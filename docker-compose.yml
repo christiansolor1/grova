@@ -1,0 +1,41 @@
+version: '3.8'
+
+services:
+  php:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+    container_name: grova_php
+    volumes:
+      - .:/var/www/html
+    ports:
+      - "9000:9000"
+    depends_on:
+      - database
+
+  nginx:
+    image: nginx:alpine
+    container_name: grova_nginx
+    ports:
+      - "8080:80"
+    volumes:
+      - .:/var/www/html
+      - ./docker/nginx.conf:/etc/nginx/conf.d/default.conf
+    depends_on:
+      - php
+
+  database:
+    image: mariadb:10.11
+    container_name: grova_db
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: grova
+      MYSQL_USER: grova
+      MYSQL_PASSWORD: grova
+    ports:
+      - "3307:3306"
+    volumes:
+      - grova_db_data:/var/lib/mysql
+
+volumes:
+  grova_db_data:
