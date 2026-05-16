@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: Helvetica, Arial, sans-serif; font-size: 12px; color: #1e293b; background: #fff; }
+.page { padding: 40px 48px; }
+
+/* Header */
+.header { display: table; width: 100%; margin-bottom: 40px; }
+.header-left  { display: table-cell; vertical-align: top; width: 60%; }
+.header-right { display: table-cell; vertical-align: top; text-align: right; }
+
+.brand { font-size: 22px; font-weight: 800; color: #6366f1; letter-spacing: -0.5px; }
+.brand-sub { font-size: 10px; color: #64748b; margin-top: 2px; }
+
+.invoice-label { font-size: 28px; font-weight: 800; color: #0f172a; }
+.invoice-meta  { font-size: 11px; color: #64748b; margin-top: 6px; line-height: 1.6; }
+
+/* Separator */
+.sep { border: none; border-top: 2px solid #e2e8f0; margin: 24px 0; }
+
+/* Parties */
+.parties { display: table; width: 100%; margin-bottom: 32px; }
+.party { display: table-cell; vertical-align: top; width: 50%; }
+.party-label { font-size: 9px; text-transform: uppercase; letter-spacing: 0.08em; color: #94a3b8; margin-bottom: 6px; font-weight: 700; }
+.party-name  { font-size: 14px; font-weight: 700; color: #0f172a; }
+.party-detail { font-size: 11px; color: #475569; line-height: 1.6; margin-top: 2px; }
+
+/* Concept table */
+.concept-table { width: 100%; border-collapse: collapse; margin-bottom: 24px; }
+.concept-table th {
+    background: #f8fafc;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: #64748b;
+    font-weight: 700;
+    padding: 8px 12px;
+    border-bottom: 2px solid #e2e8f0;
+    text-align: left;
+}
+.concept-table th.right { text-align: right; }
+.concept-table td {
+    padding: 10px 12px;
+    border-bottom: 1px solid #f1f5f9;
+    font-size: 12px;
+    color: #334155;
+}
+.concept-table td.right { text-align: right; }
+.concept-table tr:last-child td { border-bottom: none; }
+
+/* Totals */
+.totals { width: 100%; border-collapse: collapse; margin-bottom: 32px; }
+.totals td { padding: 5px 12px; font-size: 12px; }
+.totals .total-row td { font-size: 16px; font-weight: 800; color: #0f172a; border-top: 2px solid #e2e8f0; padding-top: 10px; }
+.totals .right { text-align: right; }
+
+/* Bank */
+.bank-box {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 16px 20px;
+    margin-bottom: 32px;
+}
+.bank-title { font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; color: #64748b; font-weight: 700; margin-bottom: 8px; }
+.bank-row { display: table; width: 100%; margin-bottom: 4px; }
+.bank-key { display: table-cell; font-size: 11px; color: #64748b; width: 120px; }
+.bank-val { display: table-cell; font-size: 11px; font-weight: 600; color: #1e293b; }
+
+/* Days list */
+.days-section { margin-bottom: 32px; }
+.days-title { font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; color: #64748b; font-weight: 700; margin-bottom: 8px; }
+.days-table { width: 100%; border-collapse: collapse; font-size: 11px; }
+.days-table th { color: #94a3b8; font-weight: 600; padding: 4px 8px; text-align: left; border-bottom: 1px solid #e2e8f0; }
+.days-table td { padding: 4px 8px; color: #475569; border-bottom: 1px solid #f8fafc; }
+.tag-bonus { color: #16a34a; font-weight: 700; }
+.tag-normal { color: #64748b; }
+
+/* Cobro — tipo de cambio */
+.paid-fx-note {
+    font-size: 10px;
+    color: #475569;
+    line-height: 1.5;
+    margin: 16px 0 24px;
+    padding: 10px 14px;
+    background: #f1f5f9;
+    border-radius: 6px;
+    border: 1px solid #e2e8f0;
+}
+.paid-fx-note strong { color: #334155; font-size: 10px; text-transform: uppercase; letter-spacing: 0.05em; }
+
+/* Footer */
+.footer { text-align: center; font-size: 10px; color: #94a3b8; border-top: 1px solid #e2e8f0; padding-top: 16px; }
+</style>
+</head>
+<body>
+<div class="page">
+
+    <!-- Header -->
+    <div class="header">
+        <div class="header-left">
+            <div class="brand">GROVA</div>
+            <div class="brand-sub">Work Module</div>
+        </div>
+        <div class="header-right">
+            <div class="invoice-label">FACTURA</div>
+            <div class="invoice-meta">
+                Período: {{ invoice_month_label }}<br>
+                Fecha emisión: {{ invoice.createdAt|date('d/m/Y') }}<br>
+                Ref: WRK-{{ invoice.anio }}-{{ '%02d'|format(invoice.mes) }}-{{ '%04d'|format(invoice.id) }}
+            </div>
+        </div>
+    </div>
+
+    <hr class="sep">
+
+    <!-- Parties -->
+    <div class="parties">
+        <div class="party">
+            <div class="party-label">Facturado por</div>
+            <div class="party-name">Christian Solórzano</div>
+            <div class="party-detail">Servicios profesionales</div>
+        </div>
+        <div class="party" style="text-align:right;">
+            <div class="party-label">Facturado a</div>
+            <div class="party-name">{{ client.nombre }}</div>
+            <div class="party-detail">{{ client.emailsFactura }}</div>
+        </div>
+    </div>
+
+    <!-- Concept table -->
+    <table class="concept-table">
+        <thead>
+            <tr>
+                <th>Concepto</th>
+                <th class="right" style="width:80px;">Cantidad</th>
+                <th class="right" style="width:100px;">Precio unit.</th>
+                <th class="right" style="width:100px;">Importe</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>
+                    <strong>Salario base</strong><br>
+                    <span style="font-size:11px;color:#64748b;">Servicio mensual — {{ invoice_month_label }}</span>
+                </td>
+                <td class="right">1</td>
+                <td class="right">€{{ invoice.salarioBase|number_format(2, '.', ',') }}</td>
+                <td class="right">€{{ invoice.salarioBase|number_format(2, '.', ',') }}</td>
+            </tr>
+            {% if invoice.diasBonus > 0 %}
+            <tr>
+                <td>
+                    <strong>{{ 'work.invoice_pdf_bonus_punctuality'|trans({}, 'work', pdf_locale) }}</strong><br>
+                    <span style="font-size:11px;color:#64748b;">{{ 'work.invoice_pdf_bonus_days_hint'|trans({'%days%': invoice.diasBonus, '%time%': client.horaLimiteBonus}, 'work', pdf_locale) }}</span>
+                </td>
+                <td class="right">{{ invoice.diasBonus }}</td>
+                <td class="right">€{{ client.bonusDia|number_format(2, '.', ',') }}</td>
+                <td class="right">€{{ invoice.montoBonus|number_format(2, '.', ',') }}</td>
+            </tr>
+            {% endif %}
+            {% for line in invoice.bonusLines %}
+            <tr>
+                <td>
+                    <strong>{{ line.concepto ?? ('work.invoice_pdf_manual_bonus_default_concept'|trans({}, 'work', pdf_locale)) }}</strong><br>
+                    <span style="font-size:11px;color:#64748b;">{{ 'work.invoice_pdf_manual_bonus_sub'|trans({}, 'work', pdf_locale) }}</span>
+                </td>
+                <td class="right">1</td>
+                <td class="right">€{{ line.importeEur|number_format(2, '.', ',') }}</td>
+                <td class="right">€{{ line.importeEur|number_format(2, '.', ',') }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <!-- Totals -->
+    <table class="totals">
+        <tr>
+            <td style="color:#64748b;">Subtotal</td>
+            <td class="right">€{{ (invoice.salarioBaseFloat + invoice.montoBonusFloat + invoice.extraBonusSumFloat)|number_format(2, '.', ',') }}</td>
+        </tr>
+        <tr>
+            <td style="color:#64748b;">IVA (0%)</td>
+            <td class="right">€0.00</td>
+        </tr>
+        <tr class="total-row">
+            <td>TOTAL A PAGAR</td>
+            <td class="right" style="color:#6366f1;">€{{ invoice.totalFloat|number_format(2, '.', ',') }}</td>
+        </tr>
+    </table>
+
+    {% if invoice.pagadaAt and invoice.tasaPagoEurL is not null and invoice.tasaPagoEurLFloat > 0 %}
+    <div class="paid-fx-note">
+        <strong>{{ 'work.invoice_pdf_paid_fx_title'|trans({}, 'work', pdf_locale) }}</strong><br>
+        EUR {{ invoice.tasaPagoEurLFloat|number_format(4, '.', ',') }}/USD {% if invoice.tasaPagoUsdLFloat > 0 %}{{ invoice.tasaPagoUsdLFloat|number_format(4, '.', ',') }}{% else %}—{% endif %}
+        — {{ 'work.invoice_pdf_paid_fx_cobro'|trans({'%fecha%': invoice.pagadaAt|date('d/m/Y')}, 'work', pdf_locale) }}
+    </div>
+    {% endif %}
+
+    <!-- Bank details -->
+    {% if client.bancNombre %}
+    <div class="bank-box">
+        <div class="bank-title">Datos bancarios para transferencia</div>
+        {% if client.bancNombre %}
+        <div class="bank-row"><span class="bank-key">Banco:</span><span class="bank-val">{{ client.bancNombre }}</span></div>
+        {% endif %}
+        {% if client.bancTitular %}
+        <div class="bank-row"><span class="bank-key">Titular:</span><span class="bank-val">{{ client.bancTitular }}</span></div>
+        {% endif %}
+        {% if client.bancCuenta %}
+        <div class="bank-row"><span class="bank-key">Cuenta:</span><span class="bank-val">{{ client.bancCuenta }}</span></div>
+        {% endif %}
+        {% if client.bancSwift %}
+        <div class="bank-row"><span class="bank-key">SWIFT/BIC:</span><span class="bank-val">{{ client.bancSwift }}</span></div>
+        {% endif %}
+        {% if client.bancDireccion %}
+        <div class="bank-row"><span class="bank-key">Dirección:</span><span class="bank-val">{{ client.bancDireccion }}</span></div>
+        {% endif %}
+    </div>
+    {% endif %}
+
+    <!-- Days breakdown -->
+    {% if days|length > 0 %}
+    <div class="days-section">
+        <div class="days-title">Detalle de días trabajados</div>
+        <table class="days-table">
+            <thead>
+                <tr>
+                    <th>Fecha</th>
+                    <th>Entrada</th>
+                    <th>Tipo</th>
+                    <th>Notas</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for day in days %}
+                {% if day.trabajado %}
+                <tr>
+                    <td>{{ day.fecha|date('d/m/Y (D)') }}</td>
+                    <td>{{ day.horaEntrada ?? '—' }}</td>
+                    <td>
+                        {% if day.bonusAplica %}
+                            <span class="tag-bonus">+Bonus</span>
+                        {% else %}
+                            <span class="tag-normal">Normal</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ day.notas ?? '' }}</td>
+                </tr>
+                {% endif %}
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% endif %}
+
+    <!-- Footer -->
+    <div class="footer">
+        Generado el {{ 'now'|date('d/m/Y') }} · GROVA Work Module · Gracias por confiar en nuestros servicios
+    </div>
+
+</div>
+</body>
+</html>

@@ -1,76 +1,315 @@
 {% extends 'workspace/app_layout.html.twig' %}
 
-{% block title %}{{ 'app.name' | trans }} – {{ 'dashboard.title' | trans }}{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
+{% block app_page_subtitle %}
+    {% if tenant %}Bienvenido, {{ app.user.nombre ?? app.user.username }} · {{ tenant.nombre }}{% else %}Bienvenido al sistema{% endif %}
+{% endblock %}
 
-{% block app_page_h1 %}{{ 'dashboard.title' | trans }}{% endblock %}
+{% block page_styles %}
+<style>
+.dash-section-title {
+    font-size: 11px;
+    font-weight: 700;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: .08em;
+    margin-bottom: .75rem;
+}
+.dash-tenant-card {
+    background: #111827;
+    border: 1px solid #1e293b;
+    border-radius: 12px;
+    padding: 1.25rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+body.light-mode .dash-tenant-card { background: #fff; border-color: #e2e8f0; }
 
-{% block app_page_subtitle %}{{ 'dashboard.subtitle' | trans }}{% endblock %}
+.dash-plan-card {
+    background: #111827;
+    border: 1px solid #1e3a5f;
+    border-radius: 12px;
+    padding: 1.25rem;
+    height: 100%;
+}
+body.light-mode .dash-plan-card { background: #fff; border-color: #bfdbfe; }
+
+.dash-plan-name { font-size: 22px; font-weight: 800; color: #60a5fa; }
+.dash-plan-price { font-size: 13px; color: #64748b; margin-top: 2px; }
+.dash-plan-expiry { font-size: 12px; color: #64748b; margin-top: .5rem; }
+
+.dash-module-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+    gap: .5rem;
+}
+.dash-module-chip {
+    display: flex;
+    align-items: center;
+    gap: .4rem;
+    background: #0f172a;
+    border: 1px solid #1e293b;
+    border-radius: 8px;
+    padding: .5rem .75rem;
+    font-size: 12px;
+    color: #94a3b8;
+    font-weight: 500;
+}
+body.light-mode .dash-module-chip { background: #f8fafc; border-color: #e2e8f0; color: #475569; }
+.dash-module-chip i { color: #60a5fa; font-size: 14px; }
+
+.dash-no-tenant {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+    padding: 3rem 1rem;
+    text-align: center;
+    color: #64748b;
+}
+.dash-no-tenant i { font-size: 3rem; color: #334155; }
+</style>
+{% endblock %}
 
 {% block app_main %}
-<div id="dashboard-stats" class="row g-3 mb-4">
+
+{% if tenant %}
+{# ── Fila superior: tarjeta tenant + tarjeta plan ── #}
+<div class="row g-3 mb-4">
+
+    {# Tarjeta del tenant #}
+    <div class="col-lg-6">
+        <div class="dash-section-title">Tu espacio</div>
+        <div class="dash-tenant-card">
+            <div class="grova-profile-avatar" style="width:48px;height:48px;font-size:18px;">
+                {{ tenant.initials }}
+            </div>
+            <div style="flex:1;min-width:0;">
+                <div style="font-size:16px;font-weight:700;color:#f1f5f9;">{{ tenant.nombre }}</div>
+                <div style="font-size:12px;color:#64748b;margin-top:2px;"><code>{{ tenant.slug }}</code></div>
+                <div style="margin-top:.5rem;">
+                    <span class="badge {{ tenant.isActivo ? 'bg-success' : 'bg-secondary' }}">
+                        {{ tenant.estado|capitalize }}
+                    </span>
+                </div>
+            </div>
+            <div class="grova-detail-list" style="min-width:160px;">
+                <div class="grova-detail-row">
+                    <dt>BD</dt>
+                    <dd><code style="font-size:11px;">{{ tenant.dbName }}</code></dd>
+                </div>
+                <div class="grova-detail-row">
+                    <dt>Desde</dt>
+                    <dd>{{ tenant.createdAt|date('d/m/Y') }}</dd>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {# Tarjeta del plan #}
+    <div class="col-lg-6">
+        <div class="dash-section-title">Plan activo</div>
+        {% if suscripcion %}
+        <div class="dash-plan-card">
+            <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:.5rem;flex-wrap:wrap;">
+                <div>
+                    <div class="dash-plan-name">{{ suscripcion.plan.nombre }}</div>
+                    <div class="dash-plan-price">
+                        {% if suscripcion.plan.precioMensual == '0.00' %}
+                            Cortesía — $0/mes
+                        {% else %}
+                            ${{ suscripcion.plan.precioMensual }}/mes
+                        {% endif %}
+                    </div>
+                    <div class="dash-plan-expiry">
+                        <i class="bi bi-calendar3 me-1"></i>
+                        Vence el {{ suscripcion.fechaVencimiento|date('d/m/Y') }}
+                    </div>
+                </div>
+                <span class="badge {{ suscripcion.isActiva ? 'bg-success' : 'bg-danger' }}">
+                    {{ suscripcion.estado|capitalize }}
+                </span>
+            </div>
+            <div style="margin-top:.75rem;display:flex;flex-wrap:wrap;gap:.3rem;">
+                {% for modulo in suscripcion.plan.modulos|slice(0,4) %}
+                    <span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25" style="font-size:11px;">{{ modulo }}</span>
+                {% endfor %}
+                {% if suscripcion.plan.modulos|length > 4 %}
+                    <span class="badge bg-secondary bg-opacity-10 text-secondary" style="font-size:11px;">+{{ suscripcion.plan.modulos|length - 4 }} más</span>
+                {% endif %}
+            </div>
+        </div>
+        {% else %}
+        <div class="dash-plan-card" style="border-color:#dc2626;">
+            <div style="color:#f87171;font-size:13px;"><i class="bi bi-exclamation-triangle me-1"></i>Sin suscripción activa</div>
+        </div>
+        {% endif %}
+    </div>
+
+</div>
+
+{# ── Módulos activos ── #}
+<div class="content-card mb-4">
+    <div class="content-card-header">
+        Módulos activos
+        <span class="badge bg-primary ms-2">{{ modulos_activos|length }}</span>
+    </div>
+    <div class="content-card-body">
+        {% if modulos_activos|length > 0 %}
+        <div class="dash-module-grid">
+            {% set modulo_icons = {
+                'wallet':      'bi-wallet2',
+                'work':        'bi-briefcase',
+                'agenda':      'bi-calendar-check',
+                'habitos':     'bi-activity',
+                'pesca':       'bi-water',
+                'facturacion': 'bi-receipt',
+                'legal':       'bi-building',
+                'construccion':'bi-hammer',
+                'pos':         'bi-shop',
+                'restaurante': 'bi-cup-straw',
+                'clinica':     'bi-heart-pulse',
+                'financiera':  'bi-bank',
+                'inventario':  'bi-boxes',
+                'rrhh':        'bi-people',
+            } %}
+            {% set modulo_labels = {
+                'wallet':      'Wallet',
+                'work':        'Work',
+                'agenda':      'Agenda',
+                'habitos':     'Hábitos',
+                'pesca':       'Pesca',
+                'facturacion': 'Facturación',
+                'legal':       'Legal',
+                'construccion':'Construcción',
+                'pos':         'POS',
+                'restaurante': 'Restaurante',
+                'clinica':     'Clínica',
+                'financiera':  'Financiera',
+                'inventario':  'Inventario',
+                'rrhh':        'RRHH',
+            } %}
+            {% for key in modulos_activos %}
+            <div class="dash-module-chip">
+                <i class="{{ modulo_icons[key] ?? 'bi-box' }}"></i>
+                {{ modulo_labels[key] ?? key|capitalize }}
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="grova-empty-state grova-empty-state-compact">
+            <div class="grova-empty-icon"><i class="bi bi-box"></i></div>
+            <div class="grova-empty-title">Sin módulos activos</div>
+            <div class="grova-empty-desc">Activa módulos desde Configuración → Módulos activos.</div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+{# ── Stats del usuario ── #}
+<div class="row g-3">
     <div class="col-sm-6 col-xl-3">
         <div class="stat-card">
-            <div class="stat-label">{{ 'stat.active_users' | trans }}</div>
-            <div class="stat-value">1,248</div>
-            <div class="stat-change">{{ 'stat.active_users.change' | trans }}</div>
+            <div class="stat-label">Módulos activos</div>
+            <div class="stat-value">{{ modulos_activos|length }}</div>
+            <div class="stat-change">de {{ suscripcion ? suscripcion.plan.modulos|length : 0 }} disponibles</div>
         </div>
     </div>
     <div class="col-sm-6 col-xl-3">
         <div class="stat-card">
-            <div class="stat-label">{{ 'stat.organizations' | trans }}</div>
-            <div class="stat-value">84</div>
-            <div class="stat-change">{{ 'stat.organizations.change' | trans }}</div>
+            <div class="stat-label">Plan</div>
+            <div class="stat-value" style="font-size:18px;">{{ suscripcion ? suscripcion.plan.nombre : '—' }}</div>
+            <div class="stat-change">
+                {% if suscripcion %}
+                    vence {{ suscripcion.fechaVencimiento|date('d/m/Y') }}
+                {% else %}
+                    sin suscripción
+                {% endif %}
+            </div>
         </div>
     </div>
     <div class="col-sm-6 col-xl-3">
         <div class="stat-card">
-            <div class="stat-label">{{ 'stat.revenue' | trans }}</div>
-            <div class="stat-value">$24.8k</div>
-            <div class="stat-change">{{ 'stat.revenue.change' | trans }}</div>
+            <div class="stat-label">Rol</div>
+            <div class="stat-value" style="font-size:16px;">
+                {% if is_granted('ROLE_DEVELOPER') %}Super-admin
+                {% elseif is_granted('ROLE_ADMIN') %}Admin
+                {% else %}Usuario{% endif %}
+            </div>
+            <div class="stat-change">{{ app.user.email }}</div>
         </div>
     </div>
     <div class="col-sm-6 col-xl-3">
         <div class="stat-card">
-            <div class="stat-label">{{ 'stat.churn' | trans }}</div>
-            <div class="stat-value">2.1%</div>
-            <div class="stat-change down">{{ 'stat.churn.change' | trans }}</div>
+            <div class="stat-label">Tenant</div>
+            <div class="stat-value" style="font-size:14px;word-break:break-all;">{{ tenant.slug }}</div>
+            <div class="stat-change">
+                <span class="badge {{ tenant.isActivo ? 'bg-success' : 'bg-secondary' }}" style="font-size:10px;">{{ tenant.estado }}</span>
+            </div>
         </div>
     </div>
 </div>
 
-<div id="dashboard-users-table" class="content-card">
-    <div class="content-card-header">
-        {{ 'table.users.title' | trans }}
-        <button class="btn btn-sm btn-primary" type="button">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="me-1"><path d="M12 5v14M5 12h14"/></svg>
-            {{ 'table.users.new' | trans }}
-        </button>
-    </div>
+{% else %}
+{# ── Sin tenant asignado (super-admin puro) ── #}
+<div class="content-card">
     <div class="content-card-body">
-        <table id="users-table" class="table table-hover w-100" style="color:inherit;">
-            <thead>
-                <tr>
-                    <th>{{ 'table.col.id' | trans }}</th>
-                    <th>{{ 'table.col.username' | trans }}</th>
-                    <th>{{ 'table.col.email' | trans }}</th>
-                    <th>{{ 'table.col.role' | trans }}</th>
-                    <th>{{ 'table.col.status' | trans }}</th>
-                    <th>{{ 'table.col.actions' | trans }}</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr>
-                    <td>1</td>
-                    <td>demo</td>
-                    <td>demo@grova.com</td>
-                    <td><span class="badge bg-primary">{{ 'role.admin' | trans }}</span></td>
-                    <td><span class="badge bg-success">{{ 'status.active' | trans }}</span></td>
-                    <td>—</td>
-                </tr>
-            </tbody>
+        <div class="dash-no-tenant">
+            <i class="bi bi-buildings"></i>
+            <div>
+                <div style="font-size:16px;font-weight:600;color:#94a3b8;margin-bottom:.25rem;">Vista de sistema</div>
+                <div style="font-size:13px;">Este usuario no tiene un tenant asignado. Estás en modo super-admin.</div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+{# ── Panel de impersonate — solo visible para ROLE_DEVELOPER cuando no está impersonando ── #}
+{% if switch_users is defined and switch_users|length > 0 %}
+<div class="content-card mt-4" style="border-color:#7c3aed33;">
+    <div class="content-card-header" style="color:#a78bfa; font-size:12px;">
+        <i class="bi bi-incognito me-2"></i>Entrar como otro usuario
+        <span style="font-size:10px; color:#64748b; margin-left:.5rem; font-weight:400;">
+            <i class="bi bi-shield-lock me-1"></i>Solo visible para ti · queda en el log
+        </span>
+    </div>
+    <div class="content-card-body" style="padding:.25rem 0;">
+        <table style="width:100%; border-collapse:collapse;">
+            {% for u in switch_users %}
+            <tr style="border-bottom:1px solid #1e293b22;">
+                <td style="padding:.5rem 1rem; width:36px;">
+                    <div style="
+                        width:30px; height:30px; border-radius:50%;
+                        background:#1e293b; border:1px solid #334155;
+                        display:flex; align-items:center; justify-content:center;
+                        font-size:12px; font-weight:700; color:#94a3b8;
+                    ">{{ u.userIdentifier|first|upper }}</div>
+                </td>
+                <td style="padding:.5rem 0;">
+                    <div style="font-size:13px; font-weight:600; color:#f1f5f9; line-height:1.2;">
+                        {{ u.nombreCompleto ?: u.userIdentifier }}
+                    </div>
+                    <div style="font-size:11px; color:#64748b;">{{ u.email }}</div>
+                </td>
+                <td style="padding:.5rem 1rem; text-align:right;">
+                    <a href="{{ path('grova_page_dashboard', {_locale: app.request.locale, _switch_user: u.username}) }}"
+                       class="btn btn-xs"
+                       title="Entrar como {{ u.username }}"
+                       style="background:#7c3aed22; color:#a78bfa; border:1px solid #7c3aed44; padding:3px 9px; border-radius:6px; font-size:11px; text-decoration:none; display:inline-flex; align-items:center; gap:.3rem;">
+                        <i class="bi bi-person-fill-lock" style="font-size:13px;"></i>
+                        Entrar
+                    </a>
+                </td>
+            </tr>
+            {% endfor %}
         </table>
     </div>
 </div>
+{% endif %}
+
 {% endblock %}
 
 {% block app_page_scripts %}

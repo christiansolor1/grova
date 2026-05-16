@@ -1,0 +1,294 @@
+{% extends 'workspace/app_layout.html.twig' %}
+
+{% block page_title %}Cards y contenedores{% endblock %}
+{% block app_page_subtitle %}Cards, listas, timelines y contenedores para sistemas transaccionales. Copia el código y úsalo en cualquier vista.{% endblock %}
+
+{% block page_styles %}
+<style>
+.ui-component { border: 1px solid #1e293b; border-radius: 10px; overflow: hidden; margin-bottom: 1.5rem; }
+.ui-component-preview { padding: 1.5rem; background: #0f172a; }
+.ui-component-code { background: #020617; border-top: 1px solid #1e293b; }
+.ui-component-code-header { display: flex; align-items: center; justify-content: space-between; padding: .5rem 1rem; border-bottom: 1px solid #1e293b; }
+.ui-component-code-label { font-size: 11px; color: #64748b; text-transform: uppercase; letter-spacing: .5px; }
+.ui-component-code pre { margin: 0; padding: 1rem; font-size: 12px; color: #94a3b8; overflow-x: auto; }
+.btn-copy-code { font-size: 11px; padding: 2px 10px; }
+.grova-timeline { list-style: none; padding: 0; margin: 0; position: relative; }
+.grova-timeline::before { content: ''; position: absolute; left: 16px; top: 0; bottom: 0; width: 2px; background: #1e293b; }
+.grova-timeline li { display: flex; gap: 1rem; padding: .75rem 0; position: relative; }
+.grova-timeline .tl-dot { width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 13px; z-index: 1; }
+.grova-timeline .tl-body { flex: 1; }
+.grova-timeline .tl-title { font-size: 13px; font-weight: 600; }
+.grova-timeline .tl-meta { font-size: 11px; color: #64748b; }
+body.light-mode .ui-component { border-color: #dbe3ee; }
+body.light-mode .ui-component-preview { background: #f8fafc; }
+body.light-mode .ui-component-code { background: #f1f5f9; border-color: #dbe3ee; }
+body.light-mode .ui-component-code-header { border-color: #dbe3ee; }
+body.light-mode .ui-component-code pre { color: #475569; }
+body.light-mode .grova-timeline::before { background: #dbe3ee; }
+</style>
+{% endblock %}
+
+{% block app_main %}
+<div class="content-card">
+    <div class="content-card-header">Cards y contenedores</div>
+    <div class="content-card-body">
+
+        {# ── Content card (estándar de grova) ── #}
+        <div class="ui-component">
+            <div class="ui-component-preview">
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <div class="content-card">
+                            <div class="content-card-header">Card básica</div>
+                            <div class="content-card-body">
+                                <p style="font-size:13px; margin:0;">Contenido de la card. Úsala para agrupar información relacionada.</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="content-card">
+                            <div class="content-card-header d-flex justify-content-between align-items-center">
+                                Card con acción
+                                <button type="button" class="btn btn-outline-secondary btn-sm" style="font-size:11px;padding:2px 8px;"><i class="bi bi-gear"></i></button>
+                            </div>
+                            <div class="content-card-body">
+                                <p style="font-size:13px; margin:0;">Card con botón de acción en el header.</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="content-card">
+                            <div class="content-card-header">Card con footer</div>
+                            <div class="content-card-body">
+                                <p style="font-size:13px; margin:0;">Card con footer para acciones secundarias.</p>
+                            </div>
+                            <div class="content-card-body" style="border-top:1px solid #1e293b; padding-top:.75rem;">
+                                <button type="button" class="btn btn-primary btn-sm me-1">Guardar</button>
+                                <button type="button" class="btn btn-outline-secondary btn-sm">Cancelar</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="ui-component-code">
+                <div class="ui-component-code-header">
+                    <span class="ui-component-code-label">Twig / HTML — Content card</span>
+                    <button type="button" class="btn btn-outline-secondary btn-sm btn-copy-code" data-copy-target="code-content-card">Copiar</button>
+                </div>
+                <pre id="code-content-card">{% verbatim %}{# Card básica #}
+<div class="content-card">
+    <div class="content-card-header">Título</div>
+    <div class="content-card-body">
+        Contenido aquí.
+    </div>
+</div>
+
+{# Card con acción en header #}
+<div class="content-card">
+    <div class="content-card-header d-flex justify-content-between align-items-center">
+        Título
+        <button type="button" class="btn btn-outline-secondary btn-sm"><i class="bi bi-gear"></i></button>
+    </div>
+    <div class="content-card-body">Contenido.</div>
+</div>{% endverbatim %}</pre>
+            </div>
+        </div>
+
+        {# ── Lista de items con acción ── #}
+        <div class="ui-component">
+            <div class="ui-component-preview">
+                <div class="content-card">
+                    <div class="content-card-header d-flex justify-content-between align-items-center">
+                        Elementos
+                        <button type="button" class="btn btn-primary btn-sm"><i class="bi bi-plus me-1"></i>Agregar</button>
+                    </div>
+                    <div class="content-card-body p-0">
+                        <ul class="list-group list-group-flush">
+                            <li class="list-group-item d-flex justify-content-between align-items-center px-3 py-2">
+                                <div>
+                                    <div style="font-size:13px; font-weight:600;">Elemento #1</div>
+                                    <div style="font-size:11px; color:#64748b;">Descripción breve del elemento</div>
+                                </div>
+                                <div class="d-flex gap-1">
+                                    <span class="badge bg-success">Activo</span>
+                                    <button type="button" class="btn btn-outline-secondary btn-sm"><i class="bi bi-pencil"></i></button>
+                                </div>
+                            </li>
+                            <li class="list-group-item d-flex justify-content-between align-items-center px-3 py-2">
+                                <div>
+                                    <div style="font-size:13px; font-weight:600;">Elemento #2</div>
+                                    <div style="font-size:11px; color:#64748b;">Descripción breve del elemento</div>
+                                </div>
+                                <div class="d-flex gap-1">
+                                    <span class="badge bg-warning text-dark">Pendiente</span>
+                                    <button type="button" class="btn btn-outline-secondary btn-sm"><i class="bi bi-pencil"></i></button>
+                                </div>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            <div class="ui-component-code">
+                <div class="ui-component-code-header">
+                    <span class="ui-component-code-label">Twig / HTML — Lista de items</span>
+                    <button type="button" class="btn btn-outline-secondary btn-sm btn-copy-code" data-copy-target="code-list-items">Copiar</button>
+                </div>
+                <pre id="code-list-items">{% verbatim %}<div class="content-card">
+    <div class="content-card-header d-flex justify-content-between align-items-center">
+        Elementos
+        <button type="button" class="btn btn-primary btn-sm"><i class="bi bi-plus me-1"></i>Agregar</button>
+    </div>
+    <div class="content-card-body p-0">
+        <ul class="list-group list-group-flush">
+            <li class="list-group-item d-flex justify-content-between align-items-center px-3 py-2">
+                <div>
+                    <div style="font-size:13px; font-weight:600;">Título del item</div>
+                    <div style="font-size:11px; color:#64748b;">Descripción</div>
+                </div>
+                <div class="d-flex gap-1">
+                    <span class="badge bg-success">Activo</span>
+                    <button type="button" class="btn btn-outline-secondary btn-sm"><i class="bi bi-pencil"></i></button>
+                </div>
+            </li>
+        </ul>
+    </div>
+</div>{% endverbatim %}</pre>
+            </div>
+        </div>
+
+        {# ── Timeline / historial ── #}
+        <div class="ui-component">
+            <div class="ui-component-preview">
+                <ul class="grova-timeline">
+                    <li>
+                        <div class="tl-dot bg-success"><i class="bi bi-check text-white"></i></div>
+                        <div class="tl-body">
+                            <div class="tl-title">Factura pagada</div>
+                            <div class="tl-meta">Hoy 09:14 · Christian Solórzano</div>
+                        </div>
+                    </li>
+                    <li>
+                        <div class="tl-dot bg-primary"><i class="bi bi-send text-white"></i></div>
+                        <div class="tl-body">
+                            <div class="tl-title">Factura enviada al cliente</div>
+                            <div class="tl-meta">Ayer 16:30 · Christian Solórzano</div>
+                        </div>
+                    </li>
+                    <li>
+                        <div class="tl-dot bg-secondary"><i class="bi bi-file-earmark text-white"></i></div>
+                        <div class="tl-body">
+                            <div class="tl-title">Factura creada</div>
+                            <div class="tl-meta">02 May 2026 10:00 · Sistema</div>
+                        </div>
+                    </li>
+                </ul>
+            </div>
+            <div class="ui-component-code">
+                <div class="ui-component-code-header">
+                    <span class="ui-component-code-label">Twig / HTML — Timeline / historial</span>
+                    <button type="button" class="btn btn-outline-secondary btn-sm btn-copy-code" data-copy-target="code-timeline">Copiar</button>
+                </div>
+                <pre id="code-timeline">{% verbatim %}<ul class="grova-timeline">
+    <li>
+        <div class="tl-dot bg-success"><i class="bi bi-check text-white"></i></div>
+        <div class="tl-body">
+            <div class="tl-title">Acción completada</div>
+            <div class="tl-meta">Hoy 09:14 · Usuario</div>
+        </div>
+    </li>
+    <li>
+        <div class="tl-dot bg-primary"><i class="bi bi-send text-white"></i></div>
+        <div class="tl-body">
+            <div class="tl-title">Documento enviado</div>
+            <div class="tl-meta">Ayer 16:30 · Usuario</div>
+        </div>
+    </li>
+</ul>
+
+{# CSS requerido (agregar en page_styles o en _styles.html.twig) #}
+<style>
+.grova-timeline { list-style: none; padding: 0; margin: 0; position: relative; }
+.grova-timeline::before { content: ''; position: absolute; left: 16px; top: 0; bottom: 0; width: 2px; background: #1e293b; }
+.grova-timeline li { display: flex; gap: 1rem; padding: .75rem 0; position: relative; }
+.grova-timeline .tl-dot { width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 13px; z-index: 1; }
+.grova-timeline .tl-title { font-size: 13px; font-weight: 600; }
+.grova-timeline .tl-meta { font-size: 11px; color: #64748b; }
+</style>{% endverbatim %}</pre>
+            </div>
+        </div>
+
+        {# ── Acordeón ── #}
+        <div class="ui-component">
+            <div class="ui-component-preview">
+                <div class="accordion" id="demo-accordion">
+                    <div class="accordion-item">
+                        <h2 class="accordion-header">
+                            <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#acc1">
+                                Sección 1
+                            </button>
+                        </h2>
+                        <div id="acc1" class="accordion-collapse collapse show" data-bs-parent="#demo-accordion">
+                            <div class="accordion-body" style="font-size:13px;">Contenido de la sección 1.</div>
+                        </div>
+                    </div>
+                    <div class="accordion-item">
+                        <h2 class="accordion-header">
+                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#acc2">
+                                Sección 2
+                            </button>
+                        </h2>
+                        <div id="acc2" class="accordion-collapse collapse" data-bs-parent="#demo-accordion">
+                            <div class="accordion-body" style="font-size:13px;">Contenido de la sección 2.</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="ui-component-code">
+                <div class="ui-component-code-header">
+                    <span class="ui-component-code-label">Twig / HTML — Acordeón</span>
+                    <button type="button" class="btn btn-outline-secondary btn-sm btn-copy-code" data-copy-target="code-accordion">Copiar</button>
+                </div>
+                <pre id="code-accordion">{% verbatim %}<div class="accordion" id="mi-accordion">
+    <div class="accordion-item">
+        <h2 class="accordion-header">
+            <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#sec1">
+                Sección 1
+            </button>
+        </h2>
+        <div id="sec1" class="accordion-collapse collapse show" data-bs-parent="#mi-accordion">
+            <div class="accordion-body">Contenido aquí.</div>
+        </div>
+    </div>
+    <div class="accordion-item">
+        <h2 class="accordion-header">
+            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#sec2">
+                Sección 2
+            </button>
+        </h2>
+        <div id="sec2" class="accordion-collapse collapse" data-bs-parent="#mi-accordion">
+            <div class="accordion-body">Contenido aquí.</div>
+        </div>
+    </div>
+</div>{% endverbatim %}</pre>
+            </div>
+        </div>
+
+    </div>
+</div>
+{% endblock %}
+
+{% block app_page_scripts %}
+<script>
+document.querySelectorAll('.btn-copy-code').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+        var target = document.getElementById(btn.getAttribute('data-copy-target'));
+        if (!target) return;
+        navigator.clipboard.writeText(target.textContent.trim()).then(function () {
+            var old = btn.textContent;
+            btn.textContent = 'Copiado';
+            setTimeout(function () { btn.textContent = old; }, 1200);
+        });
+    });
+});
+</script>
+{% endblock %}

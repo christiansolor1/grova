@@ -1,0 +1,333 @@
+{% extends 'workspace/app_layout.html.twig' %}
+{% block page_title %}{{ case.titulo }}{% endblock %}
+{% block app_page_subtitle %}{{ case.contact.nombreCompleto }} · {{ case.tipoLabel }} · {{ case.estadoLabel }}{% endblock %}
+
+{% block page_styles %}
+<style>
+.case-stat { background:#111827; border:1px solid #1e293b; border-radius:12px; padding:1.25rem; }
+body.light-mode .case-stat { background:#fff; border-color:#e2e8f0; }
+.case-stat-label { font-size:11px; color:#64748b; text-transform:uppercase; letter-spacing:.06em; margin-bottom:.35rem; }
+.case-stat-value { font-size:22px; font-weight:800; }
+.estado-abierto    { color:#60a5fa; }
+.estado-en_proceso { color:#fbbf24; }
+.estado-cerrado    { color:#4ade80; }
+.estado-archivado  { color:#64748b; }
+.pay-pendiente { background:#f59e0b22; color:#fbbf24; }
+.pay-pagado    { background:#16a34a22; color:#4ade80; }
+.pay-badge { font-size:10px; padding:2px 7px; border-radius:8px; font-weight:600; }
+</style>
+{% endblock %}
+
+{% block app_main %}
+
+<div class="mb-3 d-flex align-items-center gap-3">
+    <a href="{{ path('grova_legal_index', {_locale: app.request.locale}) }}" style="font-size:13px;color:#6366f1;">
+        <i class="bi bi-arrow-left me-1"></i>Volver a Legal
+    </a>
+    <button type="button" class="btn btn-sm btn-outline-secondary ms-auto" data-bs-toggle="modal" data-bs-target="#modal-edit-case">
+        <i class="bi bi-pencil me-1"></i>Editar caso
+    </button>
+</div>
+
+{# ── Stats del caso ── #}
+<div class="row g-3 mb-4">
+    <div class="col-sm-3">
+        <div class="case-stat">
+            <div class="case-stat-label">Honorarios</div>
+            <div class="case-stat-value" style="color:#f59e0b;">${{ case.honorariosFloat|number_format(2) }}</div>
+        </div>
+    </div>
+    <div class="col-sm-3">
+        <div class="case-stat">
+            <div class="case-stat-label">Cobrado</div>
+            <div class="case-stat-value" style="color:#4ade80;">${{ case.totalCobrado|number_format(2) }}</div>
+        </div>
+    </div>
+    <div class="col-sm-3">
+        <div class="case-stat">
+            <div class="case-stat-label">Pendiente</div>
+            <div class="case-stat-value" style="color:#f87171;">${{ case.saldoPendiente|number_format(2) }}</div>
+        </div>
+    </div>
+    <div class="col-sm-3">
+        <div class="case-stat">
+            <div class="case-stat-label">Estado</div>
+            <div class="case-stat-value {{ 'estado-' ~ case.estado }}">{{ case.estadoLabel }}</div>
+            <div style="font-size:11px;color:#64748b;">Abierto {{ case.fechaApertura|date('d/m/Y') }}</div>
+        </div>
+    </div>
+</div>
+
+{% if case.descripcion %}
+<div class="content-card mb-3">
+    <div class="content-card-body" style="font-size:13px;color:#94a3b8;">{{ case.descripcion }}</div>
+</div>
+{% endif %}
+
+<div class="row g-3">
+
+    {# ── Seguimientos ── #}
+    <div class="col-lg-6">
+        <div class="content-card">
+            <div class="content-card-header">
+                Seguimientos
+                <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#modal-seguimiento">
+                    <i class="bi bi-plus-lg me-1"></i>Agregar
+                </button>
+            </div>
+            <div class="content-card-body p-0">
+                {% if case.followUps|length > 0 %}
+                <ul class="list-group list-group-flush">
+                    {% for fu in case.followUps %}
+                    <li class="list-group-item" style="background:transparent;border-color:#1e293b;">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div style="font-size:12px;color:#64748b;">{{ fu.fecha|date('d/m/Y') }}</div>
+                            {% if fu.proximaAudiencia %}
+                            <span style="font-size:11px;background:#1d4ed822;color:#60a5fa;padding:2px 7px;border-radius:8px;">
+                                Audiencia: {{ fu.proximaAudiencia|date('d/m/Y H:i') }}
+                            </span>
+                            {% endif %}
+                        </div>
+                        <div style="font-size:13px;margin-top:.3rem;">{{ fu.descripcion }}</div>
+                    </li>
+                    {% endfor %}
+                </ul>
+                {% else %}
+                <div style="padding:1.5rem;text-align:center;font-size:12px;color:#475569;">Sin seguimientos</div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    {# ── Cobros + Documentos ── #}
+    <div class="col-lg-6">
+
+        {# Cobros #}
+        <div class="content-card mb-3">
+            <div class="content-card-header">
+                Cobros
+                <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#modal-cobro">
+                    <i class="bi bi-plus-lg me-1"></i>Registrar
+                </button>
+            </div>
+            <div class="content-card-body p-0">
+                {% if case.payments|length > 0 %}
+                <table class="table table-hover mb-0" style="color:inherit;">
+                    <tbody>
+                        {% for payment in case.payments %}
+                        <tr>
+                            <td style="font-size:13px;">{{ payment.concepto }}</td>
+                            <td><span class="pay-badge pay-{{ payment.estado }}">{{ payment.isPagado ? 'Pagado' : 'Pendiente' }}</span></td>
+                            <td style="text-align:right;font-weight:600;color:#f59e0b;">${{ payment.monto|number_format(2) }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                {% else %}
+                <div style="padding:1rem;text-align:center;font-size:12px;color:#475569;">Sin cobros registrados</div>
+                {% endif %}
+            </div>
+        </div>
+
+        {# Documentos #}
+        <div class="content-card">
+            <div class="content-card-header">
+                Documentos
+                <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#modal-documento">
+                    <i class="bi bi-upload me-1"></i>Subir
+                </button>
+            </div>
+            <div class="content-card-body p-0">
+                {% if case.documents|length > 0 %}
+                <ul class="list-group list-group-flush">
+                    {% for doc in case.documents %}
+                    <li class="list-group-item d-flex align-items-center gap-2" style="background:transparent;border-color:#1e293b;">
+                        <i class="bi bi-file-earmark" style="color:#6366f1;"></i>
+                        <span style="flex:1;font-size:13px;">{{ doc.nombre }}</span>
+                        <a href="{{ doc.archivoUrl }}" target="_blank" class="btn btn-outline-secondary btn-sm" style="padding:2px 7px;font-size:11px;">
+                            <i class="bi bi-download"></i>
+                        </a>
+                    </li>
+                    {% endfor %}
+                </ul>
+                {% else %}
+                <div style="padding:1rem;text-align:center;font-size:12px;color:#475569;">Sin documentos</div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+{# ── Modal: Editar caso ── #}
+<div class="modal fade" id="modal-edit-case" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content">
+            <form method="post" action="{{ path('grova_legal_case_edit', {id: case.id, _locale: app.request.locale}) }}">
+                <input type="hidden" name="_token" value="{{ csrf_token('legal_case_edit_' ~ case.id) }}">
+                <div class="modal-header">
+                    <h5 class="modal-title">Editar caso</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row g-3">
+                        <div class="col-sm-8">
+                            <label class="form-label">Título *</label>
+                            <input type="text" class="form-control form-control-sm" name="titulo" value="{{ case.titulo }}" required>
+                        </div>
+                        <div class="col-sm-4">
+                            <label class="form-label">N° expediente</label>
+                            <input type="text" class="form-control form-control-sm" name="numero" value="{{ case.numero }}">
+                        </div>
+                        <div class="col-sm-4">
+                            <label class="form-label">Tipo</label>
+                            <select class="form-select form-select-sm" name="tipo">
+                                {% for key, label in {'penal':'Penal','civil':'Civil','laboral':'Laboral','familiar':'Familiar','mercantil':'Mercantil','administrativo':'Administrativo','otro':'Otro'} %}
+                                <option value="{{ key }}" {{ case.tipo == key ? 'selected' : '' }}>{{ label }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-sm-4">
+                            <label class="form-label">Estado</label>
+                            <select class="form-select form-select-sm" name="estado">
+                                {% for key, label in {'abierto':'Abierto','en_proceso':'En proceso','cerrado':'Cerrado','archivado':'Archivado'} %}
+                                <option value="{{ key }}" {{ case.estado == key ? 'selected' : '' }}>{{ label }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-sm-4">
+                            <label class="form-label">Honorarios ($)</label>
+                            <div class="input-group input-group-sm">
+                                <span class="input-group-text">$</span>
+                                <input type="number" step="0.01" class="form-control" name="honorarios" value="{{ case.honorarios }}">
+                            </div>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label">Descripción</label>
+                            <textarea class="form-control form-control-sm" name="descripcion" rows="3">{{ case.descripcion }}</textarea>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary btn-sm">Guardar cambios</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+{# ── Modal: Seguimiento ── #}
+<div class="modal fade" id="modal-seguimiento" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <form method="post" action="{{ path('grova_legal_followup_add', {id: case.id, _locale: app.request.locale}) }}">
+                <input type="hidden" name="_token" value="{{ csrf_token('legal_followup_' ~ case.id) }}">
+                <div class="modal-header">
+                    <h5 class="modal-title">Agregar seguimiento</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row g-3">
+                        <div class="col-sm-6">
+                            <label class="form-label">Fecha *</label>
+                            <input type="date" class="form-control form-control-sm" name="fecha" value="{{ 'now'|date('Y-m-d') }}" required>
+                        </div>
+                        <div class="col-sm-6">
+                            <label class="form-label">Próxima audiencia</label>
+                            <input type="datetime-local" class="form-control form-control-sm" name="proxima_audiencia">
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label">Descripción *</label>
+                            <textarea class="form-control form-control-sm" name="descripcion" rows="4" required
+                                      placeholder="Detalle del seguimiento, actuaciones, notas..."></textarea>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary btn-sm">Guardar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+{# ── Modal: Cobro ── #}
+<div class="modal fade" id="modal-cobro" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <form method="post" action="{{ path('grova_legal_payment_add', {id: case.id, _locale: app.request.locale}) }}">
+                <input type="hidden" name="_token" value="{{ csrf_token('legal_payment_' ~ case.id) }}">
+                <div class="modal-header">
+                    <h5 class="modal-title">Registrar cobro</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row g-3">
+                        <div class="col-12">
+                            <label class="form-label">Concepto *</label>
+                            <input type="text" class="form-control form-control-sm" name="concepto" required maxlength="150"
+                                   placeholder="Pago inicial, cuota 1, honorarios finales...">
+                        </div>
+                        <div class="col-sm-6">
+                            <label class="form-label">Monto ($) *</label>
+                            <div class="input-group input-group-sm">
+                                <span class="input-group-text">$</span>
+                                <input type="number" step="0.01" class="form-control" name="monto" min="0.01" required>
+                            </div>
+                        </div>
+                        <div class="col-sm-6">
+                            <label class="form-label">Estado</label>
+                            <select class="form-select form-select-sm" name="estado">
+                                <option value="pendiente">Pendiente</option>
+                                <option value="pagado">Pagado</option>
+                            </select>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label">Fecha de pago</label>
+                            <input type="date" class="form-control form-control-sm" name="fecha_pago">
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary btn-sm">Guardar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+{# ── Modal: Subir documento ── #}
+<div class="modal fade" id="modal-documento" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <form method="post" action="{{ path('grova_legal_document_upload', {id: case.id, _locale: app.request.locale}) }}" enctype="multipart/form-data">
+                <input type="hidden" name="_token" value="{{ csrf_token('legal_doc_' ~ case.id) }}">
+                <div class="modal-header">
+                    <h5 class="modal-title">Subir documento</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row g-3">
+                        <div class="col-12">
+                            <label class="form-label">Nombre del documento</label>
+                            <input type="text" class="form-control form-control-sm" name="nombre" maxlength="150"
+                                   placeholder="Se usará el nombre del archivo si se deja vacío">
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label">Archivo *</label>
+                            <input type="file" class="form-control form-control-sm" name="archivo" required>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary btn-sm">Subir</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

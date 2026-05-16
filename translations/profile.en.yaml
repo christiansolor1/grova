@@ -1,0 +1,48 @@
+# ══ MODULE: User profile ══════════════════════════════════════════════════════
+# Domain: profile
+
+# ── Page ──────────────────────────────────────────────────────────────────────
+profile.title: "User profile"
+profile.subtitle: "Set your personal info and profile photo."
+
+# ── Form ──────────────────────────────────────────────────────────────────────
+profile.form_title: "Profile information"
+profile.change_photo: "Change photo"
+profile.first_name: "First name"
+profile.last_name: "Last name"
+profile.first_name_ph: "Your first name"
+profile.last_name_ph: "Your last name"
+profile.email: "Email"
+profile.phone: "Phone"
+profile.company: "Company"
+profile.position: "Job title"
+profile.position_ph: "Your role"
+profile.bio: "Bio"
+profile.bio_ph: "Write a short bio about yourself."
+profile.cancel: "Cancel"
+profile.save: "Save changes"
+
+# ── Security ──────────────────────────────────────────────────────────────────
+profile.security_title: "Security — Section lock"
+profile.locked_sections: "Locked sections"
+profile.change_pin: "Change PIN"
+profile.set_pin: "Set PIN"
+profile.pin_configured: "Configured"
+profile.pin_placeholder: "4–8 digits (empty = no change)"
+profile.pin_hint: "Numbers only."
+profile.relock_after: "Re-lock after"
+profile.ttl_1min: "1 minute"
+profile.ttl_2min: "2 minutes"
+profile.ttl_5min: "5 minutes"
+profile.ttl_10min: "10 minutes"
+profile.ttl_15min: "15 minutes"
+profile.ttl_30min: "30 minutes"
+profile.ttl_1h: "1 hour"
+profile.ttl_2h: "2 hours"
+profile.ttl_8h: "8 hours"
+profile.biometric_title: "Fingerprint / Face ID"
+profile.biometric_registered: "Credential registered"
+profile.biometric_delete: "Delete"
+profile.biometric_register: "Register fingerprint / Face ID"
+profile.btn_save_security: "Save settings"
+profile.confirm_delete_biometric: "Delete biometric credential?"

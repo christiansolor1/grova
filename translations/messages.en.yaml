@@ -1,3 +1,6 @@
+# ══ GLOBAL — shared messages across the entire app ════════════════════════════
+# Domain: messages (default, no need to specify in twig/php/js)
+
 # ── General ──────────────────────────────────────────────────────────────────
 app.name: "GROVA"
 app.tagline: "Administration panel"
@@ -18,9 +21,17 @@ auth.login.error.connection_title: "Connection error"
 auth.login.error.too_many_attempts: "Too many failed attempts. Please wait 15 minutes and try again."
 auth.login.error.attempts_left: "Warning: only %count% attempt(s) left before you get blocked."
 auth.login.remember_me: "Keep me signed in"
+auth.login.footer.privacy: "Privacy"
+auth.login.footer.support: "Support"
+auth.login.footer.email_demo: "Demo email"
+auth.login.footer.email_placeholder: "name@company.com"
+auth.login.footer.phone_demo: "Demo phone"
+auth.login.footer.phone_placeholder: "+1 555 123 4567"
+auth.login.footer.rights: "All rights reserved."
 
-# ── Nav ───────────────────────────────────────────────────────────────────────
+# ── Nav (sidebar) ─────────────────────────────────────────────────────────────
 nav.search_placeholder: "Search menu..."
+nav.search_clear: "Clear search"
 nav.collapse: "Collapse menu"
 nav.expand: "Expand menu"
 
@@ -104,6 +115,7 @@ nav.settings: "General System Settings"
 
 # ── Navbar ────────────────────────────────────────────────────────────────────
 navbar.search_placeholder: "Search the system..."
+navbar.search_clear: "Clear search"
 navbar.theme_toggle: "Toggle theme"
 navbar.notifications: "Notifications"
 navbar.help: "Help"
@@ -111,36 +123,30 @@ navbar.profile: "My profile"
 navbar.settings: "Settings"
 navbar.logout: "Sign out"
 navbar.role.admin: "Administrator"
+navbar.role.superadmin: "Super Admin"
+navbar.role.user: "User"
 navbar.language: "Language"
+impersonate.viewing_as: "viewing as"
+impersonate.exit: "Back to myself"
+impersonate.tooltip: "You are browsing with this user's session and permissions. Your real account remains protected."
+navbar.profiler: "Dev tools"
+navbar.profiler_open: "Open dev tools (Web Profiler / last request)"
 
 # ── Breadcrumb ────────────────────────────────────────────────────────────────
 breadcrumb.home: "Home"
+breadcrumb.back_level: "Go up one level"
 
-# ── Dashboard page ────────────────────────────────────────────────────────────
-dashboard.title: "Dashboard"
-dashboard.subtitle: "Grova system main panel"
+# ── Filters (right drawer) ───────────────────────────────────────────────────
+filters.active_label: "Active filters:"
+filters.open: "Open filters"
+filters.title: "Filters"
+filters.panel: "Filter panel"
+filters.close: "Close"
+filters.apply: "Apply"
+filters.reset: "Reset"
+filters.clear: "Clear filters"
 
-# ── Stats ─────────────────────────────────────────────────────────────────────
-stat.active_users: "Active users"
-stat.active_users.change: "↑ 12% this month"
-stat.organizations: "Organizations"
-stat.organizations.change: "↑ 3 new"
-stat.revenue: "Revenue (month)"
-stat.revenue.change: "↑ 8.4%"
-stat.churn: "Churn rate"
-stat.churn.change: "↑ 0.3%"
-
-# ── Users table ───────────────────────────────────────────────────────────────
-table.users.title: "Recent users"
-table.users.new: "New user"
-table.col.id: "#"
-table.col.username: "Username"
-table.col.email: "Email"
-table.col.role: "Role"
-table.col.status: "Status"
-table.col.actions: "Actions"
-
-# ── Common ────────────────────────────────────────────────────────────────────
+# ── Common (buttons, statuses, roles) ────────────────────────────────────────
 status.active: "Active"
 status.inactive: "Inactive"
 role.admin: "Admin"

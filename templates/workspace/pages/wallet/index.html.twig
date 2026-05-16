@@ -1,0 +1,223 @@
+{% extends 'workspace/app_layout.html.twig' %}
+{% block page_title %}Wallet{% endblock %}
+{% block app_page_subtitle %}Control de ingresos, gastos y saldo personal.{% endblock %}
+
+{% block page_styles %}
+<style>
+.wallet-stat { background:#111827; border:1px solid #1e293b; border-radius:12px; padding:1.25rem; }
+body.light-mode .wallet-stat { background:#fff; border-color:#e2e8f0; }
+.wallet-stat-label { font-size:11px; color:#64748b; text-transform:uppercase; letter-spacing:.06em; margin-bottom:.35rem; }
+.wallet-stat-value { font-size:26px; font-weight:800; line-height:1; }
+.wallet-stat-sub { font-size:12px; color:#64748b; margin-top:.35rem; }
+.saldo-pos { color:#22c55e; }
+.saldo-neg { color:#f87171; }
+.tipo-ingreso { color:#22c55e; }
+.tipo-gasto   { color:#f87171; }
+.cat-chip { display:inline-flex; align-items:center; gap:.3rem; font-size:11px; padding:2px 8px; border-radius:20px; background:#1e293b; color:#94a3b8; }
+body.light-mode .cat-chip { background:#f1f5f9; color:#475569; }
+</style>
+{% endblock %}
+
+{% block app_main %}
+
+{# ── Stats ── #}
+<div class="row g-3 mb-4">
+    <div class="col-sm-4">
+        <div class="wallet-stat">
+            <div class="wallet-stat-label">Saldo total</div>
+            <div class="wallet-stat-value {{ saldo >= 0 ? 'saldo-pos' : 'saldo-neg' }}">
+                ${{ saldo|number_format(2, '.', ',') }}
+            </div>
+            <div class="wallet-stat-sub">todos los movimientos</div>
+        </div>
+    </div>
+    <div class="col-sm-4">
+        <div class="wallet-stat">
+            <div class="wallet-stat-label">Ingresos — {{ mes_label }}</div>
+            <div class="wallet-stat-value tipo-ingreso">${{ ingresos_mes|number_format(2, '.', ',') }}</div>
+            <div class="wallet-stat-sub">este mes</div>
+        </div>
+    </div>
+    <div class="col-sm-4">
+        <div class="wallet-stat">
+            <div class="wallet-stat-label">Gastos — {{ mes_label }}</div>
+            <div class="wallet-stat-value tipo-gasto">${{ gastos_mes|number_format(2, '.', ',') }}</div>
+            <div class="wallet-stat-sub">este mes · balance: ${{ (ingresos_mes - gastos_mes)|number_format(2, '.', ',') }}</div>
+        </div>
+    </div>
+</div>
+
+{# ── Tabla de movimientos ── #}
+<div class="content-card">
+    <div class="content-card-header">
+        Movimientos
+        <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#modal-nuevo-movimiento">
+            <i class="bi bi-plus-lg me-1"></i>Nuevo
+        </button>
+    </div>
+    <div class="content-card-body p-0">
+        {% if entries|length > 0 %}
+        <div class="table-responsive">
+            <table id="wallet-table" class="table table-hover mb-0" style="color:inherit;">
+                <thead>
+                    <tr>
+                        <th style="width:100px;">Fecha</th>
+                        <th>Descripción</th>
+                        <th>Categoría</th>
+                        <th style="width:60px;">Tipo</th>
+                        <th style="width:120px;text-align:right;">Monto</th>
+                        <th style="width:50px;"></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for entry in entries %}
+                    <tr>
+                        <td style="font-size:12px;color:#64748b;">{{ entry.fecha|date('d/m/Y') }}</td>
+                        <td style="font-size:13px;">{{ entry.descripcion ?? '—' }}</td>
+                        <td>
+                            {% if entry.category %}
+                            <span class="cat-chip">
+                                <i class="{{ entry.category.icono }}" style="color:{{ entry.category.color }};"></i>
+                                {{ entry.category.nombre }}
+                            </span>
+                            {% else %}
+                            <span style="font-size:12px;color:#475569;">Sin categoría</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <span class="badge {{ entry.isIngreso ? 'bg-success' : 'bg-danger' }} bg-opacity-20 {{ entry.isIngreso ? 'text-success' : 'text-danger' }}" style="font-size:10px;">
+                                {{ entry.tipo|upper }}
+                            </span>
+                        </td>
+                        <td style="text-align:right;font-weight:600;font-size:13px;" class="{{ entry.isIngreso ? 'tipo-ingreso' : 'tipo-gasto' }}">
+                            {{ entry.isIngreso ? '+' : '-' }}${{ entry.monto|number_format(2, '.', ',') }}
+                        </td>
+                        <td>
+                            <form method="post" action="{{ path('grova_wallet_entry_delete', {id: entry.id, _locale: app.request.locale}) }}" onsubmit="return confirm('¿Eliminar este movimiento?')">
+                                <input type="hidden" name="_token" value="{{ csrf_token('wallet_delete_' ~ entry.id) }}">
+                                <button type="submit" class="btn btn-outline-danger btn-sm" style="padding:2px 7px;font-size:11px;">
+                                    <i class="bi bi-trash3"></i>
+                                </button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="grova-empty-state">
+            <div class="grova-empty-icon"><i class="bi bi-wallet2"></i></div>
+            <div class="grova-empty-title">Sin movimientos</div>
+            <div class="grova-empty-desc">Registra tu primer ingreso o gasto.</div>
+            <div class="grova-empty-actions">
+                <button type="button" class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#modal-nuevo-movimiento">
+                    <i class="bi bi-plus-lg me-1"></i>Agregar movimiento
+                </button>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+{# ── Modal nuevo movimiento ── #}
+<div class="modal fade" id="modal-nuevo-movimiento" tabindex="-1" aria-labelledby="modal-wallet-title" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <form method="post" action="{{ path('grova_wallet_entry_create', {_locale: app.request.locale}) }}">
+                <input type="hidden" name="_token" value="{{ csrf_token('wallet_entry') }}">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="modal-wallet-title">Nuevo movimiento</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row g-3">
+
+                        {# Tipo #}
+                        <div class="col-12">
+                            <label class="form-label">Tipo</label>
+                            <div class="d-flex gap-2">
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="radio" name="tipo" id="tipo-gasto" value="gasto" checked>
+                                    <label class="form-check-label text-danger" for="tipo-gasto">Gasto</label>
+                                </div>
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="radio" name="tipo" id="tipo-ingreso" value="ingreso">
+                                    <label class="form-check-label text-success" for="tipo-ingreso">Ingreso</label>
+                                </div>
+                            </div>
+                        </div>
+
+                        {# Monto #}
+                        <div class="col-sm-6">
+                            <label class="form-label" for="monto">Monto</label>
+                            <div class="input-group input-group-sm">
+                                <span class="input-group-text">$</span>
+                                <input type="number" class="form-control" id="monto" name="monto"
+                                       min="0.01" step="0.01" placeholder="0.00" required>
+                            </div>
+                        </div>
+
+                        {# Fecha #}
+                        <div class="col-sm-6">
+                            <label class="form-label" for="fecha">Fecha</label>
+                            <input type="date" class="form-control form-control-sm" id="fecha" name="fecha"
+                                   value="{{ 'now'|date('Y-m-d') }}" required>
+                        </div>
+
+                        {# Categoría #}
+                        <div class="col-12">
+                            <label class="form-label" for="category_id">Categoría</label>
+                            <select class="grova-select2 form-select form-select-sm" id="category_id" name="category_id"
+                                    data-placeholder="Sin categoría" data-allow-clear="true"
+                                    data-dropdown-parent="#modal-nuevo-movimiento">
+                                <option value=""></option>
+                                {% set gastos   = categories|filter(c => c.tipo == 'gasto') %}
+                                {% set ingresos = categories|filter(c => c.tipo == 'ingreso') %}
+                                {% if ingresos|length %}
+                                <optgroup label="Ingresos">
+                                    {% for cat in ingresos %}
+                                    <option value="{{ cat.id }}">{{ cat.nombre }}</option>
+                                    {% endfor %}
+                                </optgroup>
+                                {% endif %}
+                                {% if gastos|length %}
+                                <optgroup label="Gastos">
+                                    {% for cat in gastos %}
+                                    <option value="{{ cat.id }}">{{ cat.nombre }}</option>
+                                    {% endfor %}
+                                </optgroup>
+                                {% endif %}
+                            </select>
+                        </div>
+
+                        {# Descripción #}
+                        <div class="col-12">
+                            <label class="form-label" for="descripcion">Descripción</label>
+                            <input type="text" class="form-control form-control-sm" id="descripcion" name="descripcion"
+                                   placeholder="Opcional" maxlength="255">
+                        </div>
+
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary btn-sm">Guardar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block app_page_scripts %}
+<script>
+// Inicializar Select2 cuando el modal se abre
+document.getElementById('modal-nuevo-movimiento').addEventListener('shown.bs.modal', function () {
+    if (window.GrovaSelect2) {
+        GrovaSelect2.initAll(this);
+    }
+});
+</script>
+{% endblock %}

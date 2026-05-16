@@ -1,0 +1,252 @@
+{% extends 'workspace/app_layout.html.twig' %}
+{% block page_title %}Salida — {{ trip.finca.nombre }}{% endblock %}
+{% block app_page_subtitle %}{{ trip.fecha|date('d/m/Y') }} · {{ trip.memberCount }} miembro(s){% endblock %}
+
+{% block page_styles %}
+<style>
+.trip-stat { background:#111827; border:1px solid #1e293b; border-radius:12px; padding:1.25rem; }
+body.light-mode .trip-stat { background:#fff; border-color:#e2e8f0; }
+.trip-stat-label { font-size:11px; color:#64748b; text-transform:uppercase; letter-spacing:.06em; margin-bottom:.35rem; }
+.trip-stat-value { font-size:24px; font-weight:800; }
+.member-chip { display:inline-flex; align-items:center; gap:.3rem; background:#1e293b; color:#94a3b8; padding:3px 10px; border-radius:20px; font-size:12px; }
+body.light-mode .member-chip { background:#f1f5f9; color:#475569; }
+.tag-funciona { background:#16a34a22; color:#4ade80; border:1px solid #16a34a44; font-size:10px; padding:1px 7px; border-radius:10px; }
+.tag-no-funciona { background:#dc262622; color:#f87171; border:1px solid #dc262644; font-size:10px; padding:1px 7px; border-radius:10px; }
+</style>
+{% endblock %}
+
+{% block app_main %}
+
+{# ── Breadcrumb ── #}
+<div class="mb-3">
+    <a href="{{ path('grova_fishing_index', {_locale: app.request.locale}) }}" style="font-size:13px;color:#6366f1;">
+        <i class="bi bi-arrow-left me-1"></i>Volver a Pesca
+    </a>
+</div>
+
+{# ── Stats de la salida ── #}
+<div class="row g-3 mb-4">
+    <div class="col-sm-3">
+        <div class="trip-stat">
+            <div class="trip-stat-label">Finca</div>
+            <div class="trip-stat-value" style="font-size:18px;">{{ trip.finca.nombre }}</div>
+        </div>
+    </div>
+    <div class="col-sm-3">
+        <div class="trip-stat">
+            <div class="trip-stat-label">Total gastos</div>
+            <div class="trip-stat-value" style="color:#f59e0b;">${{ trip.totalGastos|number_format(2) }}</div>
+        </div>
+    </div>
+    <div class="col-sm-3">
+        <div class="trip-stat">
+            <div class="trip-stat-label">Por persona</div>
+            <div class="trip-stat-value" style="color:#6366f1;">${{ trip.gastoPorMiembro|number_format(2) }}</div>
+            <div style="font-size:11px;color:#64748b;">entre {{ trip.memberCount }} miembro(s)</div>
+        </div>
+    </div>
+    <div class="col-sm-3">
+        <div class="trip-stat">
+            <div class="trip-stat-label">Señuelos usados</div>
+            <div class="trip-stat-value">{{ trip.lures|length }}</div>
+        </div>
+    </div>
+</div>
+
+{# ── Miembros ── #}
+<div class="content-card mb-3">
+    <div class="content-card-header">Miembros del grupo</div>
+    <div class="content-card-body">
+        <div class="d-flex flex-wrap gap-2">
+            {% for member in trip.members %}
+            <span class="member-chip"><i class="bi bi-person-fill me-1"></i>{{ member.nombre }}</span>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<div class="row g-3">
+
+    {# ── Gastos ── #}
+    <div class="col-lg-6">
+        <div class="content-card">
+            <div class="content-card-header">
+                Gastos
+                <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#modal-gasto">
+                    <i class="bi bi-plus-lg me-1"></i>Agregar
+                </button>
+            </div>
+            <div class="content-card-body p-0">
+                {% if trip.expenses|length > 0 %}
+                <table class="table table-hover mb-0" style="color:inherit;">
+                    <thead>
+                        <tr>
+                            <th>Concepto</th>
+                            <th>Pagó</th>
+                            <th style="text-align:right;width:90px;">Monto</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for expense in trip.expenses %}
+                        <tr>
+                            <td style="font-size:13px;">{{ expense.concepto }}</td>
+                            <td style="font-size:12px;color:#64748b;">{{ expense.pagadoPor ?? '—' }}</td>
+                            <td style="text-align:right;font-weight:600;color:#f59e0b;">${{ expense.monto|number_format(2) }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                    <tfoot>
+                        <tr>
+                            <td colspan="2" style="font-weight:700;font-size:13px;">Total</td>
+                            <td style="text-align:right;font-weight:800;color:#f59e0b;">${{ trip.totalGastos|number_format(2) }}</td>
+                        </tr>
+                        <tr>
+                            <td colspan="2" style="font-size:12px;color:#64748b;">Por persona ({{ trip.memberCount }})</td>
+                            <td style="text-align:right;font-weight:700;color:#6366f1;">${{ trip.gastoPorMiembro|number_format(2) }}</td>
+                        </tr>
+                    </tfoot>
+                </table>
+                {% else %}
+                <div style="padding:1.5rem;text-align:center;font-size:12px;color:#475569;">Sin gastos registrados</div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    {# ── Señuelos de la salida ── #}
+    <div class="col-lg-6">
+        <div class="content-card">
+            <div class="content-card-header">
+                Señuelos usados
+                <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#modal-señuelo">
+                    <i class="bi bi-plus-lg me-1"></i>Agregar
+                </button>
+            </div>
+            <div class="content-card-body p-0">
+                {% if trip.lures|length > 0 %}
+                <ul class="list-group list-group-flush">
+                    {% for tl in trip.lures %}
+                    <li class="list-group-item d-flex align-items-center gap-3" style="background:transparent;border-color:#1e293b;">
+                        <div style="flex:1;">
+                            <div style="font-weight:600;font-size:13px;">{{ tl.lure.nombre }}</div>
+                            {% if tl.lure.marca %}<div style="font-size:11px;color:#64748b;">{{ tl.lure.marca }}</div>{% endif %}
+                            {% if tl.notas %}<div style="font-size:11px;color:#94a3b8;">{{ tl.notas }}</div>{% endif %}
+                        </div>
+                        {% if tl.funciono %}
+                        <span class="tag-funciona"><i class="bi bi-check-circle me-1"></i>Funcionó</span>
+                        {% else %}
+                        <span class="tag-no-funciona"><i class="bi bi-x-circle me-1"></i>No funcionó</span>
+                        {% endif %}
+                    </li>
+                    {% endfor %}
+                </ul>
+                {% else %}
+                <div style="padding:1.5rem;text-align:center;font-size:12px;color:#475569;">Sin señuelos registrados</div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+{# ── Notas ── #}
+{% if trip.notas %}
+<div class="content-card mt-3">
+    <div class="content-card-header">Notas de la salida</div>
+    <div class="content-card-body" style="font-size:13px;color:#94a3b8;">{{ trip.notas }}</div>
+</div>
+{% endif %}
+
+{# ── Modal: Agregar gasto ── #}
+<div class="modal fade" id="modal-gasto" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <form method="post" action="{{ path('grova_fishing_trip_expense_add', {id: trip.id, _locale: app.request.locale}) }}">
+                <input type="hidden" name="_token" value="{{ csrf_token('fishing_expense_' ~ trip.id) }}">
+                <div class="modal-header">
+                    <h5 class="modal-title">Agregar gasto</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row g-3">
+                        <div class="col-sm-7">
+                            <label class="form-label">Concepto</label>
+                            <input type="text" class="form-control form-control-sm" name="concepto" required
+                                   placeholder="Combustible, comida, lavado..." maxlength="100">
+                        </div>
+                        <div class="col-sm-5">
+                            <label class="form-label">Monto</label>
+                            <div class="input-group input-group-sm">
+                                <span class="input-group-text">$</span>
+                                <input type="number" step="0.01" class="form-control" name="monto" min="0.01" required>
+                            </div>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label">¿Quién pagó?</label>
+                            <select class="form-select form-select-sm" name="pagado_por">
+                                <option value="">— Selecciona —</option>
+                                {% for member in trip.members %}
+                                <option>{{ member.nombre }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary btn-sm">Guardar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+{# ── Modal: Agregar señuelo ── #}
+<div class="modal fade" id="modal-señuelo" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <form method="post" action="{{ path('grova_fishing_trip_lure_add', {id: trip.id, _locale: app.request.locale}) }}">
+                <input type="hidden" name="_token" value="{{ csrf_token('fishing_trip_lure_' ~ trip.id) }}">
+                <div class="modal-header">
+                    <h5 class="modal-title">Señuelo usado</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row g-3">
+                        <div class="col-12">
+                            <label class="form-label">Señuelo</label>
+                            <select class="form-select form-select-sm" name="lure_id" required>
+                                <option value="">Selecciona...</option>
+                                {% for lure in lures %}
+                                <option value="{{ lure.id }}">{{ lure.nombre }}{% if lure.marca %} — {{ lure.marca }}{% endif %}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label">¿Funcionó?</label>
+                            <div class="d-flex gap-3">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="funciono" value="1" id="funciono-si" checked>
+                                    <label class="form-check-label text-success" for="funciono-si">Sí funcionó</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="funciono" value="0" id="funciono-no">
+                                    <label class="form-check-label text-danger" for="funciono-no">No funcionó</label>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label">Notas</label>
+                            <input type="text" class="form-control form-control-sm" name="notas" placeholder="Opcional" maxlength="255">
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary btn-sm">Guardar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

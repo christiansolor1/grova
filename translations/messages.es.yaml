@@ -1,3 +1,6 @@
+# ══ GLOBAL — mensajes compartidos en toda la app ══════════════════════════════
+# Dominio: messages (default, no hace falta especificarlo en twig/php/js)
+
 # ── General ──────────────────────────────────────────────────────────────────
 app.name: "GROVA"
 app.tagline: "Panel de administración"
@@ -18,9 +21,17 @@ auth.login.error.connection_title: "Error de conexión"
 auth.login.error.too_many_attempts: "Demasiados intentos fallidos. Espera 15 minutos e inténtalo de nuevo."
 auth.login.error.attempts_left: "Cuidado: solo te quedan %count% intento(s) antes de bloquearte."
 auth.login.remember_me: "Mantener sesión iniciada"
+auth.login.footer.privacy: "Privacidad"
+auth.login.footer.support: "Soporte"
+auth.login.footer.email_demo: "Email demo"
+auth.login.footer.email_placeholder: "nombre@empresa.com"
+auth.login.footer.phone_demo: "Teléfono demo"
+auth.login.footer.phone_placeholder: "+34 600 123 456"
+auth.login.footer.rights: "Todos los derechos reservados."
 
-# ── Nav ───────────────────────────────────────────────────────────────────────
+# ── Nav (sidebar) ─────────────────────────────────────────────────────────────
 nav.search_placeholder: "Buscar menú..."
+nav.search_clear: "Limpiar búsqueda"
 nav.collapse: "Colapsar menú"
 nav.expand: "Expandir menú"
 
@@ -104,6 +115,7 @@ nav.settings: "Configuración General del Sistema"
 
 # ── Navbar ────────────────────────────────────────────────────────────────────
 navbar.search_placeholder: "Buscar en el sistema..."
+navbar.search_clear: "Limpiar búsqueda"
 navbar.theme_toggle: "Cambiar tema"
 navbar.notifications: "Notificaciones"
 navbar.help: "Ayuda"
@@ -111,36 +123,30 @@ navbar.profile: "Mi perfil"
 navbar.settings: "Configuración"
 navbar.logout: "Cerrar sesión"
 navbar.role.admin: "Administrador"
+navbar.role.superadmin: "Super Admin"
+navbar.role.user: "Usuario"
 navbar.language: "Idioma"
+impersonate.viewing_as: "viendo como"
+impersonate.exit: "Volver a ser yo"
+impersonate.tooltip: "Estás navegando con la sesión y permisos de este usuario. Tu cuenta real sigue protegida."
+navbar.profiler: "Herramientas de desarrollo"
+navbar.profiler_open: "Abrir herramientas de desarrollo (Web Profiler / última petición)"
 
 # ── Breadcrumb ────────────────────────────────────────────────────────────────
 breadcrumb.home: "Inicio"
+breadcrumb.back_level: "Subir un nivel"
 
-# ── Dashboard page ────────────────────────────────────────────────────────────
-dashboard.title: "Dashboard"
-dashboard.subtitle: "Panel principal del sistema Grova"
+# ── Filtros (panel lateral) ───────────────────────────────────────────────────
+filters.active_label: "Filtros activos:"
+filters.open: "Abrir filtros"
+filters.title: "Filtros"
+filters.panel: "Panel de filtros"
+filters.close: "Cerrar"
+filters.apply: "Filtrar"
+filters.reset: "Restablecer"
+filters.clear: "Limpiar filtros"
 
-# ── Stats ─────────────────────────────────────────────────────────────────────
-stat.active_users: "Usuarios activos"
-stat.active_users.change: "↑ 12% este mes"
-stat.organizations: "Organizaciones"
-stat.organizations.change: "↑ 3 nuevas"
-stat.revenue: "Ingresos (mes)"
-stat.revenue.change: "↑ 8.4%"
-stat.churn: "Churn rate"
-stat.churn.change: "↑ 0.3%"
-
-# ── Users table ───────────────────────────────────────────────────────────────
-table.users.title: "Usuarios recientes"
-table.users.new: "Nuevo usuario"
-table.col.id: "#"
-table.col.username: "Usuario"
-table.col.email: "Email"
-table.col.role: "Rol"
-table.col.status: "Estado"
-table.col.actions: "Acciones"
-
-# ── Common ────────────────────────────────────────────────────────────────────
+# ── Comunes (botones, estados, roles) ─────────────────────────────────────────
 status.active: "Activo"
 status.inactive: "Inactivo"
 role.admin: "Admin"

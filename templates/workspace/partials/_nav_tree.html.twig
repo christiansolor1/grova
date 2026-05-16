@@ -1,23 +1,147 @@
+{# Mismo patrón que renderNav() en dashboard: L1 / L2 / L3 (no reciclar nav-l1 en todos los niveles). `depth`: 0 = raíz, 1 = bajo L1, 2 = hojas bajo L2. #}
+{% set depth = depth|default(0) %}
+{% set active_menu_path = active_menu_path|default([]) %}
+{% set inherited_ui_style = inherited_ui_style|default(null) %}
 {% for item in items %}
+    {% set is_trail_ancestor = item.id in active_menu_path and item.id != active_menu_key %}
     {% set children = item.children|default([]) %}
-    <div class="nav-l1 ws-nav-l1">
-        {% if children|length > 0 %}
-            <details class="ws-details">
-                <summary class="nav-l1-btn ws-summary">
+    {% set is_pending_display = item.status|default('hecho') == 'pendiente' or (children|length == 0 and (item.href is not defined or not item.href)) %}
+    {% set own_ui_style = item.uiStyle is defined and item.uiStyle is iterable ? item.uiStyle : null %}
+    {% set ui_style = own_ui_style is iterable ? own_ui_style : inherited_ui_style %}
+    {% set ui_badge = item.uiBadge|default(null) %}
+    {% set ui_vars = '' %}
+    {% if ui_style is iterable %}
+        {% if ui_style.variant is defined and ui_style.variant == 'premium' %}
+            {% set ui_vars = ui_vars ~ '--menu-bg:#2A2110;--menu-text:#FDE68A;--menu-border:#F59E0B;--menu-hover-bg:#3B2F12;--menu-hover-text:#FFF3C4;' %}
+        {% endif %}
+        {% if ui_style.bg is defined %}{% set ui_vars = ui_vars ~ '--menu-bg:' ~ ui_style.bg ~ ';' %}{% endif %}
+        {% if ui_style.text is defined %}{% set ui_vars = ui_vars ~ '--menu-text:' ~ ui_style.text ~ ';' %}{% endif %}
+        {% if ui_style.border is defined %}{% set ui_vars = ui_vars ~ '--menu-border:' ~ ui_style.border ~ ';' %}{% endif %}
+        {% if ui_style.hoverBg is defined %}{% set ui_vars = ui_vars ~ '--menu-hover-bg:' ~ ui_style.hoverBg ~ ';' %}{% endif %}
+        {% if ui_style.hoverText is defined %}{% set ui_vars = ui_vars ~ '--menu-hover-text:' ~ ui_style.hoverText ~ ';' %}{% endif %}
+    {% endif %}
+    {% if depth == 0 %}
+        <div class="nav-l1 ws-nav-l1">
+            {% if children|length > 0 %}
+                <details class="ws-details">
+                    <summary class="nav-l1-btn ws-summary menu-ui{{ is_trail_ancestor ? ' nav-on-trail' : '' }}" style="{{ ui_vars|e('html_attr') }}" data-nav-tip="{{ item.label|e('html_attr') }}">
+                        {% include 'workspace/partials/_menu_icon.html.twig' with { icon: item.icon|default('bi-list'), size: 16 } only %}
+                        <span class="nav-label">{{ item.label }}</span>
+                        {% if ui_badge %}
+                            <span class="menu-premium-badge">{{ ui_badge }}</span>
+                        {% endif %}
+                        {% if is_pending_display %}
+                            <span class="menu-status-badge">Pendiente</span>
+                        {% endif %}
+                        <span class="nav-chevron" aria-hidden="true">▾</span>
+                    </summary>
+                    <div class="nav-l2-wrap ws-sub">
+                        {% include 'workspace/partials/_nav_tree.html.twig' with { items: children, depth: 1, active_menu_key: active_menu_key, active_menu_path: active_menu_path, inherited_ui_style: ui_style } only %}
+                    </div>
+                </details>
+            {% elseif item.href is defined and item.href %}
+                <a href="{{ item.href }}"
+                   class="nav-l1-btn menu-ui{{ is_trail_ancestor ? ' nav-on-trail' : '' }} {{ item.id == active_menu_key ? 'active-leaf' : '' }}"
+                   style="{{ ui_vars|e('html_attr') }}"
+                   data-nav-tip="{{ item.label|e('html_attr') }}"
+                   aria-label="{{ item.label|e('html_attr') }}">
+                    {% include 'workspace/partials/_menu_icon.html.twig' with { icon: item.icon|default('bi-list'), size: 16 } only %}
                     <span class="nav-label">{{ item.label }}</span>
-                    <span class="nav-chevron" aria-hidden="true">▾</span>
-                </summary>
-                <div class="nav-l2-wrap ws-sub">
-                    {% include 'workspace/partials/_nav_tree.html.twig' with { items: children, active_menu_key: active_menu_key } only %}
+                    {% if ui_badge %}
+                        <span class="menu-premium-badge">{{ ui_badge }}</span>
+                    {% endif %}
+                    {% if is_pending_display %}
+                        <span class="menu-status-badge">Pendiente</span>
+                    {% endif %}
+                </a>
+            {% else %}
+                <div class="nav-l1-btn ws-disabled menu-ui" style="{{ ui_vars|e('html_attr') }}" data-nav-tip="{{ item.label|e('html_attr') }}" aria-label="{{ item.label|e('html_attr') }}">
+                    {% include 'workspace/partials/_menu_icon.html.twig' with { icon: item.icon|default('bi-list'), size: 16 } only %}
+                    <span class="nav-label">{{ item.label }}</span>
+                    {% if ui_badge %}
+                        <span class="menu-premium-badge">{{ ui_badge }}</span>
+                    {% endif %}
+                    {% if is_pending_display %}
+                        <span class="menu-status-badge">Pendiente</span>
+                    {% endif %}
                 </div>
-            </details>
-        {% elseif item.href is defined and item.href %}
+            {% endif %}
+        </div>
+    {% elseif depth == 1 %}
+        <div>
+            {% if children|length > 0 %}
+                <details class="ws-details">
+                    <summary class="nav-l2-btn ws-summary menu-ui{{ is_trail_ancestor ? ' nav-on-trail' : '' }}" style="{{ ui_vars|e('html_attr') }}" data-nav-tip="{{ item.label|e('html_attr') }}">
+                        {% include 'workspace/partials/_menu_icon.html.twig' with { icon: item.icon|default('bi-list'), size: 13 } only %}
+                        <span class="flex-1">{{ item.label }}</span>
+                        {% if ui_badge %}
+                            <span class="menu-premium-badge">{{ ui_badge }}</span>
+                        {% endif %}
+                        {% if is_pending_display %}
+                            <span class="menu-status-badge">Pendiente</span>
+                        {% endif %}
+                        <span class="nav-chevron" aria-hidden="true">▾</span>
+                    </summary>
+                    <div class="nav-l3-wrap">
+                        {% include 'workspace/partials/_nav_tree.html.twig' with { items: children, depth: 2, active_menu_key: active_menu_key, active_menu_path: active_menu_path, inherited_ui_style: ui_style } only %}
+                    </div>
+                </details>
+            {% elseif item.href is defined and item.href %}
+                <a href="{{ item.href }}"
+                   class="nav-l2-btn menu-ui{{ is_trail_ancestor ? ' nav-on-trail' : '' }} {{ item.id == active_menu_key ? 'active-leaf' : '' }}"
+                   style="{{ ui_vars|e('html_attr') }}"
+                   data-nav-tip="{{ item.label|e('html_attr') }}"
+                   aria-label="{{ item.label|e('html_attr') }}">
+                    {% include 'workspace/partials/_menu_icon.html.twig' with { icon: item.icon|default('bi-list'), size: 13 } only %}
+                    <span class="flex-1">{{ item.label }}</span>
+                    {% if ui_badge %}
+                        <span class="menu-premium-badge">{{ ui_badge }}</span>
+                    {% endif %}
+                    {% if is_pending_display %}
+                        <span class="menu-status-badge">Pendiente</span>
+                    {% endif %}
+                </a>
+            {% else %}
+                <div class="nav-l2-btn ws-disabled menu-ui" style="{{ ui_vars|e('html_attr') }}" data-nav-tip="{{ item.label|e('html_attr') }}" aria-label="{{ item.label|e('html_attr') }}">
+                    {% include 'workspace/partials/_menu_icon.html.twig' with { icon: item.icon|default('bi-list'), size: 13 } only %}
+                    <span class="flex-1">{{ item.label }}</span>
+                    {% if ui_badge %}
+                        <span class="menu-premium-badge">{{ ui_badge }}</span>
+                    {% endif %}
+                    {% if is_pending_display %}
+                        <span class="menu-status-badge">Pendiente</span>
+                    {% endif %}
+                </div>
+            {% endif %}
+        </div>
+    {% else %}
+        {% if item.href is defined and item.href %}
             <a href="{{ item.href }}"
-               class="nav-l1-btn {{ item.id == active_menu_key ? 'active-leaf' : '' }}">
-                <span class="nav-label">{{ item.label }}</span>
+               class="nav-l3-btn menu-ui{{ is_trail_ancestor ? ' nav-on-trail' : '' }} {{ item.id == active_menu_key ? 'active nav-active-current' : '' }}"
+               style="{{ ui_vars|e('html_attr') }}"
+               data-nav-tip="{{ item.label|e('html_attr') }}"
+               aria-label="{{ item.label|e('html_attr') }}"
+               {% if item.id == active_menu_key %}aria-current="page"{% endif %}>
+                {% include 'workspace/partials/_menu_icon.html.twig' with { icon: item.icon|default('bi-list'), size: 11 } only %}
+                <span>{{ item.label }}</span>
+                {% if ui_badge %}
+                    <span class="menu-premium-badge">{{ ui_badge }}</span>
+                {% endif %}
+                {% if is_pending_display %}
+                    <span class="menu-status-badge">Pendiente</span>
+                {% endif %}
             </a>
         {% else %}
-            <div class="nav-l1-btn ws-disabled"><span class="nav-label">{{ item.label }}</span></div>
+            <div class="nav-l3-btn ws-disabled menu-ui" style="{{ ui_vars|e('html_attr') }}" data-nav-tip="{{ item.label|e('html_attr') }}" aria-label="{{ item.label|e('html_attr') }}">
+                {% include 'workspace/partials/_menu_icon.html.twig' with { icon: item.icon|default('bi-list'), size: 11 } only %}
+                <span>{{ item.label }}</span>
+                {% if ui_badge %}
+                    <span class="menu-premium-badge">{{ ui_badge }}</span>
+                {% endif %}
+                {% if is_pending_display %}
+                    <span class="menu-status-badge">Pendiente</span>
+                {% endif %}
+            </div>
         {% endif %}
-    </div>
+    {% endif %}
 {% endfor %}

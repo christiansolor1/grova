@@ -1,0 +1,29 @@
+# ══ MÓDULO: Dashboard ═════════════════════════════════════════════════════════
+# Dominio: dashboard
+# Uso en twig: {{ 'clave' | trans({}, 'dashboard') }}
+# Uso en PHP:  $translator->trans('clave', [], 'dashboard')
+# Uso en JS:   traducir('clave')  ← el build lo incluye automáticamente
+
+# ── Página ────────────────────────────────────────────────────────────────────
+dashboard.title: "Dashboard"
+dashboard.subtitle: "Panel principal del sistema Grova"
+
+# ── Stats ─────────────────────────────────────────────────────────────────────
+stat.active_users: "Usuarios activos"
+stat.active_users.change: "↑ 12% este mes"
+stat.organizations: "Organizaciones"
+stat.organizations.change: "↑ 3 nuevas"
+stat.revenue: "Ingresos (mes)"
+stat.revenue.change: "↑ 8.4%"
+stat.churn: "Churn rate"
+stat.churn.change: "↑ 0.3%"
+
+# ── Tabla de usuarios ─────────────────────────────────────────────────────────
+table.users.title: "Usuarios recientes"
+table.users.new: "Nuevo usuario"
+table.col.id: "#"
+table.col.username: "Usuario"
+table.col.email: "Email"
+table.col.role: "Rol"
+table.col.status: "Estado"
+table.col.actions: "Acciones"

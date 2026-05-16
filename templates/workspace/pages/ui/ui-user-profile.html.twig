@@ -1,0 +1,246 @@
+{% extends 'workspace/app_layout.html.twig' %}
+{% block page_title %}Perfil de usuario{% endblock %}
+{% block app_page_subtitle %}Header de perfil, datos personales, cambio de contraseña y avatar.{% endblock %}
+
+{% block page_styles %}
+<style>
+.ui-component{border:1px solid #1e293b;border-radius:10px;overflow:hidden;margin-bottom:1.5rem;}
+.ui-component-preview{padding:1.5rem;background:#0f172a;}
+.ui-component-code{background:#020617;border-top:1px solid #1e293b;}
+.ui-component-code-header{display:flex;align-items:center;justify-content:space-between;padding:.5rem 1rem;border-bottom:1px solid #1e293b;}
+.ui-component-code-label{font-size:11px;color:#64748b;text-transform:uppercase;letter-spacing:.5px;}
+.ui-component-code pre{margin:0;padding:1rem;font-size:12px;color:#94a3b8;overflow-x:auto;white-space:pre;}
+.btn-copy-code{font-size:11px;padding:2px 10px;}
+body.light-mode .ui-component{border-color:#dbe3ee;}
+body.light-mode .ui-component-preview{background:#f8fafc;}
+body.light-mode .ui-component-code{background:#f1f5f9;border-color:#dbe3ee;}
+body.light-mode .ui-component-code-header{border-color:#dbe3ee;}
+body.light-mode .ui-component-code pre{color:#475569;}
+</style>
+{% endblock %}
+
+{% block app_main %}
+<div class="content-card">
+    <div class="content-card-header">Perfil de usuario</div>
+    <div class="content-card-body">
+
+        {# ── Header de perfil ── #}
+        <div class="ui-component">
+            <div class="ui-component-preview">
+                <div class="grova-profile-header">
+                    <div class="grova-profile-avatar">CS</div>
+                    <div class="grova-profile-info">
+                        <div class="grova-profile-name">Christian Solórzano</div>
+                        <div class="grova-profile-meta">
+                            <span class="badge bg-primary">Administrador</span>
+                            <span style="font-size:12px;color:#64748b;">christian@grova.com</span>
+                            <span style="font-size:12px;color:#64748b;"><i class="bi bi-building me-1"></i>grova_christian</span>
+                        </div>
+                        <div style="font-size:11px;color:#475569;margin-top:4px;">
+                            Último acceso: hoy a las 08:32 · IP 192.168.1.1
+                        </div>
+                    </div>
+                    <div class="ms-auto">
+                        <button class="btn btn-outline-secondary btn-sm"><i class="bi bi-pencil me-1"></i>Editar</button>
+                    </div>
+                </div>
+            </div>
+            <div class="ui-component-code">
+                <div class="ui-component-code-header">
+                    <span class="ui-component-code-label">Twig — Header de perfil</span>
+                    <button type="button" class="btn btn-outline-secondary btn-sm btn-copy-code" data-copy-target="code-profile-header">Copiar</button>
+                </div>
+                <pre id="code-profile-header">{% verbatim %}<div class="grova-profile-header">
+    <div class="grova-profile-avatar">{{ user.initials }}</div>
+    <div class="grova-profile-info">
+        <div class="grova-profile-name">{{ user.fullName }}</div>
+        <div class="grova-profile-meta">
+            <span class="badge bg-primary">{{ user.role }}</span>
+            <span style="font-size:12px;color:#64748b;">{{ user.email }}</span>
+            <span style="font-size:12px;color:#64748b;">
+                <i class="bi bi-building me-1"></i>{{ tenant.nombre }}
+            </span>
+        </div>
+        <div style="font-size:11px;color:#475569;margin-top:4px;">
+            Último acceso: {{ user.lastLogin|date('d/m/Y H:i') }}
+        </div>
+    </div>
+    <div class="ms-auto">
+        <button class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-pencil me-1"></i>Editar
+        </button>
+    </div>
+</div>{% endverbatim %}</pre>
+            </div>
+        </div>
+
+        {# ── Formulario datos personales ── #}
+        <div class="ui-component">
+            <div class="ui-component-preview">
+                <div style="max-width:480px;width:100%;">
+                    <div style="font-size:13px;font-weight:600;color:#94a3b8;text-transform:uppercase;letter-spacing:.06em;margin-bottom:1rem;">Datos personales</div>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Nombre</label>
+                            <input type="text" class="form-control form-control-sm" value="Christian">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Apellido</label>
+                            <input type="text" class="form-control form-control-sm" value="Solórzano">
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label">Email</label>
+                            <input type="email" class="form-control form-control-sm" value="christian@grova.com">
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label">Zona horaria</label>
+                            <select class="grova-select2 form-select form-select-sm">
+                                <option selected>America/Managua (UTC-6)</option>
+                                <option>America/Bogota (UTC-5)</option>
+                                <option>America/Mexico_City (UTC-6)</option>
+                            </select>
+                        </div>
+                        <div class="col-12 d-flex justify-content-end">
+                            <button class="btn btn-primary btn-sm">Guardar cambios</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="ui-component-code">
+                <div class="ui-component-code-header">
+                    <span class="ui-component-code-label">Twig — Formulario datos personales</span>
+                    <button type="button" class="btn btn-outline-secondary btn-sm btn-copy-code" data-copy-target="code-profile-form">Copiar</button>
+                </div>
+                <pre id="code-profile-form">{% verbatim %}<form method="post" action="{{ path('grova_profile_update') }}">
+    <div class="row g-3">
+        <div class="col-md-6">
+            <label class="form-label">Nombre</label>
+            <input type="text" name="nombre" class="form-control form-control-sm"
+                   value="{{ user.nombre }}" required>
+        </div>
+        <div class="col-md-6">
+            <label class="form-label">Apellido</label>
+            <input type="text" name="apellido" class="form-control form-control-sm"
+                   value="{{ user.apellido }}" required>
+        </div>
+        <div class="col-12">
+            <label class="form-label">Email</label>
+            <input type="email" name="email" class="form-control form-control-sm"
+                   value="{{ user.email }}" required>
+        </div>
+        <div class="col-12 d-flex justify-content-end">
+            <button type="submit" class="btn btn-primary btn-sm">Guardar cambios</button>
+        </div>
+    </div>
+</form>{% endverbatim %}</pre>
+            </div>
+        </div>
+
+        {# ── Cambio de contraseña ── #}
+        <div class="ui-component">
+            <div class="ui-component-preview">
+                <div style="max-width:380px;width:100%;">
+                    <div style="font-size:13px;font-weight:600;color:#94a3b8;text-transform:uppercase;letter-spacing:.06em;margin-bottom:1rem;">Cambiar contraseña</div>
+                    <div class="row g-3">
+                        <div class="col-12">
+                            <label class="form-label">Contraseña actual</label>
+                            <input type="password" class="form-control form-control-sm" placeholder="••••••••">
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label">Nueva contraseña</label>
+                            <input type="password" class="form-control form-control-sm" placeholder="Mínimo 8 caracteres">
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label">Confirmar nueva contraseña</label>
+                            <input type="password" class="form-control form-control-sm" placeholder="Repite la nueva contraseña">
+                        </div>
+                        <div class="col-12 d-flex justify-content-end">
+                            <button class="btn btn-primary btn-sm">Cambiar contraseña</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="ui-component-code">
+                <div class="ui-component-code-header">
+                    <span class="ui-component-code-label">Twig — Formulario cambio de contraseña</span>
+                    <button type="button" class="btn btn-outline-secondary btn-sm btn-copy-code" data-copy-target="code-password">Copiar</button>
+                </div>
+                <pre id="code-password">{% verbatim %}<form method="post" action="{{ path('grova_profile_change_password') }}">
+    <div class="row g-3">
+        <div class="col-12">
+            <label class="form-label">Contraseña actual</label>
+            <input type="password" name="current_password" class="form-control form-control-sm" required>
+        </div>
+        <div class="col-12">
+            <label class="form-label">Nueva contraseña</label>
+            <input type="password" name="new_password" class="form-control form-control-sm"
+                   minlength="8" required>
+        </div>
+        <div class="col-12">
+            <label class="form-label">Confirmar nueva contraseña</label>
+            <input type="password" name="confirm_password" class="form-control form-control-sm" required>
+        </div>
+        <div class="col-12 d-flex justify-content-end">
+            <button type="submit" class="btn btn-primary btn-sm">Cambiar contraseña</button>
+        </div>
+    </div>
+</form>{% endverbatim %}</pre>
+            </div>
+        </div>
+
+        {# ── Avatar upload ── #}
+        <div class="ui-component">
+            <div class="ui-component-preview">
+                <div style="display:flex;align-items:center;gap:1.5rem;flex-wrap:wrap;">
+                    <div class="grova-profile-avatar" style="width:72px;height:72px;font-size:24px;">CS</div>
+                    <div class="grova-avatar-upload-zone" id="avatar-drop-demo">
+                        <i class="bi bi-cloud-arrow-up" style="font-size:1.5rem;color:#475569;"></i>
+                        <div style="font-size:13px;color:#64748b;">Arrastra una imagen o <span style="color:#60a5fa;cursor:pointer;">selecciona archivo</span></div>
+                        <div style="font-size:11px;color:#475569;">PNG, JPG · máx 2 MB</div>
+                        <input type="file" accept="image/*" style="display:none;" id="avatar-input-demo">
+                    </div>
+                </div>
+            </div>
+            <div class="ui-component-code">
+                <div class="ui-component-code-header">
+                    <span class="ui-component-code-label">HTML — Avatar upload con drag & drop</span>
+                    <button type="button" class="btn btn-outline-secondary btn-sm btn-copy-code" data-copy-target="code-avatar">Copiar</button>
+                </div>
+                <pre id="code-avatar">{% verbatim %}<div class="grova-avatar-upload-zone" id="avatar-drop-zone">
+    <i class="bi bi-cloud-arrow-up" style="font-size:1.5rem;color:#475569;"></i>
+    <div style="font-size:13px;color:#64748b;">
+        Arrastra una imagen o
+        <span style="color:#60a5fa;cursor:pointer;" onclick="document.getElementById('avatar-input').click()">selecciona archivo</span>
+    </div>
+    <div style="font-size:11px;color:#475569;">PNG, JPG · máx 2 MB</div>
+    <input type="file" id="avatar-input" name="avatar" accept="image/*" style="display:none;">
+</div>{% endverbatim %}</pre>
+            </div>
+        </div>
+
+    </div>
+</div>
+{% endblock %}
+
+{% block app_page_scripts %}
+<script>
+document.querySelectorAll('.btn-copy-code').forEach(function(btn){
+    btn.addEventListener('click',function(){
+        var t=document.getElementById(btn.getAttribute('data-copy-target'));
+        if(!t)return;
+        navigator.clipboard.writeText(t.textContent.trim()).then(function(){
+            var o=btn.textContent;btn.textContent='Copiado';
+            setTimeout(function(){btn.textContent=o;},1200);
+        });
+    });
+});
+var zone=document.getElementById('avatar-drop-demo');
+var inp=document.getElementById('avatar-input-demo');
+if(zone&&inp){
+    zone.addEventListener('click',function(){inp.click();});
+    zone.addEventListener('dragover',function(e){e.preventDefault();zone.classList.add('drag-over');});
+    zone.addEventListener('dragleave',function(){zone.classList.remove('drag-over');});
+    zone.addEventListener('drop',function(e){e.preventDefault();zone.classList.remove('drag-over');});
+}
+</script>
+{% endblock %}

@@ -1,0 +1,212 @@
+{% extends 'workspace/app_layout.html.twig' %}
+{% block page_title %}{{ 'work.clients_page_title'|trans({}, 'work') }}{% endblock %}
+{% block breadcrumb_tail %}{{ 'work.clients_breadcrumb_tail'|trans({}, 'work') }}{% endblock %}
+{% block app_page_subtitle %}{{ 'work.clients_page_subtitle'|trans({}, 'work') }}{% endblock %}
+
+{% block app_main %}
+
+<div class="content-card">
+    <div class="content-card-header">
+        {{ 'work.clients_title'|trans({}, 'work') }}
+        <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#modal-nuevo-cliente">
+            <i class="bi bi-plus-lg me-1"></i>{{ 'work.clients_new'|trans({}, 'work') }}
+        </button>
+    </div>
+    <div class="content-card-body p-0">
+        {% if clients|length > 0 %}
+        <div class="table-responsive">
+            <table class="table table-hover mb-0" style="color:inherit;">
+                <thead>
+                    <tr>
+                        <th>{{ 'work.field_company'|trans({}, 'work') }}</th>
+                        <th>{{ 'work.field_invoice_emails'|trans({}, 'work') }}</th>
+                        <th style="width:100px;">{{ 'work.field_base_salary'|trans({}, 'work') }}</th>
+                        <th style="width:100px;">{{ 'work.client_bonus_day'|trans({}, 'work') }}</th>
+                        <th style="width:90px;">{{ 'work.clients_col_time_limit'|trans({}, 'work') }}</th>
+                        <th style="width:80px;">{{ 'work.col_status'|trans({}, 'work') }}</th>
+                        <th style="width:120px;"></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for client in clients %}
+                    <tr>
+                        <td style="font-weight:600;">{{ client.nombre }}</td>
+                        <td style="font-size:12px;color:#64748b;">{{ client.emailsFactura }}</td>
+                        <td>€{{ client.salarioBaseFloat|number_format(0) }}</td>
+                        <td style="color:#22c55e;font-weight:600;">€{{ client.bonusDiaFloat|number_format(2) }}</td>
+                        <td style="font-size:12px;">{{ client.horaLimiteBonus }}</td>
+                        <td>
+                            {% if client.activo %}
+                            <span class="badge bg-success bg-opacity-20 text-success" style="font-size:10px;">{{ 'work.clients_status_active'|trans({}, 'work') }}</span>
+                            {% else %}
+                            <span class="badge bg-secondary bg-opacity-20 text-secondary" style="font-size:10px;">{{ 'work.clients_status_inactive'|trans({}, 'work') }}</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div class="d-flex gap-1">
+                                <button type="button" class="btn btn-outline-secondary btn-sm"
+                                        style="font-size:11px;padding:2px 7px;"
+                                        data-bs-toggle="modal" data-bs-target="#modal-edit-{{ client.id }}">
+                                    <i class="bi bi-pencil"></i>
+                                </button>
+                                {% if not client.activo %}
+                                <form method="post" action="{{ path('grova_work_client_activate', {id: client.id, _locale: app.request.locale}) }}">
+                                    <input type="hidden" name="_token" value="{{ csrf_token('work_client_activate_' ~ client.id) }}">
+                                    <button type="submit" class="btn btn-outline-success btn-sm" style="font-size:11px;padding:2px 7px;" title="{{ 'work.clients_activate'|trans({}, 'work') }}">
+                                        <i class="bi bi-check-circle"></i>
+                                    </button>
+                                </form>
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="grova-empty-state">
+            <div class="grova-empty-icon"><i class="bi bi-building"></i></div>
+            <div class="grova-empty-title">{{ 'work.clients_empty_title'|trans({}, 'work') }}</div>
+            <div class="grova-empty-desc">{{ 'work.clients_empty_desc'|trans({}, 'work') }}</div>
+            <div class="grova-empty-actions">
+                <button type="button" class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#modal-nuevo-cliente">
+                    <i class="bi bi-plus-lg me-1"></i>{{ 'work.clients_new'|trans({}, 'work') }}
+                </button>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+{# ── Modals de edición por cliente ── #}
+{% for client in clients %}
+<div class="modal fade" id="modal-edit-{{ client.id }}" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content">
+            <form method="post" action="{{ path('grova_work_client_edit', {id: client.id, _locale: app.request.locale}) }}">
+                <input type="hidden" name="_token" value="{{ csrf_token('work_client_' ~ client.id) }}">
+                <div class="modal-header">
+                    <h5 class="modal-title">{{ 'work.modal_edit_client'|trans({'%client%': client.nombre}, 'work') }}</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row g-3">
+                        <div class="col-sm-6">
+                            <label class="form-label">{{ 'work.field_company'|trans({}, 'work') }}</label>
+                            <input type="text" class="form-control form-control-sm" name="nombre" value="{{ client.nombre }}" required>
+                        </div>
+                        <div class="col-sm-6">
+                            <label class="form-label">{{ 'work.field_invoice_emails'|trans({}, 'work') }} <small class="text-muted">{{ 'work.field_invoice_emails_hint'|trans({}, 'work') }}</small></label>
+                            <input type="text" class="form-control form-control-sm" name="emails_factura" value="{{ client.emailsFactura }}" required>
+                        </div>
+                        <div class="col-sm-4">
+                            <label class="form-label">{{ 'work.field_base_salary'|trans({}, 'work') }}</label>
+                            <input type="number" step="0.01" class="form-control form-control-sm" name="salario_base" value="{{ client.salarioBase }}" required>
+                        </div>
+                        <div class="col-sm-4">
+                            <label class="form-label">{{ 'work.field_bonus_day'|trans({}, 'work') }}</label>
+                            <input type="number" step="0.01" class="form-control form-control-sm" name="bonus_dia" value="{{ client.bonusDia }}" required>
+                        </div>
+                        <div class="col-sm-4">
+                            <label class="form-label">{{ 'work.field_bonus_limit'|trans({}, 'work') }}</label>
+                            <input type="time" class="form-control form-control-sm" name="hora_limite_bonus" value="{{ client.horaLimiteBonus }}" required>
+                        </div>
+                        <div class="col-12"><hr style="border-color:#1e293b;"></div>
+                        <div class="col-sm-6">
+                            <label class="form-label">{{ 'work.field_bank_name'|trans({}, 'work') }}</label>
+                            <input type="text" class="form-control form-control-sm" name="banc_nombre" value="{{ client.bancNombre }}">
+                        </div>
+                        <div class="col-sm-6">
+                            <label class="form-label">{{ 'work.field_swift'|trans({}, 'work') }}</label>
+                            <input type="text" class="form-control form-control-sm" name="banc_swift" value="{{ client.bancSwift }}">
+                        </div>
+                        <div class="col-sm-6">
+                            <label class="form-label">{{ 'work.field_account'|trans({}, 'work') }}</label>
+                            <input type="text" class="form-control form-control-sm" name="banc_cuenta" value="{{ client.bancCuenta }}">
+                        </div>
+                        <div class="col-sm-6">
+                            <label class="form-label">{{ 'work.field_account_holder'|trans({}, 'work') }}</label>
+                            <input type="text" class="form-control form-control-sm" name="banc_titular" value="{{ client.bancTitular }}">
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label">{{ 'work.field_bank_address'|trans({}, 'work') }}</label>
+                            <input type="text" class="form-control form-control-sm" name="banc_direccion" value="{{ client.bancDireccion }}">
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">{{ 'work.btn_cancel'|trans({}, 'work') }}</button>
+                    <button type="submit" class="btn btn-primary btn-sm">{{ 'work.btn_save_changes'|trans({}, 'work') }}</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endfor %}
+
+{# ── Modal: Nuevo cliente ── #}
+<div class="modal fade" id="modal-nuevo-cliente" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content">
+            <form method="post" action="{{ path('grova_work_client_create', {_locale: app.request.locale}) }}">
+                <input type="hidden" name="_token" value="{{ csrf_token('work_client') }}">
+                <div class="modal-header">
+                    <h5 class="modal-title">{{ 'work.clients_modal_new'|trans({}, 'work') }}</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row g-3">
+                        <div class="col-sm-6">
+                            <label class="form-label">{{ 'work.field_company'|trans({}, 'work') }}</label>
+                            <input type="text" class="form-control form-control-sm" name="nombre" required>
+                        </div>
+                        <div class="col-sm-6">
+                            <label class="form-label">{{ 'work.field_invoice_emails'|trans({}, 'work') }} <small class="text-muted">{{ 'work.field_invoice_emails_hint'|trans({}, 'work') }}</small></label>
+                            <input type="text" class="form-control form-control-sm" name="emails_factura" required>
+                        </div>
+                        <div class="col-sm-4">
+                            <label class="form-label">{{ 'work.field_base_salary'|trans({}, 'work') }}</label>
+                            <input type="number" step="0.01" class="form-control form-control-sm" name="salario_base" value="1100.00" required>
+                        </div>
+                        <div class="col-sm-4">
+                            <label class="form-label">{{ 'work.field_bonus_day'|trans({}, 'work') }}</label>
+                            <input type="number" step="0.01" class="form-control form-control-sm" name="bonus_dia" value="12.50" required>
+                        </div>
+                        <div class="col-sm-4">
+                            <label class="form-label">{{ 'work.field_bonus_limit'|trans({}, 'work') }}</label>
+                            <input type="time" class="form-control form-control-sm" name="hora_limite_bonus" value="08:00" required>
+                        </div>
+                        <div class="col-12"><hr style="border-color:#1e293b;"></div>
+                        <div class="col-sm-6">
+                            <label class="form-label">{{ 'work.field_bank_name'|trans({}, 'work') }}</label>
+                            <input type="text" class="form-control form-control-sm" name="banc_nombre">
+                        </div>
+                        <div class="col-sm-6">
+                            <label class="form-label">{{ 'work.field_swift'|trans({}, 'work') }}</label>
+                            <input type="text" class="form-control form-control-sm" name="banc_swift">
+                        </div>
+                        <div class="col-sm-6">
+                            <label class="form-label">{{ 'work.field_account'|trans({}, 'work') }}</label>
+                            <input type="text" class="form-control form-control-sm" name="banc_cuenta">
+                        </div>
+                        <div class="col-sm-6">
+                            <label class="form-label">{{ 'work.field_account_holder'|trans({}, 'work') }}</label>
+                            <input type="text" class="form-control form-control-sm" name="banc_titular">
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label">{{ 'work.field_bank_address'|trans({}, 'work') }}</label>
+                            <input type="text" class="form-control form-control-sm" name="banc_direccion">
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">{{ 'work.btn_cancel'|trans({}, 'work') }}</button>
+                    <button type="submit" class="btn btn-primary btn-sm">{{ 'work.clients_btn_create'|trans({}, 'work') }}</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

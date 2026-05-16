@@ -1,0 +1,236 @@
+{% extends 'workspace/app_layout.html.twig' %}
+{% block page_title %}API Reference{% endblock %}
+{% block app_page_subtitle %}Patrones para documentar endpoints REST, JWT, request/response y códigos de estado.{% endblock %}
+
+{% block page_styles %}
+<style>
+.ui-component{border:1px solid #1e293b;border-radius:10px;overflow:hidden;margin-bottom:1.5rem;}
+.ui-component-preview{padding:1.5rem;background:#0f172a;}
+.ui-component-code{background:#020617;border-top:1px solid #1e293b;}
+.ui-component-code-header{display:flex;align-items:center;justify-content:space-between;padding:.5rem 1rem;border-bottom:1px solid #1e293b;}
+.ui-component-code-label{font-size:11px;color:#64748b;text-transform:uppercase;letter-spacing:.5px;}
+.ui-component-code pre{margin:0;padding:1rem;font-size:12px;color:#94a3b8;overflow-x:auto;white-space:pre;}
+.btn-copy-code{font-size:11px;padding:2px 10px;}
+body.light-mode .ui-component{border-color:#dbe3ee;}
+body.light-mode .ui-component-preview{background:#f8fafc;}
+body.light-mode .ui-component-code{background:#f1f5f9;border-color:#dbe3ee;}
+body.light-mode .ui-component-code-header{border-color:#dbe3ee;}
+body.light-mode .ui-component-code pre{color:#475569;}
+.method-badge{font-size:11px;font-weight:700;padding:3px 8px;border-radius:4px;font-family:monospace;}
+.method-get   {background:#0c4a6e20;color:#38bdf8;border:1px solid #0284c750;}
+.method-post  {background:#14532d20;color:#4ade80;border:1px solid #16a34a50;}
+.method-put   {background:#78350f20;color:#fb923c;border:1px solid #d9770650;}
+.method-delete{background:#7f1d1d20;color:#f87171;border:1px solid #dc262650;}
+.endpoint-card{background:#111827;border:1px solid #1e293b;border-radius:8px;padding:1rem;margin-bottom:.75rem;}
+.endpoint-path{font-family:monospace;font-size:13px;color:#e2e8f0;}
+.endpoint-desc{font-size:12px;color:#64748b;margin-top:3px;}
+.http-status{display:inline-flex;align-items:center;gap:.4rem;font-size:12px;padding:3px 10px;border-radius:20px;font-weight:600;}
+.status-2xx{background:#14532d20;color:#4ade80;border:1px solid #16a34a40;}
+.status-4xx{background:#78350f20;color:#fb923c;border:1px solid #ea580c40;}
+.status-5xx{background:#7f1d1d20;color:#f87171;border:1px solid #dc262640;}
+</style>
+{% endblock %}
+
+{% block app_main %}
+<div class="content-card">
+    <div class="content-card-header">API Reference</div>
+    <div class="content-card-body">
+
+        {# ── Endpoint cards ── #}
+        <div class="ui-component">
+            <div class="ui-component-preview">
+                <div style="width:100%;max-width:560px;">
+                    {% for ep in [
+                        {method:'GET',    path:'/api/tenants',              desc:'Lista todos los tenants del sistema'},
+                        {method:'POST',   path:'/api/tenants',              desc:'Crea un nuevo tenant'},
+                        {method:'GET',    path:'/api/tenants/{id}',         desc:'Obtiene un tenant por ID'},
+                        {method:'PUT',    path:'/api/tenants/{id}',         desc:'Actualiza datos de un tenant'},
+                        {method:'DELETE', path:'/api/tenants/{id}/disable', desc:'Desactiva un tenant'},
+                    ] %}
+                    <div class="endpoint-card">
+                        <div style="display:flex;align-items:center;gap:.6rem;flex-wrap:wrap;">
+                            <span class="method-badge method-{{ ep.method|lower }}">{{ ep.method }}</span>
+                            <span class="endpoint-path">{{ ep.path }}</span>
+                        </div>
+                        <div class="endpoint-desc">{{ ep.desc }}</div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            <div class="ui-component-code">
+                <div class="ui-component-code-header">
+                    <span class="ui-component-code-label">Twig — Endpoint cards</span>
+                    <button type="button" class="btn btn-outline-secondary btn-sm btn-copy-code" data-copy-target="code-endpoints">Copiar</button>
+                </div>
+                <pre id="code-endpoints">{% verbatim %}{% for endpoint in endpoints %}
+<div class="endpoint-card">
+    <div style="display:flex;align-items:center;gap:.6rem;">
+        <span class="method-badge method-{{ endpoint.method|lower }}">{{ endpoint.method }}</span>
+        <span class="endpoint-path">{{ endpoint.path }}</span>
+    </div>
+    <div class="endpoint-desc">{{ endpoint.description }}</div>
+</div>
+{% endfor %}{% endverbatim %}</pre>
+            </div>
+        </div>
+
+        {# ── JWT payload ── #}
+        <div class="ui-component">
+            <div class="ui-component-preview">
+                <div style="width:100%;max-width:480px;">
+                    <div style="font-size:11px;color:#64748b;margin-bottom:.5rem;text-transform:uppercase;letter-spacing:.06em;">JWT Payload</div>
+                    <pre style="background:#0b1220;border:1px solid #1e293b;border-radius:8px;padding:1rem;font-size:12px;color:#94a3b8;margin:0;">{
+  "sub": "christian@grova.com",
+  "tenant": "grova_christian",
+  "modulos": ["wallet", "work", "pesca", "agenda"],
+  "roles": ["ROLE_ADMIN"],
+  "iat": 1746451200,
+  "exp": 1746537600
+}</pre>
+                    <div style="margin-top:.75rem;font-size:11px;color:#64748b;">
+                        <strong style="color:#94a3b8;">Authorization header:</strong>
+                        <code style="display:block;margin-top:4px;color:#60a5fa;">Bearer eyJhbGciOiJSUzI1NiJ9...</code>
+                    </div>
+                </div>
+            </div>
+            <div class="ui-component-code">
+                <div class="ui-component-code-header">
+                    <span class="ui-component-code-label">PHP — Generar JWT payload en Symfony (lexik/jwt)</span>
+                    <button type="button" class="btn btn-outline-secondary btn-sm btn-copy-code" data-copy-target="code-jwt">Copiar</button>
+                </div>
+                <pre id="code-jwt">// En el EventSubscriber de JWT (JWTCreatedListener)
+use Lexik\Bundle\JWTAuthenticationBundle\Event\JWTCreatedEvent;
+
+public function onJWTCreated(JWTCreatedEvent $event): void
+{
+    $user   = $event->getUser();
+    $tenant = $this->tenantContext->getTenant();
+
+    $payload = $event->getData();
+    $payload['tenant']  = $tenant->getSlug();
+    $payload['modulos'] = $this->tenantContext->getModulosActivos();
+    $event->setData($payload);
+}
+
+// services.yaml
+App\EventListener\JWTCreatedListener:
+    tags:
+        - { name: kernel.event_listener, event: lexik_jwt_authentication.on_jwt_created, method: onJWTCreated }</pre>
+            </div>
+        </div>
+
+        {# ── Request / Response ── #}
+        <div class="ui-component">
+            <div class="ui-component-preview">
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;width:100%;max-width:580px;">
+                    <div>
+                        <div style="font-size:11px;color:#64748b;margin-bottom:.4rem;text-transform:uppercase;letter-spacing:.06em;">Request — POST /api/contacts</div>
+                        <pre style="background:#0b1220;border:1px solid #1e293b;border-radius:8px;padding:.75rem;font-size:11px;color:#94a3b8;margin:0;">{
+  "nombre": "Alcides",
+  "email": "alcides@bufete.com",
+  "tipo": "cliente",
+  "tenant": "grova_alcides"
+}</pre>
+                    </div>
+                    <div>
+                        <div style="font-size:11px;color:#64748b;margin-bottom:.4rem;text-transform:uppercase;letter-spacing:.06em;">Response — 201 Created</div>
+                        <pre style="background:#0b1220;border:1px solid #14532d;border-radius:8px;padding:.75rem;font-size:11px;color:#94a3b8;margin:0;">{
+  "id": 42,
+  "nombre": "Alcides",
+  "email": "alcides@bufete.com",
+  "tipo": "cliente",
+  "createdAt": "2026-05-05"
+}</pre>
+                    </div>
+                </div>
+            </div>
+            <div class="ui-component-code">
+                <div class="ui-component-code-header">
+                    <span class="ui-component-code-label">PHP — Symfony API endpoint básico</span>
+                    <button type="button" class="btn btn-outline-secondary btn-sm btn-copy-code" data-copy-target="code-endpoint-php">Copiar</button>
+                </div>
+                <pre id="code-endpoint-php">#[Route('/api/contacts', name: 'api_contacts_create', methods: ['POST'])]
+public function create(Request $request): JsonResponse
+{
+    $data = json_decode($request->getContent(), true);
+
+    // Validar
+    if (empty($data['nombre']) || empty($data['email'])) {
+        return $this->json(['error' => 'nombre y email son requeridos'], 422);
+    }
+
+    // Crear entidad
+    $contact = new Contact();
+    $contact->setNombre($data['nombre']);
+    $contact->setEmail($data['email']);
+    $this->em->persist($contact);
+    $this->em->flush();
+
+    return $this->json([
+        'id'        => $contact->getId(),
+        'nombre'    => $contact->getNombre(),
+        'email'     => $contact->getEmail(),
+        'createdAt' => $contact->getCreatedAt()->format('Y-m-d'),
+    ], 201);
+}</pre>
+            </div>
+        </div>
+
+        {# ── Códigos HTTP con badges ── #}
+        <div class="ui-component">
+            <div class="ui-component-preview">
+                <div style="display:flex;flex-wrap:wrap;gap:.5rem;">
+                    {% for s in [
+                        {code:'200',text:'OK',            cls:'status-2xx'},
+                        {code:'201',text:'Created',       cls:'status-2xx'},
+                        {code:'204',text:'No Content',    cls:'status-2xx'},
+                        {code:'400',text:'Bad Request',   cls:'status-4xx'},
+                        {code:'401',text:'Unauthorized',  cls:'status-4xx'},
+                        {code:'403',text:'Forbidden',     cls:'status-4xx'},
+                        {code:'404',text:'Not Found',     cls:'status-4xx'},
+                        {code:'422',text:'Unprocessable', cls:'status-4xx'},
+                        {code:'429',text:'Too Many',      cls:'status-4xx'},
+                        {code:'500',text:'Server Error',  cls:'status-5xx'},
+                        {code:'503',text:'Unavailable',   cls:'status-5xx'},
+                    ] %}
+                    <span class="http-status {{ s.cls }}">{{ s.code }} {{ s.text }}</span>
+                    {% endfor %}
+                </div>
+            </div>
+            <div class="ui-component-code">
+                <div class="ui-component-code-header">
+                    <span class="ui-component-code-label">HTML — Badges de códigos HTTP</span>
+                    <button type="button" class="btn btn-outline-secondary btn-sm btn-copy-code" data-copy-target="code-http-badges">Copiar</button>
+                </div>
+                <pre id="code-http-badges"><span class="http-status status-2xx">200 OK</span>
+<span class="http-status status-2xx">201 Created</span>
+<span class="http-status status-2xx">204 No Content</span>
+<span class="http-status status-4xx">400 Bad Request</span>
+<span class="http-status status-4xx">401 Unauthorized</span>
+<span class="http-status status-4xx">403 Forbidden</span>
+<span class="http-status status-4xx">404 Not Found</span>
+<span class="http-status status-4xx">422 Unprocessable</span>
+<span class="http-status status-4xx">429 Too Many Requests</span>
+<span class="http-status status-5xx">500 Server Error</span>
+<span class="http-status status-5xx">503 Unavailable</span></pre>
+            </div>
+        </div>
+
+    </div>
+</div>
+{% endblock %}
+
+{% block app_page_scripts %}
+<script>
+document.querySelectorAll('.btn-copy-code').forEach(function(btn){
+    btn.addEventListener('click',function(){
+        var t=document.getElementById(btn.getAttribute('data-copy-target'));
+        if(!t)return;
+        navigator.clipboard.writeText(t.textContent.trim()).then(function(){
+            var o=btn.textContent;btn.textContent='Copiado';
+            setTimeout(function(){btn.textContent=o;},1200);
+        });
+    });
+});
+</script>
+{% endblock %}

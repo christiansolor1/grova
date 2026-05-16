@@ -1,0 +1,42 @@
+{% extends 'workspace/app_layout.html.twig' %}
+
+{% block page_title %}{{ page_title|trans({}, 'ui') }}{% endblock %}
+{% block app_page_subtitle %}{{ page_subtitle|trans({}, 'ui') }}{% endblock %}
+
+{% block app_main %}
+<div class="content-card">
+    <div class="content-card-header">{{ page_title|trans({}, 'ui') }}</div>
+    <div class="content-card-body">
+        <p class="text-muted mb-3" style="font-size:13px;">{{ 'alerts_swal.launch_hint'|trans({}, 'ui') }}</p>
+        <div class="d-flex flex-wrap gap-2">
+            <button type="button" class="btn btn-sm btn-primary" id="swal-launch-retry">
+                <i class="bi bi-play-fill me-1"></i>{{ 'alerts_swal.launch_retry'|trans({}, 'ui') }}
+            </button>
+            <a href="{{ path('grova_page_ui_alerts_swal', {_locale: app.request.locale}) }}" class="btn btn-sm btn-outline-secondary">
+                <i class="bi bi-grid me-1"></i>{{ 'alerts_swal.launch_catalog'|trans({}, 'ui') }}
+            </a>
+        </div>
+        <div id="swal-dev-result" class="swal-result mt-3">{{ 'alerts_swal.launch_waiting'|trans({}, 'ui') }}</div>
+    </div>
+</div>
+{% endblock %}
+
+{% block app_page_scripts %}
+<script src="{{ asset('js/workspace-swal-demos.js') }}"></script>
+<script>
+(function () {
+    var demo = {{ swal_demo|json_encode|raw }};
+    function run() {
+        if (typeof runSwalDemo === 'function') {
+            runSwalDemo(demo);
+        }
+    }
+    document.getElementById('swal-launch-retry')?.addEventListener('click', run);
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', function () { setTimeout(run, 120); });
+    } else {
+        setTimeout(run, 120);
+    }
+})();
+</script>
+{% endblock %}

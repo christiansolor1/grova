@@ -1,0 +1,26 @@
+# ══ MODULE: Dashboard ═════════════════════════════════════════════════════════
+# Domain: dashboard
+
+# ── Page ──────────────────────────────────────────────────────────────────────
+dashboard.title: "Dashboard"
+dashboard.subtitle: "Grova system main panel"
+
+# ── Stats ─────────────────────────────────────────────────────────────────────
+stat.active_users: "Active users"
+stat.active_users.change: "↑ 12% this month"
+stat.organizations: "Organizations"
+stat.organizations.change: "↑ 3 new"
+stat.revenue: "Revenue (month)"
+stat.revenue.change: "↑ 8.4%"
+stat.churn: "Churn rate"
+stat.churn.change: "↑ 0.3%"
+
+# ── Users table ───────────────────────────────────────────────────────────────
+table.users.title: "Recent users"
+table.users.new: "New user"
+table.col.id: "#"
+table.col.username: "Username"
+table.col.email: "Email"
+table.col.role: "Role"
+table.col.status: "Status"
+table.col.actions: "Actions"

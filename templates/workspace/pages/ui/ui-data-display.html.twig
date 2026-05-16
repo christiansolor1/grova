@@ -1,0 +1,236 @@
+{% extends 'workspace/app_layout.html.twig' %}
+{% block page_title %}Visualización de datos{% endblock %}
+{% block app_page_subtitle %}Fichas de detalle, KPIs, pares clave-valor, auditoría y campos de solo lectura.{% endblock %}
+
+{% block page_styles %}
+<style>
+.ui-component{border:1px solid #1e293b;border-radius:10px;overflow:hidden;margin-bottom:1.5rem;}
+.ui-component-preview{padding:1.5rem;background:#0f172a;}
+.ui-component-code{background:#020617;border-top:1px solid #1e293b;}
+.ui-component-code-header{display:flex;align-items:center;justify-content:space-between;padding:.5rem 1rem;border-bottom:1px solid #1e293b;}
+.ui-component-code-label{font-size:11px;color:#64748b;text-transform:uppercase;letter-spacing:.5px;}
+.ui-component-code pre{margin:0;padding:1rem;font-size:12px;color:#94a3b8;overflow-x:auto;white-space:pre;}
+.btn-copy-code{font-size:11px;padding:2px 10px;}
+body.light-mode .ui-component{border-color:#dbe3ee;}
+body.light-mode .ui-component-preview{background:#f8fafc;}
+body.light-mode .ui-component-code{background:#f1f5f9;border-color:#dbe3ee;}
+body.light-mode .ui-component-code-header{border-color:#dbe3ee;}
+body.light-mode .ui-component-code pre{color:#475569;}
+</style>
+{% endblock %}
+
+{% block app_main %}
+<div class="content-card">
+    <div class="content-card-header">Visualización de datos</div>
+    <div class="content-card-body">
+
+        {# ── KPIs / Stats ── #}
+        <div class="ui-component">
+            <div class="ui-component-preview">
+                <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:1rem;width:100%;">
+                    <div class="stat-card">
+                        <div class="stat-label">Clientes activos</div>
+                        <div class="stat-value">142</div>
+                        <div class="stat-change"><i class="bi bi-arrow-up-short"></i>+12% este mes</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Facturas emitidas</div>
+                        <div class="stat-value">$48,200</div>
+                        <div class="stat-change"><i class="bi bi-arrow-up-short"></i>+8%</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Casos abiertos</div>
+                        <div class="stat-value">27</div>
+                        <div class="stat-change down"><i class="bi bi-arrow-down-short"></i>-3 vs semana pasada</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">MRR</div>
+                        <div class="stat-value">$1,850</div>
+                        <div class="stat-change"><i class="bi bi-arrow-up-short"></i>+5%</div>
+                    </div>
+                </div>
+            </div>
+            <div class="ui-component-code">
+                <div class="ui-component-code-header">
+                    <span class="ui-component-code-label">Twig — KPI / Stat cards</span>
+                    <button type="button" class="btn btn-outline-secondary btn-sm btn-copy-code" data-copy-target="code-kpi">Copiar</button>
+                </div>
+                <pre id="code-kpi">{% verbatim %}<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:1rem;">
+    {% for kpi in kpis %}
+    <div class="stat-card">
+        <div class="stat-label">{{ kpi.label }}</div>
+        <div class="stat-value">{{ kpi.value }}</div>
+        <div class="stat-change {{ kpi.trend < 0 ? 'down' : '' }}">
+            <i class="bi bi-arrow-{{ kpi.trend >= 0 ? 'up' : 'down' }}-short"></i>
+            {{ kpi.change }}
+        </div>
+    </div>
+    {% endfor %}
+</div>{% endverbatim %}</pre>
+            </div>
+        </div>
+
+        {# ── Ficha de detalle (dl/dt/dd) ── #}
+        <div class="ui-component">
+            <div class="ui-component-preview">
+                <dl class="grova-detail-list" style="max-width:480px;">
+                    <div class="grova-detail-row">
+                        <dt>Nombre completo</dt>
+                        <dd>Christian Solórzano</dd>
+                    </div>
+                    <div class="grova-detail-row">
+                        <dt>Email</dt>
+                        <dd>christian@grova.com</dd>
+                    </div>
+                    <div class="grova-detail-row">
+                        <dt>Estado</dt>
+                        <dd><span class="badge bg-success">Activo</span></dd>
+                    </div>
+                    <div class="grova-detail-row">
+                        <dt>Plan</dt>
+                        <dd>Pro — $49/mes</dd>
+                    </div>
+                    <div class="grova-detail-row">
+                        <dt>Tenant</dt>
+                        <dd><code>grova_christian</code></dd>
+                    </div>
+                    <div class="grova-detail-row">
+                        <dt>Creado</dt>
+                        <dd>05/01/2026</dd>
+                    </div>
+                </dl>
+            </div>
+            <div class="ui-component-code">
+                <div class="ui-component-code-header">
+                    <span class="ui-component-code-label">Twig — Ficha de detalle (dl/dt/dd)</span>
+                    <button type="button" class="btn btn-outline-secondary btn-sm btn-copy-code" data-copy-target="code-dl">Copiar</button>
+                </div>
+                <pre id="code-dl">{% verbatim %}<dl class="grova-detail-list">
+    <div class="grova-detail-row">
+        <dt>Nombre</dt>
+        <dd>{{ entity.nombre }}</dd>
+    </div>
+    <div class="grova-detail-row">
+        <dt>Estado</dt>
+        <dd><span class="badge bg-{{ entity.activo ? 'success' : 'secondary' }}">
+            {{ entity.activo ? 'Activo' : 'Inactivo' }}
+        </span></dd>
+    </div>
+    <div class="grova-detail-row">
+        <dt>Creado</dt>
+        <dd>{{ entity.createdAt|date('d/m/Y') }}</dd>
+    </div>
+</dl>{% endverbatim %}</pre>
+            </div>
+        </div>
+
+        {# ── Campo solo lectura ── #}
+        <div class="ui-component">
+            <div class="ui-component-preview">
+                <div style="max-width:400px;width:100%;display:flex;flex-direction:column;gap:.75rem;">
+                    <div>
+                        <label class="form-label">Tenant (solo lectura)</label>
+                        <input type="text" class="form-control form-control-sm" value="grova_christian" readonly>
+                    </div>
+                    <div>
+                        <label class="form-label" style="font-size:12px;color:#64748b;margin-bottom:2px;">DB Name</label>
+                        <div style="font-size:13px;color:#e2e8f0;padding:2px 0;"><code>grova_christian</code></div>
+                    </div>
+                    <div>
+                        <label class="form-label">Plan</label>
+                        <input type="text" class="form-control form-control-sm" value="Pro" disabled>
+                        <div class="form-text">Cambia el plan desde la sección de facturación.</div>
+                    </div>
+                </div>
+            </div>
+            <div class="ui-component-code">
+                <div class="ui-component-code-header">
+                    <span class="ui-component-code-label">HTML — Campos de solo lectura</span>
+                    <button type="button" class="btn btn-outline-secondary btn-sm btn-copy-code" data-copy-target="code-readonly">Copiar</button>
+                </div>
+                <pre id="code-readonly">{% verbatim %}{# Input readonly (valor seleccionable) #}
+<input type="text" class="form-control form-control-sm" value="{{ entity.campo }}" readonly>
+
+{# Texto plano (label + valor, sin caja) #}
+<div>
+    <label class="form-label" style="font-size:12px;color:#64748b;">DB Name</label>
+    <div style="font-size:13px;"><code>{{ tenant.db_name }}</code></div>
+</div>
+
+{# Input disabled con ayuda contextual #}
+<div>
+    <input type="text" class="form-control form-control-sm" value="{{ user.plan }}" disabled>
+    <div class="form-text">Cambia el plan desde la sección de facturación.</div>
+</div>{% endverbatim %}</pre>
+            </div>
+        </div>
+
+        {# ── Lista de auditoría ── #}
+        <div class="ui-component">
+            <div class="ui-component-preview">
+                <div style="max-width:520px;width:100%;">
+                    {% set logs = [
+                        {icon:'bi-person-check',color:'text-success', msg:'Usuario <strong>christian@grova.com</strong> inició sesión', time:'Hace 5 min'},
+                        {icon:'bi-pencil',color:'text-warning', msg:'Contrato <strong>#2024-0091</strong> actualizado', time:'Hace 1h'},
+                        {icon:'bi-person-plus',color:'text-info', msg:'Nuevo usuario <strong>jordi@construccion.com</strong> creado', time:'Hace 3h'},
+                        {icon:'bi-trash',color:'text-danger', msg:'Documento <strong>contrato_v1.pdf</strong> eliminado', time:'Ayer'},
+                    ] %}
+                    <div style="display:flex;flex-direction:column;gap:.5rem;">
+                        {% for log in logs %}
+                        <div style="display:flex;align-items:flex-start;gap:.75rem;padding:.5rem 0;border-bottom:1px solid #1e293b;">
+                            <div style="width:28px;height:28px;border-radius:50%;background:#1e293b;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                                <i class="bi {{ log.icon }} {{ log.color }}" style="font-size:13px;"></i>
+                            </div>
+                            <div style="flex:1;min-width:0;">
+                                <div style="font-size:13px;color:#e2e8f0;">{{ log.msg|raw }}</div>
+                                <div style="font-size:11px;color:#475569;">{{ log.time }}</div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            <div class="ui-component-code">
+                <div class="ui-component-code-header">
+                    <span class="ui-component-code-label">Twig — Lista de auditoría / actividad</span>
+                    <button type="button" class="btn btn-outline-secondary btn-sm btn-copy-code" data-copy-target="code-audit">Copiar</button>
+                </div>
+                <pre id="code-audit">{% verbatim %}<div class="grova-audit-list">
+    {% for log in audit_logs %}
+    <div class="grova-audit-row">
+        <div class="grova-audit-icon">
+            <i class="bi {{ log.icon }} {{ log.colorClass }}"></i>
+        </div>
+        <div class="grova-audit-body">
+            <div class="grova-audit-msg">{{ log.message|raw }}</div>
+            <div class="grova-audit-time">{{ log.createdAt|time_diff }}</div>
+        </div>
+    </div>
+    {% else %}
+    <div class="grova-empty-state grova-empty-state-compact">
+        <div class="grova-empty-icon"><i class="bi bi-clock-history"></i></div>
+        <div class="grova-empty-title">Sin actividad registrada</div>
+    </div>
+    {% endfor %}
+</div>{% endverbatim %}</pre>
+            </div>
+        </div>
+
+    </div>
+</div>
+{% endblock %}
+
+{% block app_page_scripts %}
+<script>
+document.querySelectorAll('.btn-copy-code').forEach(function(btn){
+    btn.addEventListener('click',function(){
+        var t=document.getElementById(btn.getAttribute('data-copy-target'));
+        if(!t)return;
+        navigator.clipboard.writeText(t.textContent.trim()).then(function(){
+            var o=btn.textContent;btn.textContent='Copiado';
+            setTimeout(function(){btn.textContent=o;},1200);
+        });
+    });
+});
+</script>
+{% endblock %}

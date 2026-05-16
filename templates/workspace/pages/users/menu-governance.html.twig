@@ -1,0 +1,1427 @@
+{% extends 'workspace/app_layout.html.twig' %}
+{% block main_attributes %} class="menu-governance-page" data-grova-filter-schema="users-menu-governance"{% endblock %}
+
+{% block app_filters_row %}{% include 'workspace/partials/_filters_active_row.html.twig' %}{% endblock %}
+{% block app_filters_drawer %}{% include 'workspace/partials/_filters_drawer.html.twig' %}{% endblock %}
+
+{% block page_title %}{{ 'Gestión de menú' | trans }}{% endblock %}
+{% block app_page_subtitle %}{{ 'Gobierno de jerarquía y visibilidad del menú (UI de referencia, sin CRUD).' | trans }}{% endblock %}
+{% block page_styles %}
+<link rel="stylesheet" href="{{ asset('css/menu-builder.css') }}">
+<style>
+.menu-governance-page .sidebar-snapshot { min-width: 0; width: 100%; max-width: 100%; }
+.menu-governance-page .snapshot-row.sibling { opacity: .96; }
+.menu-governance-page .snapshot-row { cursor: default; }
+.menu-info-wrap { position: relative; display: inline-flex; margin-left: 6px; }
+.menu-info-btn {
+    width: 18px; height: 18px; border-radius: 999px; border: 1px solid #64748b;
+    background: transparent; color: #64748b; font-size: 11px; font-weight: 700;
+    display: inline-flex; align-items: center; justify-content: center; cursor: pointer;
+    line-height: 1; padding: 0;
+}
+.menu-info-pop {
+    position: absolute; top: 24px; right: 0; width: 260px; z-index: 20;
+    background: #111827; color: #cbd5e1; border: 1px solid #334155; border-radius: 8px;
+    box-shadow: 0 8px 24px rgba(0,0,0,.35); padding: 10px 12px; font-size: 12px; display: none;
+}
+.menu-info-wrap.open .menu-info-pop { display: block; }
+.menu-preview-pop { width: 320px; }
+.menu-preview-pop .sidebar-mini-preview { margin-top: 4px; }
+body.light-mode .menu-info-pop { background: #fff; color: #334155; border-color: #e2e8f0; box-shadow: 0 8px 24px rgba(15,23,42,.12); }
+.mini-item.l2 { margin-left: 14px; }
+.mini-item.l3 { margin-left: 28px; }
+.icon-opt-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; width: 100%; }
+.icon-opt-left { display: inline-flex; align-items: center; gap: 8px; min-width: 0; }
+.icon-opt-left i { width: 16px; text-align: center; }
+.icon-opt-class { font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 280px; }
+.icon-opt-badge {
+    display: inline-flex; align-items: center; justify-content: center; min-width: 28px;
+    font-size: 10px; font-weight: 700; border-radius: 999px; padding: 1px 7px; border: 1px solid transparent;
+}
+.icon-opt-badge.bi { color: #60a5fa; background: rgba(37,99,235,.16); border-color: rgba(37,99,235,.45); }
+.icon-opt-badge.fa { color: #f59e0b; background: rgba(245,158,11,.16); border-color: rgba(245,158,11,.45); }
+body.light-mode .icon-opt-badge.bi { color: #1d4ed8; background: #dbeafe; border-color: #93c5fd; }
+body.light-mode .icon-opt-badge.fa { color: #b45309; background: #fef3c7; border-color: #f59e0b; }
+.menu-governance-toolbar {
+    border: 1px solid #334155; border-radius: 10px; padding: 10px 12px;
+    background: #111827; margin-bottom: 12px;
+}
+.menu-governance-toolbar .toolbar-note { font-size: 12px; color: #94a3b8; }
+.menu-governance-toolbar .toolbar-actions { display: inline-flex; gap: 8px; }
+.btn-governance-primary {
+    display: inline-flex; align-items: center; gap: 6px;
+}
+.menu-panel-subtitle { font-size: 12px; color: #94a3b8; margin: 6px 0 0; }
+.menu-table-shell table tbody tr:hover td { background: rgba(59,130,246,.06); }
+.editor-shell {
+    border: 1px dashed #334155; border-radius: 10px; padding: 10px; background: rgba(15,23,42,.4);
+}
+.menu-type-badge {
+    display: inline-flex; align-items: center; padding: 2px 8px; border-radius: 999px;
+    font-size: 11px; font-weight: 700; border: 1px solid transparent;
+}
+.menu-type-badge.principal { background: rgba(16,185,129,.18); color: #a7f3d0; border-color: rgba(16,185,129,.38); }
+.menu-type-badge.submenu { background: rgba(59,130,246,.18); color: #bfdbfe; border-color: rgba(59,130,246,.38); }
+.menu-type-badge.subopcion { background: rgba(168,85,247,.18); color: #e9d5ff; border-color: rgba(168,85,247,.38); }
+.menu-color-dot {
+    width: 10px; height: 10px; border-radius: 999px; display: inline-block; border: 1px solid rgba(148,163,184,.45);
+}
+.menu-color-dot.principal { background: #10b981; }
+.menu-color-dot.submenu { background: #3b82f6; }
+.menu-color-dot.subopcion { background: #a855f7; }
+body.light-mode .menu-type-badge.principal { background: #d1fae5; color: #065f46; border-color: rgba(52,211,153,.5); }
+body.light-mode .menu-type-badge.submenu { background: #dbeafe; color: #1e40af; border-color: rgba(96,165,250,.5); }
+body.light-mode .menu-type-badge.subopcion { background: #f3e8ff; color: #6b21a8; border-color: rgba(192,132,252,.5); }
+body.light-mode .menu-governance-toolbar { background: #fff; border-color: #e2e8f0; }
+body.light-mode .menu-governance-toolbar .toolbar-note { color: #64748b; }
+body.light-mode .menu-panel-subtitle { color: #64748b; }
+body.light-mode .editor-shell { background: #f8fafc; border-color: #dbe3ee; }
+</style>
+{% endblock %}
+
+{% block app_main %}
+{% for label, messages in app.flashes %}
+    {% for message in messages %}
+        <div class="alert alert-{{ label == 'danger' ? 'danger' : 'success' }} mb-3" role="alert">{{ message }}</div>
+    {% endfor %}
+{% endfor %}
+
+<div class="content-card mb-3">
+    <div class="content-card-header">{{ 'Reglas recomendadas' | trans }}</div>
+    <div class="content-card-body">
+        <div class="alert alert-info mb-0" role="alert" style="font-size:13px;">
+            Estructura recomendada: <strong>id + parent_id</strong> para jerarquía, y <strong>menu_key</strong> para lógica funcional.
+            Visibilidad lateral controlada por <code>show_in_sidebar</code>.
+        </div>
+    </div>
+</div>
+
+<div class="menu-governance-toolbar d-flex align-items-center justify-content-between">
+    <div class="toolbar-note">Gestiona el árbol del menú con flujo de listado y formulario.</div>
+    <div class="toolbar-actions">
+        <button type="button" id="menu-open-create" class="btn btn-sm btn-primary btn-governance-primary">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+            {{ 'Nuevo ítem' | trans }}
+        </button>
+        <button type="button" id="menu-back-to-list" class="btn btn-sm btn-outline-secondary" style="display:none;">{{ 'Volver al listado' | trans }}</button>
+    </div>
+</div>
+
+<div id="menu-governance-layout" class="row g-3">
+    <div id="menu-list-panel" class="col-xl-12">
+        <div class="content-card h-100">
+            <div class="content-card-header">
+                Árbol actual
+                <div class="menu-panel-subtitle">Vista operativa de niveles, estado y visibilidad.</div>
+            </div>
+            <div class="content-card-body">
+                <div class="table-responsive menu-table-shell">
+                    <table id="users-table" class="table table-sm align-middle mb-0" style="color:inherit;">
+                        <thead>
+                        <tr>
+                            <th>{{ 'Editar' | trans }}</th>
+                            <th>{{ 'Nivel' | trans }}</th>
+                            <th>{{ 'Tipo' | trans }}</th>
+                            <th>{{ 'Color' | trans }}</th>
+                            <th>{{ 'Menu key' | trans }}</th>
+                            <th>{{ 'Label' | trans }}</th>
+                            <th>{{ 'Sidebar' | trans }}</th>
+                            <th>{{ 'Estado' | trans }}</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        {% for l1 in menu_tree %}
+                            <tr>
+                                <td>
+                                    <button type="button" class="btn btn-sm btn-outline-secondary js-edit-row" data-level="principal" data-key="{{ l1.id }}" data-label="{{ l1.label }}" data-icon="{{ l1.icon|default('bi-list') }}" data-status="{{ l1.status|default('hecho') }}">
+                                        <i class="bi bi-pencil"></i>
+                                    </button>
+                                </td>
+                                <td>L1</td>
+                                <td><span class="menu-type-badge principal">{{ 'Menú principal' | trans }}</span></td>
+                                <td><span class="menu-color-dot principal" title="{{ 'Menú principal' | trans }}"></span></td>
+                                <td><code>{{ l1.id }}</code></td>
+                                <td>{{ l1.label }}</td>
+                                <td data-sidebar="{{ l1.showInSidebar|default(true) ? 'visible' : 'oculto' }}"><span class="badge {{ l1.showInSidebar|default(true) ? 'bg-success' : 'bg-secondary' }}">{{ l1.showInSidebar|default(true) ? ('Visible'|trans) : ('Oculto'|trans) }}</span></td>
+                                <td data-status="{{ l1.status|default('hecho') }}"><span class="badge {{ l1.status|default('hecho') == 'pendiente' ? 'bg-warning text-dark' : 'bg-success' }}">{{ l1.status|default('hecho')|capitalize }}</span></td>
+                            </tr>
+                            {% for l2 in l1.children|default([]) %}
+                                <tr>
+                                    <td>
+                                        <button type="button" class="btn btn-sm btn-outline-secondary js-edit-row" data-level="submenu" data-key="{{ l2.id }}" data-label="{{ l2.label }}" data-icon="{{ l2.icon|default('bi-list') }}" data-status="{{ l2.status|default('hecho') }}" data-parent-key="{{ l1.id }}">
+                                            <i class="bi bi-pencil"></i>
+                                        </button>
+                                    </td>
+                                    <td>L2</td>
+                                    <td><span class="menu-type-badge submenu">{{ 'Submenú' | trans }}</span></td>
+                                    <td><span class="menu-color-dot submenu" title="{{ 'Submenú' | trans }}"></span></td>
+                                    <td><code>{{ l2.id }}</code></td>
+                                    <td>&mdash; {{ l2.label }}</td>
+                                    <td data-sidebar="{{ l2.showInSidebar|default(true) ? 'visible' : 'oculto' }}"><span class="badge {{ l2.showInSidebar|default(true) ? 'bg-success' : 'bg-secondary' }}">{{ l2.showInSidebar|default(true) ? ('Visible'|trans) : ('Oculto'|trans) }}</span></td>
+                                    <td data-status="{{ l2.status|default('hecho') }}"><span class="badge {{ l2.status|default('hecho') == 'pendiente' ? 'bg-warning text-dark' : 'bg-success' }}">{{ l2.status|default('hecho')|capitalize }}</span></td>
+                                </tr>
+                                {% for l3 in l2.children|default([]) %}
+                                    <tr>
+                                        <td>
+                                            <button type="button" class="btn btn-sm btn-outline-secondary js-edit-row" data-level="subopcion" data-key="{{ l3.id }}" data-label="{{ l3.label }}" data-icon="{{ l3.icon|default('bi-list') }}" data-status="{{ l3.status|default('hecho') }}" data-parent-key="{{ l2.id }}" data-principal-key="{{ l1.id }}">
+                                                <i class="bi bi-pencil"></i>
+                                            </button>
+                                        </td>
+                                        <td>L3</td>
+                                        <td><span class="menu-type-badge subopcion">{{ 'Subopción' | trans }}</span></td>
+                                        <td><span class="menu-color-dot subopcion" title="{{ 'Subopción' | trans }}"></span></td>
+                                        <td><code>{{ l3.id }}</code></td>
+                                        <td>&mdash; &mdash; {{ l3.label }}</td>
+                                        <td data-sidebar="{{ l3.showInSidebar|default(true) ? 'visible' : 'oculto' }}"><span class="badge {{ l3.showInSidebar|default(true) ? 'bg-success' : 'bg-secondary' }}">{{ l3.showInSidebar|default(true) ? ('Visible'|trans) : ('Oculto'|trans) }}</span></td>
+                                        <td data-status="{{ l3.status|default('hecho') }}"><span class="badge {{ l3.status|default('hecho') == 'pendiente' ? 'bg-warning text-dark' : 'bg-success' }}">{{ l3.status|default('hecho')|capitalize }}</span></td>
+                                    </tr>
+                                {% endfor %}
+                            {% endfor %}
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="menu-editor-panel" class="col-xl-12" style="display:none;">
+        <div class="content-card h-100">
+            <div class="content-card-header">
+                {{ 'Editor de ítems' | trans }}
+                <div class="menu-panel-subtitle">Configura jerarquía, estado e ícono antes de guardar.</div>
+            </div>
+            <div class="content-card-body">
+                <div class="editor-shell">
+                <form id="menu-governance-form-demo" method="post" action="{{ path('grova_page_users_menu_governance_save', {_locale: app.request.locale}) }}">
+                    <input type="hidden" name="_token" value="{{ csrf_token('menu_governance_save') }}">
+                    <div class="mb-2">
+                        <label class="form-label">¿Qué quieres crear?</label>
+                        <select id="demo-create-mode" name="create_mode" class="form-select form-select-sm js-select2">
+                            <option value="single" selected>Solo 1 ítem de menú</option>
+                            <option value="bundle">Menú completo (principal + submenú + subopción)</option>
+                        </select>
+                    </div>
+
+                    <div id="single-create-fields">
+                    <div class="mb-2">
+                        <label class="form-label">Path</label>
+                        <input id="demo-menu-key" name="single_path" type="text" class="form-control form-control-sm" placeholder="gestion-menu" value="gestion-menu">
+                        <div class="small text-muted mt-1">Identificador técnico único (URL/route key).</div>
+                    </div>
+                    <div class="mb-2">
+                        <label class="form-label">Label menú</label>
+                        <input id="demo-menu-label" name="single_label" type="text" class="form-control form-control-sm" placeholder="Gestión de menú" value="Gestión de menú">
+                        <div class="small text-muted mt-1">Nombre que verá el usuario en el sidebar.</div>
+                    </div>
+                    <div class="mb-2">
+                        <label class="form-label">Ícono (Bootstrap Icons o Font Awesome)</label>
+                        <div class="d-flex align-items-center gap-2">
+                            <select id="demo-menu-icon" name="single_icon" class="form-select form-select-sm js-select2" style="width:100%;"></select>
+                            <span class="icon-live-preview" id="demo-menu-icon-preview"><i class="bi bi-list"></i></span>
+                        </div>
+                    </div>
+                    <div class="row g-2 mb-2">
+                        <div class="col-6">
+                            <label class="form-label">Tipo de elemento</label>
+                            <select id="demo-item-type" name="single_item_type" class="form-select form-select-sm js-select2">
+                                <option value="principal">Menú principal</option>
+                                <option value="submenu" selected>Submenú</option>
+                                <option value="subopcion">Subopción</option>
+                            </select>
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label">Orden</label>
+                            <input type="number" name="single_sort_order" class="form-control form-control-sm" value="23">
+                        </div>
+                    </div>
+                    <div class="mb-2">
+                        <label class="form-label">Elemento padre</label>
+                        <label id="demo-parent-principal-label" class="form-label small text-muted mb-1" style="display:none;">1) Menú principal</label>
+                        <select id="demo-parent-principal" class="form-select form-select-sm js-select2" style="display:none;"></select>
+                        <label id="demo-parent-submenu-label" class="form-label small text-muted mt-2 mb-1" style="display:none;">2) Submenú</label>
+                        <select id="demo-parent-key" name="single_parent_key" class="form-select form-select-sm js-select2"></select>
+                        <div id="demo-parent-help" class="small text-muted mt-1"></div>
+                    </div>
+                    <div class="mb-2 d-flex align-items-center justify-content-between border rounded p-2">
+                        <label class="form-label mb-0">Mostrar en sidebar</label>
+                        <input id="single-show-in-sidebar" name="single_show_in_sidebar" class="form-check-input" type="checkbox" checked>
+                    </div>
+                    <div class="mb-3 d-flex align-items-center justify-content-between border rounded p-2">
+                        <label class="form-label mb-0">Solo desarrollo</label>
+                        <input name="single_dev_only" class="form-check-input" type="checkbox">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Estado del item</label>
+                        <select id="single-status" name="single_status" class="form-select form-select-sm js-select2">
+                            <option value="pendiente" selected>Pendiente (en construcción)</option>
+                            <option value="hecho">Hecho (listo)</option>
+                        </select>
+                    </div>
+                    <div class="mb-3 border rounded p-2" style="border-color:#334155 !important;">
+                        <div class="small text-muted mb-2 d-flex align-items-center">
+                            Vista previa en sidebar
+                            <span class="menu-info-wrap" id="menu-info-wrap">
+                                <button type="button" class="menu-info-btn" id="menu-info-btn" title="Cómo funciona">i</button>
+                                <div class="menu-info-pop" id="menu-info-pop">
+                                    Elige tipo y ubicación. Esta maqueta te muestra cómo quedaría el nuevo elemento
+                                    dentro del menú lateral antes de guardarlo.
+                                </div>
+                            </span>
+                            <span class="menu-info-wrap" id="menu-preview-wrap">
+                                <button type="button" class="menu-info-btn" id="menu-preview-btn" title="Ver previsualización" aria-label="Ver previsualización">
+                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12z"/><circle cx="12" cy="12" r="3"/></svg>
+                                </button>
+                                <div class="menu-info-pop menu-preview-pop" id="menu-preview-pop"></div>
+                            </span>
+                        </div>
+                        <div id="menu-level-meta" class="small text-muted mb-1"></div>
+                        <div id="menu-level-chip" class="badge bg-primary mb-2">Nuevo item: Submenú</div>
+                        <div id="menu-hierarchy-preview"></div>
+                    </div>
+                    </div>
+
+                    <div id="bundle-create-fields" style="display:none;">
+                        <div class="alert alert-secondary" role="alert" style="font-size:13px;">
+                            Este modo crea una estructura completa partiendo desde el nivel que elijas.
+                        </div>
+                        <div class="mb-2">
+                            <label class="form-label">Estructura a crear</label>
+                            <select id="bundle-kind" name="bundle_kind" class="form-select form-select-sm js-select2">
+                                <option value="full" selected>Principal + Submenú + Subopción</option>
+                                <option value="submenu">Submenú + Subopción (bajo principal existente)</option>
+                                <option value="subopcion">Solo Subopción (bajo submenú existente)</option>
+                            </select>
+                        </div>
+
+                        <div id="bundle-parent-principal-wrap" class="mb-2" style="display:none;">
+                            <label class="form-label">Menú principal padre</label>
+                            <select id="bundle-parent-principal" name="bundle_parent_principal" class="form-select form-select-sm js-select2">
+                                <option value="">Selecciona menú principal...</option>
+                                {% for l1 in menu_tree %}
+                                    <option value="{{ l1.id }}">{{ l1.label }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div id="bundle-parent-principal-suboption-wrap" class="mb-2" style="display:none;">
+                            <label class="form-label">1) Menú principal padre</label>
+                            <select id="bundle-parent-principal-suboption" name="bundle_parent_principal_suboption" class="form-select form-select-sm js-select2">
+                                <option value="">Selecciona menú principal...</option>
+                                {% for l1 in menu_tree %}
+                                    <option value="{{ l1.id }}">{{ l1.label }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div id="bundle-parent-submenu-wrap" class="mb-2" style="display:none;">
+                            <label class="form-label">2) Submenú padre</label>
+                            <select id="bundle-parent-submenu" name="bundle_parent_submenu" class="form-select form-select-sm js-select2">
+                                <option value="">Selecciona submenú...</option>
+                            </select>
+                        </div>
+                        <div id="bundle-principal-row" class="row g-2 mb-2">
+                            <div class="col-6">
+                                <label class="form-label">Path menú principal</label>
+                                <input name="bundle_principal_path" type="text" class="form-control form-control-sm" placeholder="ventas">
+                            </div>
+                            <div class="col-6">
+                                <label class="form-label">Label menú principal</label>
+                                <input name="bundle_principal_label" type="text" class="form-control form-control-sm" placeholder="Ventas">
+                            </div>
+                        </div>
+                        <div id="bundle-submenu-row" class="row g-2 mb-2">
+                            <div class="col-6">
+                                <label class="form-label">Path submenú</label>
+                                <input name="bundle_submenu_path" type="text" class="form-control form-control-sm" placeholder="ventas-reportes">
+                            </div>
+                            <div class="col-6">
+                                <label class="form-label">Label submenú</label>
+                                <input name="bundle_submenu_label" type="text" class="form-control form-control-sm" placeholder="Reportes">
+                            </div>
+                        </div>
+                        <div id="bundle-suboption-row" class="row g-2 mb-3">
+                            <div class="col-6">
+                                <label class="form-label">Path subopción</label>
+                                <input name="bundle_suboption_path" type="text" class="form-control form-control-sm" placeholder="ventas-reportes-diario">
+                            </div>
+                            <div class="col-6">
+                                <label class="form-label">Label subopción</label>
+                                <input name="bundle_suboption_label" type="text" class="form-control form-control-sm" placeholder="Reporte diario">
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Orden base</label>
+                            <input name="bundle_base_sort_order" type="number" class="form-control form-control-sm" value="80">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Estado de la estructura</label>
+                            <select id="bundle-status" name="bundle_status" class="form-select form-select-sm js-select2">
+                                <option value="pendiente" selected>Pendiente (en construcción)</option>
+                                <option value="hecho">Hecho (listo)</option>
+                            </select>
+                        </div>
+                        <div class="mb-3 border rounded p-2" style="border-color:#334155 !important;">
+                            <div class="small text-muted mb-2">Vista previa en sidebar (modo estructura)</div>
+                            <div id="bundle-level-meta" class="small text-muted mb-1"></div>
+                            <div id="bundle-level-chip" class="badge bg-primary mb-2">Estructura</div>
+                            <div id="bundle-hierarchy-preview"></div>
+                        </div>
+                    </div>
+                    <div class="d-flex gap-2 justify-content-end">
+                        <button type="button" id="menu-form-cancel-btn" class="btn btn-sm btn-outline-secondary">Cancelar</button>
+                        <button type="submit" class="btn btn-sm btn-primary">Guardar</button>
+                    </div>
+                </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block app_page_scripts %}
+<script>
+(function () {
+    var modeEl = document.getElementById('demo-create-mode');
+    var singleFieldsEl = document.getElementById('single-create-fields');
+    var bundleFieldsEl = document.getElementById('bundle-create-fields');
+    var keyEl = document.getElementById('demo-menu-key');
+    var labelEl = document.getElementById('demo-menu-label');
+    var iconEl = document.getElementById('demo-menu-icon');
+    var iconPreviewEl = document.getElementById('demo-menu-icon-preview');
+    var typeEl = document.getElementById('demo-item-type');
+    var parentEl = document.getElementById('demo-parent-key');
+    var parentPrincipalEl = document.getElementById('demo-parent-principal');
+    var parentPrincipalLabelEl = document.getElementById('demo-parent-principal-label');
+    var parentSubmenuLabelEl = document.getElementById('demo-parent-submenu-label');
+    var parentHelpEl = document.getElementById('demo-parent-help');
+    var metaEl = document.getElementById('menu-level-meta');
+    var chipEl = document.getElementById('menu-level-chip');
+    var previewEl = document.getElementById('menu-hierarchy-preview');
+    var infoWrap = document.getElementById('menu-info-wrap');
+    var infoBtn = document.getElementById('menu-info-btn');
+    var previewWrap = document.getElementById('menu-preview-wrap');
+    var previewBtn = document.getElementById('menu-preview-btn');
+    var previewPop = document.getElementById('menu-preview-pop');
+    var openCreateBtn = document.getElementById('menu-open-create');
+    var backToListBtn = document.getElementById('menu-back-to-list');
+    var listPanelEl = document.getElementById('menu-list-panel');
+    var editorPanelEl = document.getElementById('menu-editor-panel');
+    var bundleKindEl = document.getElementById('bundle-kind');
+    var bundleParentPrincipalWrapEl = document.getElementById('bundle-parent-principal-wrap');
+    var bundleParentPrincipalEl = document.getElementById('bundle-parent-principal');
+    var bundleParentPrincipalSuboptionWrapEl = document.getElementById('bundle-parent-principal-suboption-wrap');
+    var bundleParentPrincipalSuboptionEl = document.getElementById('bundle-parent-principal-suboption');
+    var bundleParentSubmenuWrapEl = document.getElementById('bundle-parent-submenu-wrap');
+    var bundleParentSubmenuEl = document.getElementById('bundle-parent-submenu');
+    var bundlePrincipalRowEl = document.getElementById('bundle-principal-row');
+    var bundleSubmenuRowEl = document.getElementById('bundle-submenu-row');
+    var bundleSuboptionRowEl = document.getElementById('bundle-suboption-row');
+    var bundleMetaEl = document.getElementById('bundle-level-meta');
+    var bundleChipEl = document.getElementById('bundle-level-chip');
+    var bundlePreviewEl = document.getElementById('bundle-hierarchy-preview');
+    var bundlePrincipalPathEl = document.querySelector('input[name="bundle_principal_path"]');
+    var bundlePrincipalLabelEl = document.querySelector('input[name="bundle_principal_label"]');
+    var bundleSubmenuPathEl = document.querySelector('input[name="bundle_submenu_path"]');
+    var bundleSubmenuLabelEl = document.querySelector('input[name="bundle_submenu_label"]');
+    var bundleSuboptionPathEl = document.querySelector('input[name="bundle_suboption_path"]');
+    var bundleSuboptionLabelEl = document.querySelector('input[name="bundle_suboption_label"]');
+    var singleSortOrderEl = document.querySelector('input[name="single_sort_order"]');
+    var bundleBaseSortOrderEl = document.querySelector('input[name="bundle_base_sort_order"]');
+    var singleStatusEl = document.getElementById('single-status');
+    var formEl = document.getElementById('menu-governance-form-demo');
+    var cancelBtn = document.getElementById('menu-form-cancel-btn');
+    if (!modeEl || !singleFieldsEl || !bundleFieldsEl || !keyEl || !labelEl || !iconEl || !iconPreviewEl || !typeEl || !parentEl || !parentPrincipalEl || !parentPrincipalLabelEl || !parentSubmenuLabelEl || !parentHelpEl || !metaEl || !chipEl || !previewEl || !bundleKindEl || !bundleParentPrincipalWrapEl || !bundleParentPrincipalEl || !bundleParentPrincipalSuboptionWrapEl || !bundleParentPrincipalSuboptionEl || !bundleParentSubmenuWrapEl || !bundleParentSubmenuEl || !bundlePrincipalRowEl || !bundleSubmenuRowEl || !bundleSuboptionRowEl || !bundleMetaEl || !bundleChipEl || !bundlePreviewEl || !bundlePrincipalPathEl || !bundlePrincipalLabelEl || !bundleSubmenuPathEl || !bundleSubmenuLabelEl || !bundleSuboptionPathEl || !bundleSuboptionLabelEl || !singleStatusEl || !formEl || !cancelBtn || !openCreateBtn || !backToListBtn || !listPanelEl || !editorPanelEl) return;
+
+    function setGovernanceView(view) {
+        var isEditor = view === 'editor';
+        listPanelEl.style.display = isEditor ? 'none' : '';
+        editorPanelEl.style.display = isEditor ? '' : 'none';
+        openCreateBtn.style.display = isEditor ? 'none' : '';
+        backToListBtn.style.display = isEditor ? '' : 'none';
+    }
+
+    function clearAndPrepareForm() {
+        formEl.reset();
+        setSelectValueWithSelect2(modeEl, 'single');
+        setSelectValueWithSelect2(typeEl, 'principal');
+        setSelectValueWithSelect2(singleStatusEl, 'pendiente');
+        setSelectValueWithSelect2(iconEl, 'bi-list');
+        setIconPreview('bi-list');
+        syncCreateMode();
+        setParentOptionsByType('principal');
+        syncBundleKind();
+        renderBundlePreview();
+        renderPreview();
+    }
+
+    function setSelectValueWithSelect2(el, value) {
+        el.value = value;
+        if (hasSelect2()) {
+            window.jQuery(el).val(value).trigger('change');
+        }
+    }
+
+    function hasSwal() {
+        return typeof window.Swal !== 'undefined' && window.Swal && typeof window.Swal.fire === 'function';
+    }
+
+    function showAlert(icon, title, text) {
+        if (hasSwal()) {
+            return window.Swal.fire({
+                icon: icon || 'info',
+                title: title || 'Información',
+                text: text || '',
+                confirmButtonText: 'Entendido'
+            });
+        }
+        window.alert((title ? title + '\n\n' : '') + (text || ''));
+        return Promise.resolve();
+    }
+
+    function showConfirm(title, text, confirmText, cancelText) {
+        if (hasSwal()) {
+            return window.Swal.fire({
+                icon: 'question',
+                title: title || '¿Confirmar?',
+                text: text || '',
+                showCancelButton: true,
+                confirmButtonText: confirmText || 'Confirmar',
+                cancelButtonText: cancelText || 'Cancelar',
+                reverseButtons: true
+            }).then(function (result) { return !!result.isConfirmed; });
+        }
+        return Promise.resolve(window.confirm((title ? title + '\n\n' : '') + (text || '')));
+    }
+
+    function clearValidationState() {
+        formEl.querySelectorAll('.is-invalid').forEach(function (el) {
+            el.classList.remove('is-invalid');
+        });
+    }
+
+    function markInvalid(el) {
+        if (!el) return;
+        el.classList.add('is-invalid');
+    }
+
+    function isValidPath(pathValue) {
+        return /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(String(pathValue || '').trim());
+    }
+
+    function showValidationErrors(errors) {
+        var text = errors.join('\n- ');
+        if (hasSwal()) {
+            return window.Swal.fire({
+                icon: 'warning',
+                title: 'Faltan datos por completar',
+                text: '- ' + text,
+                confirmButtonText: 'Revisar formulario'
+            });
+        }
+        return showAlert('warning', 'Faltan datos por completar', errors.join(' '));
+    }
+
+    function validateBeforeSubmit() {
+        clearValidationState();
+        var mode = getSelectValue(modeEl) || 'single';
+        var errors = [];
+        if (mode === 'single') {
+            var itemType = getSelectValue(typeEl) || 'principal';
+            var key = (keyEl.value || '').trim();
+            var label = (labelEl.value || '').trim();
+            var icon = (iconEl.value || '').trim();
+            var parent = (getSelectValue(parentEl) || '').trim();
+            var principal = (getSelectValue(parentPrincipalEl) || '').trim();
+            var sortOrder = (singleSortOrderEl && singleSortOrderEl.value ? singleSortOrderEl.value : '').trim();
+
+            if (!key) {
+                errors.push('El campo Path es obligatorio.');
+                markInvalid(keyEl);
+            } else if (!isValidPath(key)) {
+                errors.push('Path solo permite minúsculas, números y guiones (ej: gestion-menu).');
+                markInvalid(keyEl);
+            }
+            if (!label) {
+                errors.push('El campo Label menú es obligatorio.');
+                markInvalid(labelEl);
+            }
+            if (!icon) {
+                errors.push('Debes seleccionar un ícono.');
+                markInvalid(iconEl);
+            }
+            if (sortOrder === '' || isNaN(Number(sortOrder))) {
+                errors.push('Orden debe ser numérico.');
+                markInvalid(singleSortOrderEl);
+            }
+            if (itemType === 'submenu' && !parent) {
+                errors.push('Selecciona el menú principal padre del submenú.');
+                markInvalid(parentEl);
+            }
+            if (itemType === 'subopcion' && !principal) {
+                errors.push('Selecciona el menú principal padre.');
+                markInvalid(parentPrincipalEl);
+            }
+            if (itemType === 'subopcion' && !parent) {
+                errors.push('Selecciona el submenú padre.');
+                markInvalid(parentEl);
+            }
+        } else {
+            var kind = getSelectValue(bundleKindEl) || 'full';
+            var principalPath = (bundlePrincipalPathEl.value || '').trim();
+            var principalLabel = (bundlePrincipalLabelEl.value || '').trim();
+            var submenuPath = (bundleSubmenuPathEl.value || '').trim();
+            var submenuLabel = (bundleSubmenuLabelEl.value || '').trim();
+            var suboptionPath = (bundleSuboptionPathEl.value || '').trim();
+            var suboptionLabel = (bundleSuboptionLabelEl.value || '').trim();
+            var bundlePrincipal = (getSelectValue(bundleParentPrincipalEl) || '').trim();
+            var bundlePrincipalForSub = (getSelectValue(bundleParentPrincipalSuboptionEl) || '').trim();
+            var bundleSubmenu = (getSelectValue(bundleParentSubmenuEl) || '').trim();
+            var bundleBaseSort = (bundleBaseSortOrderEl && bundleBaseSortOrderEl.value ? bundleBaseSortOrderEl.value : '').trim();
+
+            if (kind === 'full') {
+                if (!principalPath) {
+                    errors.push('Path menú principal es obligatorio.');
+                    markInvalid(bundlePrincipalPathEl);
+                } else if (!isValidPath(principalPath)) {
+                    errors.push('Path menú principal tiene formato inválido.');
+                    markInvalid(bundlePrincipalPathEl);
+                }
+                if (!principalLabel) {
+                    errors.push('Label menú principal es obligatorio.');
+                    markInvalid(bundlePrincipalLabelEl);
+                }
+            }
+            if (kind === 'submenu' && !bundlePrincipal) {
+                errors.push('Selecciona el menú principal padre.');
+                markInvalid(bundleParentPrincipalEl);
+            }
+            if (kind === 'subopcion') {
+                if (!bundlePrincipalForSub) {
+                    errors.push('Selecciona el menú principal padre.');
+                    markInvalid(bundleParentPrincipalSuboptionEl);
+                }
+                if (!bundleSubmenu) {
+                    errors.push('Selecciona el submenú padre.');
+                    markInvalid(bundleParentSubmenuEl);
+                }
+            }
+            if (kind === 'full' || kind === 'submenu') {
+                if (!submenuPath) {
+                    errors.push('Path submenú es obligatorio.');
+                    markInvalid(bundleSubmenuPathEl);
+                } else if (!isValidPath(submenuPath)) {
+                    errors.push('Path submenú tiene formato inválido.');
+                    markInvalid(bundleSubmenuPathEl);
+                }
+                if (!submenuLabel) {
+                    errors.push('Label submenú es obligatorio.');
+                    markInvalid(bundleSubmenuLabelEl);
+                }
+            }
+            if (!suboptionPath) {
+                errors.push('Path subopción es obligatorio.');
+                markInvalid(bundleSuboptionPathEl);
+            } else if (!isValidPath(suboptionPath)) {
+                errors.push('Path subopción tiene formato inválido.');
+                markInvalid(bundleSuboptionPathEl);
+            }
+            if (!suboptionLabel) {
+                errors.push('Label subopción es obligatorio.');
+                markInvalid(bundleSuboptionLabelEl);
+            }
+            if (bundleBaseSort === '' || isNaN(Number(bundleBaseSort))) {
+                errors.push('Orden base debe ser numérico.');
+                markInvalid(bundleBaseSortOrderEl);
+            }
+        }
+        return errors;
+    }
+
+    var level1Items = [
+        {% for l1 in menu_tree %}
+        { key: {{ l1.id|json_encode|raw }}, label: {{ l1.label|json_encode|raw }}, icon: {{ l1.icon|default('')|json_encode|raw }} }{{ not loop.last ? ',' : '' }}
+        {% endfor %}
+    ];
+    var level2Items = [
+        {% for l1 in menu_tree %}
+            {% for l2 in l1.children|default([]) %}
+            { key: {{ l2.id|json_encode|raw }}, label: {{ l2.label|json_encode|raw }}, icon: {{ l2.icon|default('')|json_encode|raw }}, parentLabel: {{ l1.label|json_encode|raw }}, parentKey: {{ l1.id|json_encode|raw }}, parentIcon: {{ l1.icon|default('')|json_encode|raw }} }{{ (not loop.last or not loop.parent.loop.last) ? ',' : '' }}
+            {% endfor %}
+        {% endfor %}
+    ];
+    var menuTreeData = [
+        {% for l1 in menu_tree %}
+        {
+            id: {{ l1.id|json_encode|raw }},
+            label: {{ l1.label|json_encode|raw }},
+            icon: {{ l1.icon|default('')|json_encode|raw }},
+            children: [
+                {% for l2 in l1.children|default([]) %}
+                {
+                    id: {{ l2.id|json_encode|raw }},
+                    label: {{ l2.label|json_encode|raw }},
+                    icon: {{ l2.icon|default('')|json_encode|raw }},
+                    children: [
+                        {% for l3 in l2.children|default([]) %}
+                        {
+                            id: {{ l3.id|json_encode|raw }},
+                            label: {{ l3.label|json_encode|raw }},
+                            icon: {{ l3.icon|default('')|json_encode|raw }}
+                        }{{ not loop.last ? ',' : '' }}
+                        {% endfor %}
+                    ]
+                }{{ not loop.last ? ',' : '' }}
+                {% endfor %}
+            ]
+        }{{ not loop.last ? ',' : '' }}
+        {% endfor %}
+    ];
+    function findLevel1ByKey(key) {
+        for (var i = 0; i < level1Items.length; i++) {
+            if (level1Items[i].key === key) return level1Items[i];
+        }
+        return null;
+    }
+    function findLevel2ByKey(key) {
+        for (var i = 0; i < level2Items.length; i++) {
+            if (level2Items[i].key === key) return level2Items[i];
+        }
+        return null;
+    }
+    function findTreeL1ById(id) {
+        for (var i = 0; i < menuTreeData.length; i++) {
+            if (String(menuTreeData[i].id) === String(id)) return menuTreeData[i];
+        }
+        return null;
+    }
+    function findTreeL2ContextById(id) {
+        for (var i = 0; i < menuTreeData.length; i++) {
+            var l1 = menuTreeData[i];
+            var children = l1.children || [];
+            for (var j = 0; j < children.length; j++) {
+                if (String(children[j].id) === String(id)) return { l1: l1, l2: children[j] };
+            }
+        }
+        return null;
+    }
+
+    function esc(s) {
+        return String(s || '')
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;');
+    }
+
+    function hasSelect2() {
+        return typeof window.jQuery !== 'undefined' && window.jQuery.fn && typeof window.jQuery.fn.select2 === 'function';
+    }
+
+    function initSelect2(selector, options) {
+        if (!hasSelect2()) return;
+        var $el = window.jQuery(selector);
+        if (!$el.length) return;
+        if ($el.hasClass('select2-hidden-accessible')) {
+            $el.select2('destroy');
+        }
+        $el.select2(Object.assign({
+            theme: 'bootstrap-5',
+            width: '100%',
+            dropdownAutoWidth: true
+        }, options || {}));
+    }
+
+    function normalizeText(s) {
+        return String(s || '')
+            .toLowerCase()
+            .normalize('NFD')
+            .replace(/[\u0300-\u036f]/g, '')
+            .trim();
+    }
+
+    function buildIconTags(iconValue, iconSet) {
+        if (window.GrovaIconLib && typeof window.GrovaIconLib.buildIconTags === 'function') {
+            return window.GrovaIconLib.buildIconTags(iconValue, iconSet);
+        }
+        var base = String(iconValue || '').replace(/^bi-/, '');
+        return [base, base.replace(/-/g, ' ')];
+    }
+
+    function iconMatcher(params, data) {
+        if (!params.term || !params.term.trim()) {
+            return data;
+        }
+        var term = normalizeText(params.term);
+        var text = normalizeText(data.text || '');
+        var tags = normalizeText((data.element && data.element.getAttribute('data-tags')) || '');
+
+        if (text.indexOf(term) > -1 || tags.indexOf(term) > -1) {
+            return data;
+        }
+        return null;
+    }
+
+    function initStaticSelect2() {
+        initSelect2('#demo-create-mode', { minimumResultsForSearch: Infinity });
+        initSelect2('#demo-item-type', { minimumResultsForSearch: Infinity });
+        initSelect2('#demo-parent-key', { placeholder: 'Selecciona...', allowClear: false });
+        initSelect2('#demo-parent-principal', { placeholder: 'Selecciona menú principal...', allowClear: false });
+        initSelect2('#single-status', { minimumResultsForSearch: Infinity });
+        initSelect2('#bundle-kind', { minimumResultsForSearch: Infinity });
+        initSelect2('#bundle-status', { minimumResultsForSearch: Infinity });
+        initSelect2('#bundle-parent-principal', { placeholder: 'Selecciona menú principal...', allowClear: false });
+        initSelect2('#bundle-parent-principal-suboption', { placeholder: 'Selecciona menú principal...', allowClear: false });
+        initSelect2('#bundle-parent-submenu', { placeholder: 'Selecciona submenú...', allowClear: false });
+    }
+
+    function syncBundleSubmenuOptions() {
+        var selectedPrincipal = getSelectValue(bundleParentPrincipalSuboptionEl) || '';
+        var options = ['<option value="">Selecciona submenú...</option>'].concat(
+            level2Items.filter(function (it) {
+                return selectedPrincipal ? it.parentKey === selectedPrincipal : false;
+            }).map(function (it) {
+                return '<option value="' + esc(it.key) + '">' + esc(it.label) + ' (dentro de ' + esc(it.parentLabel) + ')</option>';
+            })
+        );
+        bundleParentSubmenuEl.innerHTML = options.join('');
+        bundleParentSubmenuEl.disabled = !selectedPrincipal;
+        initSelect2('#bundle-parent-submenu', { minimumResultsForSearch: 8 });
+        renderBundlePreview();
+    }
+
+    function syncBundleKind() {
+        var kind = getSelectValue(bundleKindEl) || 'full';
+        var isFull = kind === 'full';
+        var isSubmenu = kind === 'submenu';
+        var isSuboption = kind === 'subopcion';
+
+        bundlePrincipalRowEl.style.display = isFull ? '' : 'none';
+        bundleSubmenuRowEl.style.display = (isFull || isSubmenu) ? '' : 'none';
+        bundleSuboptionRowEl.style.display = '';
+
+        bundleParentPrincipalWrapEl.style.display = isSubmenu ? '' : 'none';
+        bundleParentPrincipalSuboptionWrapEl.style.display = isSuboption ? '' : 'none';
+        bundleParentSubmenuWrapEl.style.display = isSuboption ? '' : 'none';
+
+        bundleParentPrincipalEl.disabled = !isSubmenu;
+        bundleParentPrincipalSuboptionEl.disabled = !isSuboption;
+        bundleParentSubmenuEl.disabled = !isSuboption;
+
+        if (isSuboption) {
+            syncBundleSubmenuOptions();
+        }
+        renderBundlePreview();
+    }
+
+    function renderBundlePreview() {
+        var kind = getSelectValue(bundleKindEl) || 'full';
+        var principalLabelInput = (bundlePrincipalLabelEl.value || '').trim() || 'Menú principal nuevo';
+        var submenuLabelInput = (bundleSubmenuLabelEl.value || '').trim() || 'Submenú nuevo';
+        var suboptionLabelInput = (bundleSuboptionLabelEl.value || '').trim() || 'Subopción nueva';
+
+        var principalPathInput = (bundlePrincipalPathEl.value || '').trim() || '-';
+        var submenuPathInput = (bundleSubmenuPathEl.value || '').trim() || '-';
+        var suboptionPathInput = (bundleSuboptionPathEl.value || '').trim() || '-';
+
+        var selectedPrincipalText = (bundleParentPrincipalEl.options[bundleParentPrincipalEl.selectedIndex] && bundleParentPrincipalEl.options[bundleParentPrincipalEl.selectedIndex].text) || 'Menú principal';
+        var selectedPrincipalSuboptionText = (bundleParentPrincipalSuboptionEl.options[bundleParentPrincipalSuboptionEl.selectedIndex] && bundleParentPrincipalSuboptionEl.options[bundleParentPrincipalSuboptionEl.selectedIndex].text) || 'Menú principal';
+        var selectedSubmenuText = (bundleParentSubmenuEl.options[bundleParentSubmenuEl.selectedIndex] && bundleParentSubmenuEl.options[bundleParentSubmenuEl.selectedIndex].text) || 'Submenú';
+
+        var body = '';
+        if (kind === 'full') {
+            bundleMetaEl.textContent = 'Se crearán 3 niveles nuevos: principal, submenú y subopción.';
+            bundleChipEl.textContent = 'Estructura: Principal + Submenú + Subopción';
+            bundleChipEl.className = 'badge bg-primary mb-2';
+            body =
+                renderMenuItem(principalLabelInput, 'new hier-principal', 'bi-folder', true) +
+                '<div class="mini-tree-level">' +
+                    renderMenuItem(submenuLabelInput, 'new hier-submenu', 'bi-list', true) +
+                    '<div class="mini-tree-level l3">' +
+                        renderMenuItem(suboptionLabelInput, 'new hier-subopcion', 'bi-dot', true) +
+                    '</div>' +
+                '</div>';
+        } else if (kind === 'submenu') {
+            bundleMetaEl.textContent = 'Se agregará submenú + subopción dentro de: ' + selectedPrincipalText + '.';
+            bundleChipEl.textContent = 'Estructura: Submenú + Subopción';
+            bundleChipEl.className = 'badge bg-info mb-2';
+            body =
+                renderMenuItem(selectedPrincipalText, 'hier-principal', 'bi-folder', false) +
+                '<div class="mini-tree-level">' +
+                    renderMenuItem(submenuLabelInput, 'new hier-submenu', 'bi-list', true) +
+                    '<div class="mini-tree-level l3">' +
+                        renderMenuItem(suboptionLabelInput, 'new hier-subopcion', 'bi-dot', true) +
+                    '</div>' +
+                '</div>';
+        } else {
+            bundleMetaEl.textContent = 'Se agregará subopción dentro de: ' + selectedPrincipalSuboptionText + ' / ' + selectedSubmenuText + '.';
+            bundleChipEl.textContent = 'Estructura: Solo Subopción';
+            bundleChipEl.className = 'badge bg-success mb-2';
+            body =
+                renderMenuItem(selectedPrincipalSuboptionText, 'hier-principal', 'bi-folder', false) +
+                '<div class="mini-tree-level">' +
+                    renderMenuItem(selectedSubmenuText, 'hier-submenu', 'bi-list', false) +
+                    '<div class="mini-tree-level l3">' +
+                        renderMenuItem(suboptionLabelInput, 'new hier-subopcion', 'bi-dot', true) +
+                    '</div>' +
+                '</div>';
+        }
+
+        if (!body) {
+            body = '<div class="mini-item">Completa los datos para ver la estructura.</div>';
+        }
+
+        bundlePreviewEl.innerHTML =
+            '<div class="menu-level-legend">' +
+                '<span class="menu-level-pill principal"><span class="menu-level-dot"></span>Menú principal</span>' +
+                '<span class="menu-level-pill submenu"><span class="menu-level-dot"></span>Submenú</span>' +
+                '<span class="menu-level-pill subopcion"><span class="menu-level-dot"></span>Subopción</span>' +
+            '</div>' +
+            '<div class="sidebar-mini-preview">' +
+                '<div class="sidebar-mini-head"><span class="sidebar-mini-logo">G</span><span>Sidebar</span></div>' +
+                '<div class="sidebar-mini-body">' + body + '</div>' +
+            '</div>' +
+            '<div class="small text-muted mt-2">Path(s): <code>' + esc(principalPathInput) + '</code> / <code>' + esc(submenuPathInput) + '</code> / <code>' + esc(suboptionPathInput) + '</code></div>';
+    }
+
+    function getSelectValue(el) {
+        if (hasSelect2()) {
+            var jq = window.jQuery(el);
+            if (jq && jq.length) return jq.val();
+        }
+        return el.value;
+    }
+
+    function syncCreateMode() {
+        var bundle = modeEl.value === 'bundle';
+        singleFieldsEl.style.display = bundle ? 'none' : '';
+        bundleFieldsEl.style.display = bundle ? '' : 'none';
+        if (bundle) renderBundlePreview();
+    }
+
+    function iconHtml(iconValue) {
+        var norm = normalizeIconClass(iconValue);
+        if (!norm || !norm.className) return '';
+        return '<i class="' + esc(norm.className) + '"></i>';
+    }
+
+    function setIconPreview(iconClass) {
+        var html = iconHtml(iconClass);
+        iconPreviewEl.innerHTML = html || '<i class="bi bi-question-circle"></i>';
+    }
+
+    function normalizeIconClass(iconValue) {
+        var raw = String(iconValue || '').trim();
+        if (!raw) return null;
+        var safe = raw.replace(/[^a-zA-Z0-9\-\s]/g, '').trim();
+        var parts = safe.split(/\s+/);
+        var biToken = parts.filter(function (part) { return part.indexOf('bi-') === 0; })[0];
+        var faStyleTokens = ['fa-solid', 'fa-regular', 'fa-brands', 'fa-light', 'fa-duotone', 'fa-thin'];
+        var faStyleShortToLong = {
+            'fas': 'fa-solid',
+            'far': 'fa-regular',
+            'fab': 'fa-brands',
+            'fal': 'fa-light',
+            'fad': 'fa-duotone',
+            'fat': 'fa-thin'
+        };
+        var faStyle = parts.filter(function (part) { return faStyleTokens.indexOf(part) > -1; })[0];
+        var faStyleShort = parts.filter(function (part) { return Object.prototype.hasOwnProperty.call(faStyleShortToLong, part); })[0];
+        var faNameToken = parts.filter(function (part) {
+            return part.indexOf('fa-') === 0 && faStyleTokens.indexOf(part) === -1;
+        })[0];
+
+        if (biToken) {
+            return { set: 'bi', value: biToken, className: 'bi ' + biToken };
+        }
+        if (safe.indexOf('bi-') === 0) {
+            return { set: 'bi', value: safe, className: 'bi ' + safe };
+        }
+
+        if (faNameToken || safe.indexOf('fa-') === 0 || safe.indexOf('fa ') === 0 || safe.indexOf('fas ') === 0 || safe.indexOf('far ') === 0 || safe.indexOf('fab ') === 0) {
+            var token = faNameToken || (safe.indexOf('fa-') === 0 ? safe : '');
+            if (!token) {
+                token = parts.filter(function (part) { return part.indexOf('fa-') === 0; })[0] || 'fa-circle-question';
+            }
+            var style = faStyle || (faStyleShort ? faStyleShortToLong[faStyleShort] : 'fa-solid');
+            return { set: 'fa', value: token, className: style + ' ' + token };
+        }
+        if (safe.indexOf('bi') === 0) {
+            var biVal = ('bi-' + safe.replace(/^bi-?/, '')).replace(/[^a-zA-Z0-9-]/g, '');
+            return { set: 'bi', value: biVal, className: 'bi ' + biVal };
+        }
+        return { set: 'bi', value: ('bi-' + safe), className: 'bi ' + ('bi-' + safe) };
+    }
+
+    function renderMenuItem(label, classes, iconValue, isNewItem) {
+        var safeLabel = esc(label || 'Sin nombre');
+        var iconMeta = normalizeIconClass(iconValue);
+        var iconNode = iconMeta
+            ? '<span class="mini-item-icon">' + iconHtml(iconMeta.className) + '</span>'
+            : '<span class="mini-item-no-icon">Sin ícono</span>';
+        var newChip = isNewItem ? '<span class="item-new-chip">Nuevo</span>' : '';
+        var prefix = isNewItem ? '+ ' : '';
+        return '<div class="mini-item ' + esc(classes || '') + '"><span class="mini-item-content">' + iconNode + '<span>' + prefix + safeLabel + '</span>' + newChip + '</span></div>';
+    }
+
+    function renderSnapshotRow(label, iconValue, levelClass, hierarchyClass, current, isNewItem) {
+        var iconMeta = normalizeIconClass(iconValue);
+        var iconNode = iconMeta
+            ? '<span class="mini-item-icon">' + iconHtml(iconMeta.className) + '</span>'
+            : '<span class="mini-item-no-icon">Sin ícono</span>';
+        var newChip = isNewItem ? '<span class="item-new-chip">Nuevo</span>' : '';
+        return '<div class="snapshot-row ' + esc(levelClass || '') + ' ' + esc(hierarchyClass || '') + ' ' + (current ? 'current' : 'sibling') + '">' + iconNode + '<span>' + esc(label || 'Sin nombre') + '</span>' + newChip + '</div>';
+    }
+
+    function buildEyeSnapshot(type, menuLabel, newIcon, principalId, submenuId) {
+        var html = '<div class="sidebar-snapshot">' +
+            '<div class="snapshot-head"><span class="sidebar-mini-logo">G</span><span>Cómo quedará en el sidebar</span></div>' +
+            '<div class="snapshot-body">';
+
+        if (type === 'principal') {
+            html += renderSnapshotRow('+ ' + menuLabel, newIcon, '', 'hier-principal', true, true);
+        } else if (type === 'submenu') {
+            var l1 = findTreeL1ById(principalId);
+            if (!l1) {
+                html += '<div class="small text-muted">Selecciona un menú principal para ver la rama.</div>';
+            } else {
+                html += renderSnapshotRow(l1.label, l1.icon, '', 'hier-principal', false, false);
+                var l2Children = l1.children || [];
+                for (var i = 0; i < l2Children.length; i++) {
+                    html += renderSnapshotRow(l2Children[i].label, l2Children[i].icon, 'l2', 'hier-submenu', false, false);
+                }
+                html += renderSnapshotRow('+ ' + menuLabel, newIcon, 'l2', 'hier-submenu', true, true);
+            }
+        } else {
+            var ctx = findTreeL2ContextById(submenuId);
+            if (!ctx) {
+                html += '<div class="small text-muted">Selecciona menú principal y submenú para ver hermanos e íconos.</div>';
+            } else {
+                html += renderSnapshotRow(ctx.l1.label, ctx.l1.icon, '', 'hier-principal', false, false);
+                var submenus = ctx.l1.children || [];
+                for (var j = 0; j < submenus.length; j++) {
+                    var isSelectedSubmenu = String(submenus[j].id) === String(ctx.l2.id);
+                    html += renderSnapshotRow(submenus[j].label, submenus[j].icon, 'l2', 'hier-submenu', isSelectedSubmenu, false);
+                    if (isSelectedSubmenu) {
+                        var suboptions = submenus[j].children || [];
+                        for (var k = 0; k < suboptions.length; k++) {
+                            html += renderSnapshotRow(suboptions[k].label, suboptions[k].icon, 'l3', 'hier-subopcion', false, false);
+                        }
+                        html += renderSnapshotRow('+ ' + menuLabel, newIcon, 'l3', 'hier-subopcion', true, true);
+                    }
+                }
+            }
+        }
+
+        html += '</div></div>';
+        return html;
+    }
+
+    function iconOptionTemplate(opt) {
+        if (!opt.id) return opt.text;
+        var set = (opt.element && opt.element.getAttribute('data-set')) || '';
+        var badge = set === 'fa'
+            ? '<span class="icon-opt-badge fa">FA</span>'
+            : '<span class="icon-opt-badge bi">BI</span>';
+        var iconMarkup = iconHtml(opt.id);
+        var classText = (opt.element && opt.element.getAttribute('data-class')) || opt.id;
+        return window.jQuery(
+            '<span class="icon-opt-row">' +
+                '<span class="icon-opt-left">' + (iconMarkup || '') + '<span class="icon-opt-class">' + esc(classText) + '</span></span>' +
+                badge +
+            '</span>'
+        );
+    }
+
+    function initIconPicker(iconList) {
+        var html = iconList.map(function (iconItem) {
+            var iconValue = iconItem.value;
+            var iconSet = iconItem.set || 'bi';
+            var tags = buildIconTags(iconValue, iconSet).join(' ');
+            var classText = iconItem.className || iconValue;
+            return '<option value="' + esc(iconValue) + '" data-set="' + esc(iconSet) + '" data-class="' + esc(classText) + '" data-tags="' + esc(tags) + '">' + esc(classText) + '</option>';
+        }).join('');
+        iconEl.innerHTML = html;
+        iconEl.value = 'bi-list';
+        setIconPreview(iconEl.value);
+
+        if (hasSelect2()) {
+            initSelect2('#demo-menu-icon', {
+                placeholder: 'Selecciona un ícono...',
+                templateResult: iconOptionTemplate,
+                templateSelection: iconOptionTemplate,
+                matcher: iconMatcher
+            });
+            window.jQuery('#demo-menu-icon').on('change', function () {
+                setIconPreview(iconEl.value || 'bi-list');
+                renderPreview();
+            });
+        } else {
+            iconEl.addEventListener('change', function () {
+                setIconPreview(iconEl.value || 'bi-list');
+                renderPreview();
+            });
+        }
+    }
+
+    function loadAllIcons() {
+        if (window.GrovaIconLib && typeof window.GrovaIconLib.loadAllIcons === 'function') {
+            window.GrovaIconLib.loadAllIcons().then(function (icons) {
+                initIconPicker(icons || []);
+            });
+            return;
+        }
+        initIconPicker([
+            { set: 'bi', value: 'bi-list', className: 'bi-list' },
+            { set: 'bi', value: 'bi-grid', className: 'bi-grid' },
+            { set: 'bi', value: 'bi-gear', className: 'bi-gear' }
+        ]);
+    }
+
+    function setParentOptionsByType(itemType) {
+        var previousParentValue = parentEl.value || '';
+        var previousPrincipalValue = parentPrincipalEl.value || '';
+        var options = [];
+        if (itemType === 'principal') {
+            options.push('<option value="">(No aplica: irá arriba)</option>');
+            parentHelpEl.textContent = 'Este elemento saldrá en el nivel principal del menú.';
+            parentEl.disabled = true;
+            parentPrincipalEl.style.display = 'none';
+            parentPrincipalEl.disabled = true;
+            parentEl.style.display = '';
+            parentPrincipalLabelEl.style.display = 'none';
+            parentSubmenuLabelEl.style.display = 'none';
+        } else if (itemType === 'submenu') {
+            options = ['<option value="">Selecciona menú principal...</option>'].concat(level1Items.map(function (it) {
+                return '<option value="' + esc(it.key) + '">' + esc(it.label) + ' (Menú principal)</option>';
+            }));
+            parentHelpEl.textContent = 'Selecciona el menú principal donde se agregará este submenú.';
+            parentEl.disabled = false;
+            parentEl.style.display = '';
+            parentPrincipalEl.style.display = 'none';
+            parentPrincipalEl.disabled = true;
+            parentPrincipalLabelEl.style.display = 'none';
+            parentSubmenuLabelEl.style.display = 'none';
+        } else {
+            var principalOptions = ['<option value="">Selecciona menú principal...</option>'].concat(level1Items.map(function (it) {
+                return '<option value="' + esc(it.key) + '">' + esc(it.label) + '</option>';
+            }));
+            parentPrincipalEl.innerHTML = principalOptions.join('');
+            parentPrincipalEl.value = previousPrincipalValue || '';
+
+            var selectedPrincipal = parentPrincipalEl.value || '';
+            if (!selectedPrincipal) {
+                options = ['<option value="">Primero selecciona menú principal...</option>'];
+                parentEl.disabled = true;
+            } else {
+                options = ['<option value="">Selecciona submenú...</option>'].concat(
+                    level2Items.filter(function (it) {
+                        return it.parentKey === selectedPrincipal;
+                    }).map(function (it) {
+                        return '<option value="' + esc(it.key) + '">' + esc(it.label) + ' (dentro de ' + esc(it.parentLabel) + ')</option>';
+                    })
+                );
+                parentEl.disabled = false;
+            }
+            parentHelpEl.textContent = 'Selecciona primero el menú principal y luego el submenú donde irá la subopción.';
+            parentEl.style.display = '';
+            parentPrincipalEl.style.display = '';
+            parentPrincipalEl.disabled = false;
+            parentPrincipalLabelEl.style.display = '';
+            parentSubmenuLabelEl.style.display = '';
+        }
+
+        parentEl.innerHTML = options.join('');
+        if (previousParentValue) {
+            parentEl.value = previousParentValue;
+        }
+        if (itemType === 'subopcion' && parentEl.value) {
+            var selectedL2 = findLevel2ByKey(parentEl.value);
+            if (selectedL2) parentPrincipalEl.value = selectedL2.parentKey;
+        }
+        initSelect2('#demo-parent-key', { minimumResultsForSearch: 8 });
+        initSelect2('#demo-parent-principal', { minimumResultsForSearch: 8 });
+    }
+
+    function renderPreview() {
+        var menuKey = (keyEl.value || 'new-menu-item').trim() || 'new-menu-item';
+        var menuLabel = (labelEl.value || 'Nuevo item').trim() || 'Nuevo item';
+        var type = getSelectValue(typeEl) || 'submenu';
+        var parentKey = parentEl.value || '';
+        var principalKey = getSelectValue(parentPrincipalEl) || '';
+        var parentText = parentEl.disabled
+            ? '(sin padre)'
+            : ((parentEl.options[parentEl.selectedIndex] && parentEl.options[parentEl.selectedIndex].text) || '');
+        var itemLevel = type === 'principal' ? 1 : (type === 'submenu' ? 2 : 3);
+        var levelName = { 1: 'Menú principal', 2: 'Submenú', 3: 'Subopción' };
+        var itemLevelText = levelName[itemLevel] || ('L' + itemLevel);
+        if (type === 'submenu' && !parentKey) {
+            metaEl.textContent = 'Se mostrará como: Submenú | Falta seleccionar menú principal.';
+        } else if (type === 'subopcion' && !principalKey) {
+            metaEl.textContent = 'Se mostrará como: Subopción | Falta seleccionar menú principal.';
+        } else if (type === 'subopcion' && principalKey && !parentKey) {
+            metaEl.textContent = 'Se mostrará como: Subopción | Falta seleccionar submenú.';
+        } else {
+            metaEl.textContent = 'Se mostrará como: ' + itemLevelText + (parentKey ? ('  |  Dentro de: ' + parentText.replace(/\s*\(.+\)\s*$/, '')) : '');
+        }
+
+        chipEl.textContent = 'Nuevo item: ' + itemLevelText;
+        chipEl.className = 'badge mb-2 ' + (itemLevel === 1 ? 'bg-success' : (itemLevel === 2 ? 'bg-primary' : 'bg-info'));
+
+        var parentLabel = parentKey || 'Inicio';
+        var body = '';
+        var newIcon = iconEl.value || '';
+        if (itemLevel === 1) {
+            body = renderMenuItem(menuLabel, 'new hier-principal', newIcon, true);
+        } else if (itemLevel === 2) {
+            var selectedL1 = findLevel1ByKey(parentKey);
+            var principalLabelForL2 = selectedL1 ? selectedL1.label : (parentText.replace(/\s*\(.+\)\s*$/, '') || parentLabel);
+            var principalIconForL2 = selectedL1 ? selectedL1.icon : '';
+            body =
+                renderMenuItem(principalLabelForL2, 'hier-principal', principalIconForL2, false) +
+                '<div class="mini-tree-level">' +
+                    renderMenuItem(menuLabel, 'new hier-submenu', newIcon, true) +
+                '</div>';
+        } else {
+            var selectedL2 = findLevel2ByKey(parentKey);
+            var selectedL1ByPrincipal = findLevel1ByKey(getSelectValue(parentPrincipalEl) || '');
+            var selectedPrincipalText = (parentPrincipalEl.options[parentPrincipalEl.selectedIndex] && parentPrincipalEl.options[parentPrincipalEl.selectedIndex].text) || 'Menú principal';
+            var principalLabel = selectedL2 ? selectedL2.parentLabel : selectedPrincipalText;
+            var principalIcon = selectedL2 ? selectedL2.parentIcon : (selectedL1ByPrincipal ? selectedL1ByPrincipal.icon : '');
+            var submenuLabel = selectedL2 ? selectedL2.label : (parentText.replace(/\s*\(.+\)\s*$/, '') || 'Submenú');
+            var submenuIcon = selectedL2 ? selectedL2.icon : '';
+            body =
+                renderMenuItem(principalLabel, 'hier-principal', principalIcon, false) +
+                '<div class="mini-tree-level">' +
+                    renderMenuItem(submenuLabel, 'hier-submenu', submenuIcon, false) +
+                    '<div class="mini-tree-level l3">' +
+                        renderMenuItem(menuLabel, 'new hier-subopcion', newIcon, true) +
+                    '</div>' +
+                '</div>';
+        }
+
+        var sidebarNote = '';
+        var sidebarFlag = document.getElementById('single-show-in-sidebar');
+        if (sidebarFlag && !sidebarFlag.checked) {
+            sidebarNote = '<div class="small text-muted mt-2">Este item NO aparecerá en sidebar (Mostrar en sidebar desactivado).</div>';
+        }
+
+        previewEl.innerHTML =
+            '<div class="menu-level-legend">' +
+                '<span class="menu-level-pill principal"><span class="menu-level-dot"></span>Menú principal</span>' +
+                '<span class="menu-level-pill submenu"><span class="menu-level-dot"></span>Submenú</span>' +
+                '<span class="menu-level-pill subopcion"><span class="menu-level-dot"></span>Subopción</span>' +
+            '</div>' +
+            '<div class="sidebar-mini-preview">' +
+            '<div class="sidebar-mini-head"><span class="sidebar-mini-logo">G</span><span>Sidebar</span></div>' +
+            '<div class="sidebar-mini-body">' + body + sidebarNote + '</div>' +
+            '</div>' +
+            '<div class="small text-muted mt-2">Path: <code>' + esc(menuKey) + '</code></div>';
+
+        if (previewPop) {
+            var principalForEye = type === 'submenu' ? parentKey : (getSelectValue(parentPrincipalEl) || '');
+            previewPop.innerHTML =
+                '<div class="small text-muted mb-2">Previsualización de rama completa</div>' +
+                buildEyeSnapshot(type, menuLabel, newIcon, principalForEye, parentKey);
+        }
+    }
+
+    keyEl.addEventListener('input', renderPreview);
+    labelEl.addEventListener('input', renderPreview);
+    function onModeChanged() {
+        syncCreateMode();
+        syncBundleKind();
+    }
+
+    function onTypeChanged() {
+        var typeValue = getSelectValue(typeEl) || 'principal';
+        setParentOptionsByType(typeValue);
+        renderPreview();
+    }
+
+    function onPrincipalParentChanged() {
+        if ((getSelectValue(typeEl) || '') !== 'subopcion') return;
+        var currentParent = '';
+        var selectedPrincipal = getSelectValue(parentPrincipalEl) || '';
+        var options = selectedPrincipal
+            ? ['<option value="">Selecciona submenú...</option>'].concat(
+                level2Items.filter(function (it) {
+                    return it.parentKey === selectedPrincipal;
+                }).map(function (it) {
+                    return '<option value="' + esc(it.key) + '">' + esc(it.label) + ' (dentro de ' + esc(it.parentLabel) + ')</option>';
+                })
+            )
+            : ['<option value="">Primero selecciona menú principal...</option>'];
+        parentEl.innerHTML = options.join('');
+        parentEl.value = currentParent;
+        parentEl.disabled = !selectedPrincipal;
+        initSelect2('#demo-parent-key', { minimumResultsForSearch: 8 });
+        renderPreview();
+    }
+
+    modeEl.addEventListener('change', onModeChanged);
+    typeEl.addEventListener('change', onTypeChanged);
+    parentEl.addEventListener('change', renderPreview);
+    parentPrincipalEl.addEventListener('change', onPrincipalParentChanged);
+    bundleKindEl.addEventListener('change', syncBundleKind);
+    bundleParentPrincipalSuboptionEl.addEventListener('change', syncBundleSubmenuOptions);
+    bundleParentPrincipalEl.addEventListener('change', renderBundlePreview);
+    bundleParentSubmenuEl.addEventListener('change', renderBundlePreview);
+    bundlePrincipalPathEl.addEventListener('input', renderBundlePreview);
+    bundlePrincipalLabelEl.addEventListener('input', renderBundlePreview);
+    bundleSubmenuPathEl.addEventListener('input', renderBundlePreview);
+    bundleSubmenuLabelEl.addEventListener('input', renderBundlePreview);
+    bundleSuboptionPathEl.addEventListener('input', renderBundlePreview);
+    bundleSuboptionLabelEl.addEventListener('input', renderBundlePreview);
+    if (hasSelect2()) {
+        window.jQuery('#demo-create-mode').on('change', onModeChanged);
+        window.jQuery('#demo-item-type').on('change', onTypeChanged);
+        window.jQuery('#demo-parent-key').on('change', renderPreview);
+        window.jQuery('#demo-parent-principal').on('change', onPrincipalParentChanged);
+        window.jQuery('#bundle-kind').on('change', syncBundleKind);
+        window.jQuery('#bundle-parent-principal-suboption').on('change', syncBundleSubmenuOptions);
+        window.jQuery('#bundle-parent-principal').on('change', renderBundlePreview);
+        window.jQuery('#bundle-parent-submenu').on('change', renderBundlePreview);
+    }
+    openCreateBtn.addEventListener('click', function () {
+        clearAndPrepareForm();
+        setGovernanceView('editor');
+    });
+    backToListBtn.addEventListener('click', function () {
+        setGovernanceView('list');
+    });
+    cancelBtn.addEventListener('click', function () {
+        showConfirm(
+            'Cancelar edición',
+            'Se limpiarán los campos del formulario y volverás al listado.',
+            'Sí, cancelar',
+            'Seguir editando'
+        ).then(function (ok) {
+            if (!ok) return;
+            clearAndPrepareForm();
+            setGovernanceView('list');
+            showAlert('success', 'Edición cancelada', 'El formulario se limpió correctamente.');
+        });
+    });
+    formEl.addEventListener('submit', function (e) {
+        e.preventDefault();
+        var errors = validateBeforeSubmit();
+        if (errors.length) {
+            showValidationErrors(errors);
+            return;
+        }
+        showConfirm(
+            'Guardar cambios',
+            'Se enviará el formulario con la configuración actual del menú.',
+            'Sí, guardar',
+            'Revisar'
+        ).then(function (ok) {
+            if (!ok) return;
+            if (hasSwal()) {
+                window.Swal.fire({
+                    icon: 'success',
+                    title: 'Guardando...',
+                    text: 'Validación OK. Enviando formulario.',
+                    timer: 900,
+                    showConfirmButton: false
+                }).then(function () {
+                    formEl.submit();
+                });
+            } else {
+                formEl.submit();
+            }
+        });
+    });
+    document.addEventListener('click', function (e) {
+        var btn = e.target.closest('.js-edit-row');
+        if (!btn) return;
+        var level = btn.getAttribute('data-level') || 'principal';
+        var key = btn.getAttribute('data-key') || '';
+        var label = btn.getAttribute('data-label') || '';
+        var icon = btn.getAttribute('data-icon') || 'bi-list';
+        var status = btn.getAttribute('data-status') || 'pendiente';
+        var parentKey = btn.getAttribute('data-parent-key') || '';
+        var principalKey = btn.getAttribute('data-principal-key') || '';
+
+        setGovernanceView('editor');
+        setSelectValueWithSelect2(modeEl, 'single');
+        syncCreateMode();
+
+        keyEl.value = key;
+        labelEl.value = label;
+        setSelectValueWithSelect2(iconEl, icon);
+        setIconPreview(iconEl.value || 'bi-list');
+        setSelectValueWithSelect2(singleStatusEl, status);
+
+        setSelectValueWithSelect2(typeEl, level);
+        if (level === 'principal') {
+            setParentOptionsByType('principal');
+        } else if (level === 'submenu') {
+            setParentOptionsByType('submenu');
+            setSelectValueWithSelect2(parentEl, parentKey);
+        } else {
+            setParentOptionsByType('subopcion');
+            if (principalKey) setSelectValueWithSelect2(parentPrincipalEl, principalKey);
+            onPrincipalParentChanged();
+            setSelectValueWithSelect2(parentEl, parentKey);
+        }
+        renderPreview();
+    });
+    if (infoBtn && infoWrap) {
+        infoBtn.addEventListener('click', function (e) {
+            e.stopPropagation();
+            infoWrap.classList.toggle('open');
+            if (previewWrap) previewWrap.classList.remove('open');
+        });
+    }
+    if (previewBtn && previewWrap) {
+        previewBtn.addEventListener('click', function (e) {
+            e.stopPropagation();
+            previewWrap.classList.toggle('open');
+            if (infoWrap) infoWrap.classList.remove('open');
+        });
+    }
+    if (infoWrap || previewWrap) {
+        document.addEventListener('click', function () {
+            infoWrap.classList.remove('open');
+            if (previewWrap) previewWrap.classList.remove('open');
+        });
+    }
+    initStaticSelect2();
+    loadAllIcons();
+    syncCreateMode();
+    syncBundleKind();
+    renderBundlePreview();
+    setParentOptionsByType(getSelectValue(typeEl) || 'principal');
+    renderPreview();
+    setGovernanceView('list');
+
+    var tableGovernanceEl = document.getElementById('users-table');
+    if (tableGovernanceEl && typeof DataTable !== 'undefined') {
+        var govLocale = {{ app.request.locale|json_encode|raw }};
+        var govLangUrl = govLocale === 'en'
+            ? 'https://cdn.datatables.net/plug-ins/2.1.8/i18n/en-GB.json'
+            : 'https://cdn.datatables.net/plug-ins/2.1.8/i18n/es-ES.json';
+        try {
+            var initDt = (window.GrovaDataTable && window.GrovaDataTable.init) ? window.GrovaDataTable.init : function (t, o) { return new DataTable(t, o); };
+            initDt(tableGovernanceEl, {
+                language: { url: govLangUrl },
+                buttons: ['excel', 'colvis'],
+                pageLength: 10,
+                order: [[1, 'asc'], [4, 'asc']],
+                columnDefs: [
+                    { orderable: false, searchable: false, targets: [0] },
+                    { orderable: false, targets: [3] }
+                ],
+                layout: {
+                    topStart: { pageLength: { menu: [10, 25, 50, 100, -1] } },
+                    topEnd: { search: { placeholder: govLocale === 'en' ? 'Search…' : 'Buscar…' } }
+                }
+            });
+        } catch (e) {
+            console.error('DataTable menú:', e);
+        }
+    }
+})();
+</script>
+{% endblock %}

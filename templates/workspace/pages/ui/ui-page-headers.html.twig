@@ -1,0 +1,258 @@
+{% extends 'workspace/app_layout.html.twig' %}
+
+{% block page_title %}Page headers{% endblock %}
+{% block app_page_subtitle %}Encabezados de página: título, subtítulo, breadcrumb y acciones. Copia el bloque y pégalo en app_page_subtitle o como primer elemento de app_main.{% endblock %}
+
+{% block page_styles %}
+<style>
+.ui-component { border: 1px solid #1e293b; border-radius: 10px; overflow: hidden; margin-bottom: 1.5rem; }
+.ui-component-preview { padding: 1.5rem; background: #0f172a; }
+.ui-component-code { background: #020617; border-top: 1px solid #1e293b; }
+.ui-component-code-header { display: flex; align-items: center; justify-content: space-between; padding: .5rem 1rem; border-bottom: 1px solid #1e293b; }
+.ui-component-code-label { font-size: 11px; color: #64748b; text-transform: uppercase; letter-spacing: .5px; }
+.ui-component-code pre { margin: 0; padding: 1rem; font-size: 12px; color: #94a3b8; overflow-x: auto; white-space: pre; }
+.btn-copy-code { font-size: 11px; padding: 2px 10px; }
+body.light-mode .ui-component { border-color: #dbe3ee; }
+body.light-mode .ui-component-preview { background: #f8fafc; }
+body.light-mode .ui-component-code { background: #f1f5f9; border-color: #dbe3ee; }
+body.light-mode .ui-component-code-header { border-color: #dbe3ee; }
+body.light-mode .ui-component-code pre { color: #475569; }
+</style>
+{% endblock %}
+
+{% block app_main %}
+<div class="content-card">
+    <div class="content-card-header">Page headers</div>
+    <div class="content-card-body">
+
+        {# ── Header básico ── #}
+        <div class="ui-component">
+            <div class="ui-component-preview">
+                <div class="grova-page-header">
+                    <div class="grova-page-header-main">
+                        <h1 class="grova-page-title">Usuarios</h1>
+                        <p class="grova-page-subtitle">Gestión de usuarios y accesos del sistema.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="ui-component-code">
+                <div class="ui-component-code-header">
+                    <span class="ui-component-code-label">Twig — Header básico</span>
+                    <button type="button" class="btn btn-outline-secondary btn-sm btn-copy-code" data-copy-target="code-header-basic">Copiar</button>
+                </div>
+                <pre id="code-header-basic">{% verbatim %}<div class="grova-page-header">
+    <div class="grova-page-header-main">
+        <h1 class="grova-page-title">Usuarios</h1>
+        <p class="grova-page-subtitle">Gestión de usuarios y accesos del sistema.</p>
+    </div>
+</div>{% endverbatim %}</pre>
+            </div>
+        </div>
+
+        {# ── Header con breadcrumb ── #}
+        <div class="ui-component">
+            <div class="ui-component-preview">
+                <div class="grova-page-header">
+                    <nav class="grova-breadcrumb" aria-label="breadcrumb">
+                        <a href="#">Inicio</a>
+                        <span class="grova-breadcrumb-sep"><i class="bi bi-chevron-right"></i></span>
+                        <a href="#">Legal</a>
+                        <span class="grova-breadcrumb-sep"><i class="bi bi-chevron-right"></i></span>
+                        <span class="grova-breadcrumb-active">Casos</span>
+                    </nav>
+                    <div class="grova-page-header-main">
+                        <h1 class="grova-page-title">Casos legales</h1>
+                        <p class="grova-page-subtitle">Seguimiento de casos activos e historial del bufete.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="ui-component-code">
+                <div class="ui-component-code-header">
+                    <span class="ui-component-code-label">Twig — Header con breadcrumb</span>
+                    <button type="button" class="btn btn-outline-secondary btn-sm btn-copy-code" data-copy-target="code-header-breadcrumb">Copiar</button>
+                </div>
+                <pre id="code-header-breadcrumb">{% verbatim %}<div class="grova-page-header">
+    <nav class="grova-breadcrumb" aria-label="breadcrumb">
+        <a href="{{ path('grova_page_dashboard') }}">Inicio</a>
+        <span class="grova-breadcrumb-sep"><i class="bi bi-chevron-right"></i></span>
+        <a href="#">Legal</a>
+        <span class="grova-breadcrumb-sep"><i class="bi bi-chevron-right"></i></span>
+        <span class="grova-breadcrumb-active">Casos</span>
+    </nav>
+    <div class="grova-page-header-main">
+        <h1 class="grova-page-title">Casos legales</h1>
+        <p class="grova-page-subtitle">Seguimiento de casos activos e historial del bufete.</p>
+    </div>
+</div>{% endverbatim %}</pre>
+            </div>
+        </div>
+
+        {# ── Header con acciones ── #}
+        <div class="ui-component">
+            <div class="ui-component-preview">
+                <div class="grova-page-header">
+                    <div class="grova-page-header-main">
+                        <h1 class="grova-page-title">Clientes</h1>
+                        <p class="grova-page-subtitle">123 clientes activos</p>
+                    </div>
+                    <div class="grova-page-header-actions">
+                        <button type="button" class="btn btn-outline-secondary btn-sm">
+                            <i class="bi bi-download me-1"></i>Exportar
+                        </button>
+                        <button type="button" class="btn btn-primary btn-sm">
+                            <i class="bi bi-plus me-1"></i>Nuevo cliente
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <div class="ui-component-code">
+                <div class="ui-component-code-header">
+                    <span class="ui-component-code-label">Twig — Header con acciones</span>
+                    <button type="button" class="btn btn-outline-secondary btn-sm btn-copy-code" data-copy-target="code-header-actions">Copiar</button>
+                </div>
+                <pre id="code-header-actions">{% verbatim %}<div class="grova-page-header">
+    <div class="grova-page-header-main">
+        <h1 class="grova-page-title">Clientes</h1>
+        <p class="grova-page-subtitle">{{ total }} clientes activos</p>
+    </div>
+    <div class="grova-page-header-actions">
+        <button type="button" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-download me-1"></i>Exportar
+        </button>
+        <button type="button" class="btn btn-primary btn-sm"
+                data-bs-toggle="modal" data-bs-target="#modal-nuevo-cliente">
+            <i class="bi bi-plus me-1"></i>Nuevo cliente
+        </button>
+    </div>
+</div>{% endverbatim %}</pre>
+            </div>
+        </div>
+
+        {# ── Header con badge de estado ── #}
+        <div class="ui-component">
+            <div class="ui-component-preview">
+                <div class="grova-page-header">
+                    <div class="grova-page-header-main">
+                        <div class="d-flex align-items-center gap-2 flex-wrap">
+                            <h1 class="grova-page-title mb-0">Contrato #2024-0091</h1>
+                            <span class="badge bg-success">Activo</span>
+                        </div>
+                        <p class="grova-page-subtitle">Alcides Bufete · Caso civil · Vence 15/12/2025</p>
+                    </div>
+                    <div class="grova-page-header-actions">
+                        <button type="button" class="btn btn-outline-danger btn-sm">
+                            <i class="bi bi-x-circle me-1"></i>Cerrar caso
+                        </button>
+                        <button type="button" class="btn btn-primary btn-sm">
+                            <i class="bi bi-pencil me-1"></i>Editar
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <div class="ui-component-code">
+                <div class="ui-component-code-header">
+                    <span class="ui-component-code-label">Twig — Header con badge de estado</span>
+                    <button type="button" class="btn btn-outline-secondary btn-sm btn-copy-code" data-copy-target="code-header-badge">Copiar</button>
+                </div>
+                <pre id="code-header-badge">{% verbatim %}<div class="grova-page-header">
+    <div class="grova-page-header-main">
+        <div class="d-flex align-items-center gap-2 flex-wrap">
+            <h1 class="grova-page-title mb-0">Contrato #{{ contrato.numero }}</h1>
+            <span class="badge bg-{{ contrato.estado == 'activo' ? 'success' : 'secondary' }}">
+                {{ contrato.estado|capitalize }}
+            </span>
+        </div>
+        <p class="grova-page-subtitle">{{ contrato.cliente }} · Vence {{ contrato.vencimiento|date('d/m/Y') }}</p>
+    </div>
+    <div class="grova-page-header-actions">
+        <button type="button" class="btn btn-outline-danger btn-sm">
+            <i class="bi bi-x-circle me-1"></i>Cerrar caso
+        </button>
+        <button type="button" class="btn btn-primary btn-sm">
+            <i class="bi bi-pencil me-1"></i>Editar
+        </button>
+    </div>
+</div>{% endverbatim %}</pre>
+            </div>
+        </div>
+
+        {# ── Header con breadcrumb + acciones (completo) ── #}
+        <div class="ui-component">
+            <div class="ui-component-preview">
+                <div class="grova-page-header">
+                    <nav class="grova-breadcrumb" aria-label="breadcrumb">
+                        <a href="#">Inicio</a>
+                        <span class="grova-breadcrumb-sep"><i class="bi bi-chevron-right"></i></span>
+                        <a href="#">Facturación</a>
+                        <span class="grova-breadcrumb-sep"><i class="bi bi-chevron-right"></i></span>
+                        <span class="grova-breadcrumb-active">Facturas</span>
+                    </nav>
+                    <div class="grova-page-header-main">
+                        <h1 class="grova-page-title">Facturas</h1>
+                        <p class="grova-page-subtitle">Emisión y seguimiento de facturas electrónicas.</p>
+                    </div>
+                    <div class="grova-page-header-actions">
+                        <button type="button" class="btn btn-outline-secondary btn-sm">
+                            <i class="bi bi-funnel me-1"></i>Filtrar
+                        </button>
+                        <button type="button" class="btn btn-outline-secondary btn-sm">
+                            <i class="bi bi-download me-1"></i>Exportar
+                        </button>
+                        <button type="button" class="btn btn-primary btn-sm">
+                            <i class="bi bi-plus me-1"></i>Nueva factura
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <div class="ui-component-code">
+                <div class="ui-component-code-header">
+                    <span class="ui-component-code-label">Twig — Header completo (breadcrumb + acciones)</span>
+                    <button type="button" class="btn btn-outline-secondary btn-sm btn-copy-code" data-copy-target="code-header-full">Copiar</button>
+                </div>
+                <pre id="code-header-full">{% verbatim %}<div class="grova-page-header">
+    <nav class="grova-breadcrumb" aria-label="breadcrumb">
+        <a href="{{ path('grova_page_dashboard') }}">Inicio</a>
+        <span class="grova-breadcrumb-sep"><i class="bi bi-chevron-right"></i></span>
+        <a href="#">Facturación</a>
+        <span class="grova-breadcrumb-sep"><i class="bi bi-chevron-right"></i></span>
+        <span class="grova-breadcrumb-active">Facturas</span>
+    </nav>
+    <div class="grova-page-header-main">
+        <h1 class="grova-page-title">Facturas</h1>
+        <p class="grova-page-subtitle">Emisión y seguimiento de facturas electrónicas.</p>
+    </div>
+    <div class="grova-page-header-actions">
+        <button type="button" class="btn btn-outline-secondary btn-sm" id="filters-toggle-btn">
+            <i class="bi bi-funnel me-1"></i>Filtrar
+        </button>
+        <button type="button" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-download me-1"></i>Exportar
+        </button>
+        <button type="button" class="btn btn-primary btn-sm"
+                data-bs-toggle="modal" data-bs-target="#modal-nueva-factura">
+            <i class="bi bi-plus me-1"></i>Nueva factura
+        </button>
+    </div>
+</div>{% endverbatim %}</pre>
+            </div>
+        </div>
+
+    </div>
+</div>
+{% endblock %}
+
+{% block app_page_scripts %}
+<script>
+document.querySelectorAll('.btn-copy-code').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+        var target = document.getElementById(btn.getAttribute('data-copy-target'));
+        if (!target) return;
+        navigator.clipboard.writeText(target.textContent.trim()).then(function () {
+            var old = btn.textContent;
+            btn.textContent = 'Copiado';
+            setTimeout(function () { btn.textContent = old; }, 1200);
+        });
+    });
+});
+</script>
+{% endblock %}

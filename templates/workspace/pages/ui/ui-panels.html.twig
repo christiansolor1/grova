@@ -1,0 +1,333 @@
+{% extends 'workspace/app_layout.html.twig' %}
+
+{% block page_title %}Paneles y layouts{% endblock %}
+{% block app_page_subtitle %}Paneles, drawers, sidebars y layouts para sistemas transaccionales. Copia el código y úsalo en cualquier vista.{% endblock %}
+
+{% block page_styles %}
+<style>
+.ui-component { border: 1px solid #1e293b; border-radius: 10px; overflow: hidden; margin-bottom: 1.5rem; }
+.ui-component-preview { padding: 1.5rem; background: #0f172a; }
+.ui-component-code { background: #020617; border-top: 1px solid #1e293b; }
+.ui-component-code-header { display: flex; align-items: center; justify-content: space-between; padding: .5rem 1rem; border-bottom: 1px solid #1e293b; }
+.ui-component-code-label { font-size: 11px; color: #64748b; text-transform: uppercase; letter-spacing: .5px; }
+.ui-component-code pre { margin: 0; padding: 1rem; font-size: 12px; color: #94a3b8; overflow-x: auto; }
+.btn-copy-code { font-size: 11px; padding: 2px 10px; }
+/* Demo drawer */
+.demo-drawer { position: fixed; top: 0; right: -400px; width: 380px; height: 100vh; background: #0f172a; border-left: 1px solid #1e293b; z-index: 3010; transition: right .3s ease; padding: 1.5rem; overflow-y: auto; }
+.demo-drawer.open { right: 0; }
+.demo-drawer-backdrop { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.5); z-index: 3000; }
+.demo-drawer-backdrop.open { display: block; }
+body.light-mode .demo-drawer { background: #fff; border-color: #dbe3ee; }
+body.light-mode .ui-component { border-color: #dbe3ee; }
+body.light-mode .ui-component-preview { background: #f8fafc; }
+body.light-mode .ui-component-code { background: #f1f5f9; border-color: #dbe3ee; }
+body.light-mode .ui-component-code-header { border-color: #dbe3ee; }
+body.light-mode .ui-component-code pre { color: #475569; }
+</style>
+{% endblock %}
+
+{% block app_main %}
+<div class="content-card">
+    <div class="content-card-header">Paneles y layouts</div>
+    <div class="content-card-body">
+
+        {# ── Layout maestro-detalle ── #}
+        <div class="ui-component">
+            <div class="ui-component-preview">
+                <div class="row g-2" style="min-height:180px;">
+                    <div class="col-md-4">
+                        <div class="content-card h-100">
+                            <div class="content-card-header" style="font-size:12px;">Lista</div>
+                            <div class="content-card-body p-0">
+                                <div class="list-group list-group-flush">
+                                    <button type="button" class="list-group-item list-group-item-action active px-3 py-2" style="font-size:13px;">Registro #1</button>
+                                    <button type="button" class="list-group-item list-group-item-action px-3 py-2" style="font-size:13px;">Registro #2</button>
+                                    <button type="button" class="list-group-item list-group-item-action px-3 py-2" style="font-size:13px;">Registro #3</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-8">
+                        <div class="content-card h-100">
+                            <div class="content-card-header d-flex justify-content-between align-items-center" style="font-size:12px;">
+                                Detalle
+                                <div class="d-flex gap-1">
+                                    <button type="button" class="btn btn-outline-secondary btn-sm" style="font-size:11px;padding:2px 8px;"><i class="bi bi-pencil"></i></button>
+                                    <button type="button" class="btn btn-outline-danger btn-sm" style="font-size:11px;padding:2px 8px;"><i class="bi bi-trash"></i></button>
+                                </div>
+                            </div>
+                            <div class="content-card-body">
+                                <dl class="row mb-0" style="font-size:13px;">
+                                    <dt class="col-sm-4">Nombre</dt>
+                                    <dd class="col-sm-8">Registro #1</dd>
+                                    <dt class="col-sm-4">Estado</dt>
+                                    <dd class="col-sm-8"><span class="badge bg-success">Activo</span></dd>
+                                </dl>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="ui-component-code">
+                <div class="ui-component-code-header">
+                    <span class="ui-component-code-label">Twig / HTML — Layout maestro-detalle</span>
+                    <button type="button" class="btn btn-outline-secondary btn-sm btn-copy-code" data-copy-target="code-master-detail">Copiar</button>
+                </div>
+                <pre id="code-master-detail">{% verbatim %}<div class="row g-2">
+    <div class="col-md-4">
+        <div class="content-card h-100">
+            <div class="content-card-header">Lista</div>
+            <div class="content-card-body p-0">
+                <div class="list-group list-group-flush">
+                    <button type="button" class="list-group-item list-group-item-action active px-3 py-2">Registro #1</button>
+                    <button type="button" class="list-group-item list-group-item-action px-3 py-2">Registro #2</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-8">
+        <div class="content-card h-100">
+            <div class="content-card-header d-flex justify-content-between align-items-center">
+                Detalle
+                <div class="d-flex gap-1">
+                    <button type="button" class="btn btn-outline-secondary btn-sm"><i class="bi bi-pencil"></i></button>
+                    <button type="button" class="btn btn-outline-danger btn-sm"><i class="bi bi-trash"></i></button>
+                </div>
+            </div>
+            <div class="content-card-body">
+                <dl class="row mb-0">
+                    <dt class="col-sm-4">Nombre</dt>
+                    <dd class="col-sm-8">Ejemplo</dd>
+                    <dt class="col-sm-4">Estado</dt>
+                    <dd class="col-sm-8"><span class="badge bg-success">Activo</span></dd>
+                </dl>
+            </div>
+        </div>
+    </div>
+</div>{% endverbatim %}</pre>
+            </div>
+        </div>
+
+        {# ── Drawer lateral ── #}
+        <div class="ui-component">
+            <div class="ui-component-preview">
+                <button type="button" class="btn btn-outline-secondary btn-sm" id="btn-demo-drawer">
+                    <i class="bi bi-layout-sidebar-reverse me-1"></i>Abrir drawer lateral
+                </button>
+            </div>
+            <div class="ui-component-code">
+                <div class="ui-component-code-header">
+                    <span class="ui-component-code-label">Twig / HTML — Drawer lateral</span>
+                    <button type="button" class="btn btn-outline-secondary btn-sm btn-copy-code" data-copy-target="code-drawer">Copiar</button>
+                </div>
+                <pre id="code-drawer">{% verbatim %}{# Trigger #}
+<button type="button" class="btn btn-outline-secondary btn-sm" id="btn-abrir-drawer">
+    <i class="bi bi-layout-sidebar-reverse me-1"></i>Filtros / Detalle
+</button>
+
+{# Backdrop #}
+<div class="drawer-backdrop" id="drawer-backdrop"></div>
+
+{# Drawer #}
+<div class="drawer" id="mi-drawer">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h6 class="mb-0">Título del drawer</h6>
+        <button type="button" class="btn-close" id="btn-cerrar-drawer"></button>
+    </div>
+    <div class="row g-3">
+        <div class="col-12">
+            <label class="form-label">Campo</label>
+            <input type="text" class="form-control form-control-sm">
+        </div>
+    </div>
+    <div class="mt-3 d-flex gap-2">
+        <button type="button" class="btn btn-primary btn-sm flex-fill">Aplicar</button>
+        <button type="button" class="btn btn-outline-secondary btn-sm" id="btn-cerrar-drawer-2">Cerrar</button>
+    </div>
+</div>
+
+{# CSS básico del drawer #}
+<style>
+.drawer { position: fixed; top: 0; right: -400px; width: 380px; height: 100vh;
+    background: #0f172a; border-left: 1px solid #1e293b; z-index: 3010;
+    transition: right .3s ease; padding: 1.5rem; overflow-y: auto; }
+.drawer.open { right: 0; }
+.drawer-backdrop { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.5); z-index: 3000; }
+.drawer-backdrop.open { display: block; }
+</style>
+
+{# JS #}
+<script>
+var drawer = document.getElementById('mi-drawer');
+var backdrop = document.getElementById('drawer-backdrop');
+document.getElementById('btn-abrir-drawer').addEventListener('click', function () {
+    drawer.classList.add('open');
+    backdrop.classList.add('open');
+});
+function cerrarDrawer() {
+    drawer.classList.remove('open');
+    backdrop.classList.remove('open');
+}
+document.getElementById('btn-cerrar-drawer').addEventListener('click', cerrarDrawer);
+document.getElementById('btn-cerrar-drawer-2').addEventListener('click', cerrarDrawer);
+backdrop.addEventListener('click', cerrarDrawer);
+</script>{% endverbatim %}</pre>
+            </div>
+        </div>
+
+        {# ── Panel de estadísticas / KPIs ── #}
+        <div class="ui-component">
+            <div class="ui-component-preview">
+                <div class="row g-3">
+                    <div class="col-md-3 col-sm-6">
+                        <div class="content-card text-center">
+                            <div class="content-card-body py-3">
+                                <div style="font-size:28px; font-weight:700; color:#2563eb;">142</div>
+                                <div style="font-size:12px; color:#64748b;">Clientes activos</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3 col-sm-6">
+                        <div class="content-card text-center">
+                            <div class="content-card-body py-3">
+                                <div style="font-size:28px; font-weight:700; color:#16a34a;">₡ 4.2M</div>
+                                <div style="font-size:12px; color:#64748b;">Ingresos del mes</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3 col-sm-6">
+                        <div class="content-card text-center">
+                            <div class="content-card-body py-3">
+                                <div style="font-size:28px; font-weight:700; color:#dc2626;">18</div>
+                                <div style="font-size:12px; color:#64748b;">Facturas pendientes</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3 col-sm-6">
+                        <div class="content-card text-center">
+                            <div class="content-card-body py-3">
+                                <div style="font-size:28px; font-weight:700; color:#d97706;">7</div>
+                                <div style="font-size:12px; color:#64748b;">Tareas abiertas</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="ui-component-code">
+                <div class="ui-component-code-header">
+                    <span class="ui-component-code-label">Twig / HTML — Panel KPI</span>
+                    <button type="button" class="btn btn-outline-secondary btn-sm btn-copy-code" data-copy-target="code-kpi">Copiar</button>
+                </div>
+                <pre id="code-kpi">{% verbatim %}<div class="row g-3">
+    <div class="col-md-3 col-sm-6">
+        <div class="content-card text-center">
+            <div class="content-card-body py-3">
+                <div style="font-size:28px; font-weight:700; color:#2563eb;">142</div>
+                <div style="font-size:12px; color:#64748b;">Clientes activos</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 col-sm-6">
+        <div class="content-card text-center">
+            <div class="content-card-body py-3">
+                <div style="font-size:28px; font-weight:700; color:#16a34a;">₡ 4.2M</div>
+                <div style="font-size:12px; color:#64748b;">Ingresos del mes</div>
+            </div>
+        </div>
+    </div>
+</div>{% endverbatim %}</pre>
+            </div>
+        </div>
+
+        {# ── Tabs de navegación ── #}
+        <div class="ui-component">
+            <div class="ui-component-preview">
+                <ul class="nav nav-tabs" id="demo-tabs">
+                    <li class="nav-item">
+                        <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#tab-general">General</button>
+                    </li>
+                    <li class="nav-item">
+                        <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-documentos">Documentos</button>
+                    </li>
+                    <li class="nav-item">
+                        <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-historial">Historial</button>
+                    </li>
+                </ul>
+                <div class="tab-content p-3" style="border:1px solid #1e293b; border-top:0; border-radius:0 0 8px 8px;">
+                    <div class="tab-pane fade show active" id="tab-general" style="font-size:13px;">Contenido de la pestaña General.</div>
+                    <div class="tab-pane fade" id="tab-documentos" style="font-size:13px;">Lista de documentos adjuntos.</div>
+                    <div class="tab-pane fade" id="tab-historial" style="font-size:13px;">Historial de cambios del registro.</div>
+                </div>
+            </div>
+            <div class="ui-component-code">
+                <div class="ui-component-code-header">
+                    <span class="ui-component-code-label">Twig / HTML — Tabs</span>
+                    <button type="button" class="btn btn-outline-secondary btn-sm btn-copy-code" data-copy-target="code-tabs">Copiar</button>
+                </div>
+                <pre id="code-tabs">{% verbatim %}<ul class="nav nav-tabs">
+    <li class="nav-item">
+        <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#tab-general">General</button>
+    </li>
+    <li class="nav-item">
+        <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-documentos">Documentos</button>
+    </li>
+    <li class="nav-item">
+        <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-historial">Historial</button>
+    </li>
+</ul>
+<div class="tab-content p-3" style="border:1px solid #1e293b; border-top:0; border-radius:0 0 8px 8px;">
+    <div class="tab-pane fade show active" id="tab-general">Contenido general.</div>
+    <div class="tab-pane fade" id="tab-documentos">Documentos.</div>
+    <div class="tab-pane fade" id="tab-historial">Historial.</div>
+</div>{% endverbatim %}</pre>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+{# Demo drawer #}
+<div class="demo-drawer-backdrop" id="demo-drawer-backdrop"></div>
+<div class="demo-drawer" id="demo-drawer">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h6 class="mb-0">Drawer lateral</h6>
+        <button type="button" class="btn-close" id="btn-close-demo-drawer"></button>
+    </div>
+    <p style="font-size:13px; color:#64748b;">Este es un drawer lateral. Úsalo para filtros, detalles, o formularios secundarios sin salir de la vista principal.</p>
+    <div class="row g-3">
+        <div class="col-12">
+            <label class="form-label">Ejemplo de campo</label>
+            <input type="text" class="form-control form-control-sm" placeholder="Buscar...">
+        </div>
+    </div>
+    <div class="mt-3 d-flex gap-2">
+        <button type="button" class="btn btn-primary btn-sm flex-fill">Aplicar</button>
+        <button type="button" class="btn btn-outline-secondary btn-sm" id="btn-close-demo-drawer-2">Cerrar</button>
+    </div>
+</div>
+{% endblock %}
+
+{% block app_page_scripts %}
+<script>
+document.querySelectorAll('.btn-copy-code').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+        var target = document.getElementById(btn.getAttribute('data-copy-target'));
+        if (!target) return;
+        navigator.clipboard.writeText(target.textContent.trim()).then(function () {
+            var old = btn.textContent;
+            btn.textContent = 'Copiado';
+            setTimeout(function () { btn.textContent = old; }, 1200);
+        });
+    });
+});
+
+var demoDrawer = document.getElementById('demo-drawer');
+var demoBackdrop = document.getElementById('demo-drawer-backdrop');
+function openDemoDrawer() { demoDrawer.classList.add('open'); demoBackdrop.classList.add('open'); }
+function closeDemoDrawer() { demoDrawer.classList.remove('open'); demoBackdrop.classList.remove('open'); }
+document.getElementById('btn-demo-drawer').addEventListener('click', openDemoDrawer);
+document.getElementById('btn-close-demo-drawer').addEventListener('click', closeDemoDrawer);
+document.getElementById('btn-close-demo-drawer-2').addEventListener('click', closeDemoDrawer);
+demoBackdrop.addEventListener('click', closeDemoDrawer);
+</script>
+{% endblock %}

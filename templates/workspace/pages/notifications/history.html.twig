@@ -1,0 +1,177 @@
+{% extends 'workspace/app_layout.html.twig' %}
+
+{% block page_title %}Notificaciones{% endblock %}
+{% block app_page_subtitle %}Historial completo de notificaciones{% endblock %}
+
+{% block page_styles %}
+<style>
+.notif-history-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+    padding: .875rem 1.25rem;
+    border-bottom: 1px solid #1e293b;
+    transition: background .15s;
+}
+.notif-history-row:last-child { border-bottom: none; }
+.notif-history-row:hover { background: rgba(255,255,255,.02); }
+body.light-mode .notif-history-row:hover { background: #f8fafc; }
+body.light-mode .notif-history-row { border-color: #e2e8f0; }
+
+.notif-type-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    margin-top: 6px;
+}
+.notif-icon-wrap {
+    width: 32px; height: 32px;
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+    font-size: 14px;
+}
+.notif-dismissed { opacity: .45; }
+.notif-unread .notif-title { font-weight: 700; }
+
+.notif-filter-bar {
+    display: flex; gap: .5rem; flex-wrap: wrap; align-items: center;
+    padding: .75rem 1.25rem;
+    border-bottom: 1px solid #1e293b;
+}
+body.light-mode .notif-filter-bar { border-color: #e2e8f0; }
+.notif-filter-bar select {
+    background: #0f172a; color: #94a3b8; border: 1px solid #334155;
+    border-radius: 8px; padding: .35rem .75rem; font-size: 12px; cursor: pointer;
+}
+body.light-mode .notif-filter-bar select {
+    background: #fff; color: #475569; border-color: #e2e8f0;
+}
+</style>
+{% endblock %}
+
+{% block app_main %}
+
+{# ── Barra de filtros ── #}
+<div class="content-card mb-4">
+    <form method="GET" action="{{ path('notifications_history', {_locale: app.request.locale}) }}">
+        <div class="notif-filter-bar">
+            <span style="font-size:12px;color:#64748b;font-weight:600;">Filtrar:</span>
+
+            <select name="module" onchange="this.form.submit()">
+                <option value="">Todos los módulos</option>
+                {% for mod in modules %}
+                    <option value="{{ mod }}" {{ filter_module == mod ? 'selected' : '' }}>{{ mod|capitalize }}</option>
+                {% endfor %}
+            </select>
+
+            <select name="type" onchange="this.form.submit()">
+                <option value="">Todos los tipos</option>
+                {% for t in types %}
+                    <option value="{{ t.value }}" {{ filter_type == t.value ? 'selected' : '' }}>{{ t.label() }}</option>
+                {% endfor %}
+            </select>
+
+            {% if filter_module or filter_type %}
+                <a href="{{ path('notifications_history', {_locale: app.request.locale}) }}"
+                   style="font-size:12px;color:#60a5fa;text-decoration:none;">
+                    <i class="bi bi-x-circle me-1"></i>Limpiar filtros
+                </a>
+            {% endif %}
+
+            <span style="margin-left:auto;font-size:12px;color:#64748b;">
+                {{ total }} notificacion{{ total != 1 ? 'es' : '' }}
+            </span>
+        </div>
+
+        {# ── Lista ── #}
+        {% if items|length > 0 %}
+        <div>
+            {% for n in items %}
+            {% set typeColors = {info: '#60a5fa', success: '#4ade80', warning: '#fbbf24', danger: '#f87171'} %}
+            {% set typeBg    = {info: 'rgba(96,165,250,.12)', success: 'rgba(74,222,128,.12)', warning: 'rgba(251,191,36,.12)', danger: 'rgba(241,113,113,.12)'} %}
+            {% set color = typeColors[n.type] ?? '#60a5fa' %}
+            {% set bg    = typeBg[n.type] ?? 'rgba(96,165,250,.12)' %}
+            <div class="notif-history-row {{ not n.read ? 'notif-unread' : '' }} {{ n.dismissed ? 'notif-dismissed' : '' }}">
+                <div class="notif-type-dot" style="background:{{ color }};"></div>
+                <div class="notif-icon-wrap" style="background:{{ bg }}; color:{{ color }};">
+                    {% if n.icon %}
+                        <i class="{{ n.icon }}"></i>
+                    {% else %}
+                        <i class="bi bi-bell"></i>
+                    {% endif %}
+                </div>
+                <div style="flex:1;min-width:0;">
+                    <div class="notif-title" style="font-size:13px;color:#f1f5f9;line-height:1.3;">
+                        {% if n.url %}
+                            <a href="{{ n.url }}" style="color:inherit;text-decoration:none;">{{ n.title }}</a>
+                        {% else %}
+                            {{ n.title }}
+                        {% endif %}
+                    </div>
+                    <div style="font-size:12px;color:#94a3b8;margin-top:2px;">{{ n.body }}</div>
+                    <div style="display:flex;gap:.75rem;margin-top:4px;align-items:center;flex-wrap:wrap;">
+                        {% if n.module %}
+                            <span style="font-size:11px;background:#1e293b;color:#64748b;border-radius:4px;padding:1px 7px;border:1px solid #334155;">
+                                {{ n.module|capitalize }}
+                            </span>
+                        {% endif %}
+                        <span style="font-size:11px;color:#475569;">{{ n.createdAt|date('d/m/Y H:i') }}</span>
+                        {% if n.dismissed %}
+                            <span style="font-size:11px;color:#475569;"><i class="bi bi-archive me-1"></i>Archivada</span>
+                        {% elseif n.read %}
+                            <span style="font-size:11px;color:#475569;"><i class="bi bi-check2 me-1"></i>Leída</span>
+                        {% else %}
+                            <span style="font-size:11px;color:{{ color }};font-weight:600;">● Nueva</span>
+                        {% endif %}
+                    </div>
+                </div>
+                <div style="font-size:11px;color:#475569;white-space:nowrap;padding-top:2px;">
+                    <span style="
+                        display:inline-block;
+                        background:{{ bg }};
+                        color:{{ color }};
+                        border-radius:4px;
+                        padding:1px 7px;
+                        font-size:10px;
+                        font-weight:600;
+                        text-transform:uppercase;
+                        letter-spacing:.04em;
+                    ">{{ n.typeEnum.label() }}</span>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        {# ── Paginación ── #}
+        {% if pages > 1 %}
+        <div style="padding:.75rem 1.25rem;display:flex;gap:.5rem;align-items:center;justify-content:center;border-top:1px solid #1e293b;">
+            {% if page > 1 %}
+                <a href="{{ path('notifications_history', {_locale: app.request.locale, page: page - 1, module: filter_module, type: filter_type}) }}"
+                   class="btn btn-sm btn-secondary">← Anterior</a>
+            {% endif %}
+            <span style="font-size:12px;color:#64748b;">Página {{ page }} de {{ pages }}</span>
+            {% if page < pages %}
+                <a href="{{ path('notifications_history', {_locale: app.request.locale, page: page + 1, module: filter_module, type: filter_type}) }}"
+                   class="btn btn-sm btn-secondary">Siguiente →</a>
+            {% endif %}
+        </div>
+        {% endif %}
+
+        {% else %}
+        <div class="grova-empty-state" style="padding:3rem;">
+            <div class="grova-empty-icon"><i class="bi bi-bell-slash"></i></div>
+            <div class="grova-empty-title">Sin notificaciones</div>
+            <div class="grova-empty-desc">
+                {% if filter_module or filter_type %}
+                    No hay notificaciones con los filtros aplicados.
+                {% else %}
+                    Aquí aparecerán todas las notificaciones del sistema.
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+    </form>
+</div>
+
+{% endblock %}

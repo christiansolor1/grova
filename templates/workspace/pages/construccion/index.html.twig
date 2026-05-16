@@ -1,0 +1,280 @@
+{% extends 'workspace/app_layout.html.twig' %}
+{% block page_title %}Construcción{% endblock %}
+{% block app_page_subtitle %}Obras, gastos y proveedores{% endblock %}
+
+{% block page_styles %}
+<style>
+.const-stat { background:#111827; border:1px solid #1e293b; border-radius:12px; padding:1.25rem; }
+body.light-mode .const-stat { background:#fff; border-color:#e2e8f0; }
+.const-stat-label { font-size:11px; color:#64748b; text-transform:uppercase; letter-spacing:.06em; margin-bottom:.35rem; }
+.const-stat-value { font-size:26px; font-weight:800; }
+
+.obra-card {
+    background:#111827; border:1px solid #1e293b; border-radius:12px;
+    padding:1.1rem 1.25rem; margin-bottom:.6rem;
+    display:flex; align-items:center; gap:1rem; flex-wrap:wrap;
+}
+body.light-mode .obra-card { background:#fff; border-color:#e2e8f0; }
+.obra-card:hover { border-color:#3b82f655; }
+
+.estado-activa    { background:#16a34a22; color:#4ade80; }
+.estado-pausada   { background:#f59e0b22; color:#fbbf24; }
+.estado-borrador  { background:#1e293b;   color:#64748b; }
+.estado-completada{ background:#0ea5e922; color:#38bdf8; }
+.estado-cancelada { background:#dc262622; color:#f87171; }
+.estado-badge { font-size:10px; padding:2px 8px; border-radius:10px; font-weight:600; display:inline-block; }
+
+.progress-thin { height:5px; border-radius:3px; background:#1e293b; overflow:hidden; margin-top:.35rem; }
+.progress-thin .fill { height:100%; background:#3b82f6; border-radius:3px; transition:width .4s; }
+
+.prov-chip {
+    display:inline-flex; align-items:center; gap:.35rem;
+    background:#0f172a; border:1px solid #1e293b; border-radius:8px;
+    padding:.35rem .65rem; font-size:12px; color:#94a3b8;
+}
+body.light-mode .prov-chip { background:#f8fafc; border-color:#e2e8f0; color:#475569; }
+</style>
+{% endblock %}
+
+{% block app_main %}
+
+{# ── Stats ── #}
+<div class="row g-3 mb-4">
+    <div class="col-sm-3">
+        <div class="const-stat">
+            <div class="const-stat-label">Obras activas</div>
+            <div class="const-stat-value" style="color:#4ade80;">{{ (stats.activa ?? 0) + (stats.pausada ?? 0) }}</div>
+        </div>
+    </div>
+    <div class="col-sm-3">
+        <div class="const-stat">
+            <div class="const-stat-label">Completadas</div>
+            <div class="const-stat-value" style="color:#38bdf8;">{{ stats.completada ?? 0 }}</div>
+        </div>
+    </div>
+    <div class="col-sm-3">
+        <div class="const-stat">
+            <div class="const-stat-label">Total obras</div>
+            <div class="const-stat-value">{{ obras|length }}</div>
+        </div>
+    </div>
+    <div class="col-sm-3">
+        <div class="const-stat">
+            <div class="const-stat-label">Proveedores activos</div>
+            <div class="const-stat-value" style="color:#a78bfa;">{{ proveedores|length }}</div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-3">
+
+{# ── Lista de obras ── #}
+<div class="col-lg-8">
+    <div class="content-card">
+        <div class="content-card-header">
+            Obras
+            <button class="btn btn-sm btn-primary ms-auto" data-bs-toggle="modal" data-bs-target="#modalNuevaObra">
+                <i class="bi bi-plus-lg me-1"></i>Nueva obra
+            </button>
+        </div>
+        <div class="content-card-body">
+            {% if obras|length == 0 %}
+            <div class="grova-empty-state grova-empty-state-compact">
+                <div class="grova-empty-icon"><i class="bi bi-building"></i></div>
+                <div class="grova-empty-title">Sin obras</div>
+                <div class="grova-empty-desc">Crea tu primera obra para empezar a registrar gastos.</div>
+            </div>
+            {% else %}
+            {% for obra in obras %}
+            <a href="{{ path('grova_construccion_obra_show', {id: obra.id, _locale: app.request.locale}) }}"
+               style="text-decoration:none; color:inherit; display:block;">
+            <div class="obra-card">
+                <div style="flex:1; min-width:0;">
+                    <div style="font-size:15px; font-weight:700; color:#f1f5f9; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
+                        {{ obra.nombre }}
+                    </div>
+                    <div style="font-size:12px; color:#64748b; margin-top:2px;">
+                        <i class="bi bi-person me-1"></i>{{ obra.clienteDisplay }}
+                        {% if obra.fechaInicio %}
+                        · <i class="bi bi-calendar3 me-1"></i>{{ obra.fechaInicio|date('d/m/Y') }}
+                        {% endif %}
+                    </div>
+                    {% if obra.presupuestoFloat > 0 %}
+                    <div class="progress-thin" style="max-width:200px;">
+                        <div class="fill" style="width:{{ obra.porcentajeEjecutado|round }}%;
+                            {% if obra.porcentajeEjecutado >= 90 %}background:#ef4444;{% elseif obra.porcentajeEjecutado >= 70 %}background:#f59e0b;{% endif %}"></div>
+                    </div>
+                    {% endif %}
+                </div>
+                <div style="text-align:right; min-width:100px;">
+                    <div style="font-size:16px; font-weight:700; color:#f1f5f9;">L {{ obra.totalGastos|number_format(0) }}</div>
+                    {% if obra.presupuestoFloat > 0 %}
+                    <div style="font-size:11px; color:#64748b;">de L {{ obra.presupuestoFloat|number_format(0) }}</div>
+                    {% endif %}
+                    <div class="estado-badge estado-{{ obra.estado }} mt-1">{{ obra.estadoLabel }}</div>
+                </div>
+                <i class="bi bi-chevron-right" style="color:#334155;"></i>
+            </div>
+            </a>
+            {% endfor %}
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+{# ── Proveedores ── #}
+<div class="col-lg-4">
+    <div class="content-card">
+        <div class="content-card-header">
+            Proveedores
+            <button class="btn btn-sm btn-outline-secondary ms-auto" data-bs-toggle="modal" data-bs-target="#modalNuevoProveedor">
+                <i class="bi bi-plus-lg"></i>
+            </button>
+        </div>
+        <div class="content-card-body">
+            {% if proveedores|length == 0 %}
+            <div style="font-size:13px; color:#64748b; text-align:center; padding:1.5rem 0;">Sin proveedores aún.</div>
+            {% else %}
+            <div style="display:flex; flex-direction:column; gap:.4rem;">
+            {% for p in proveedores %}
+            <div class="prov-chip" style="justify-content:space-between;">
+                <div>
+                    <div style="font-weight:600; color:#f1f5f9; font-size:13px;">{{ p.nombre }}</div>
+                    <div style="font-size:11px; color:#64748b;">{{ p.especialidadLabel }}
+                        {% if p.telefono %} · {{ p.telefono }}{% endif %}
+                    </div>
+                </div>
+                <button class="btn btn-xs btn-outline-secondary" style="padding:1px 6px; font-size:11px;"
+                        data-bs-toggle="modal" data-bs-target="#modalEditProv{{ p.id }}">
+                    <i class="bi bi-pencil"></i>
+                </button>
+            </div>
+
+            {# Modal editar proveedor #}
+            <div class="modal fade" id="modalEditProv{{ p.id }}" tabindex="-1">
+                <div class="modal-dialog modal-sm">
+                    <div class="modal-content">
+                        <form method="post" action="{{ path('grova_construccion_proveedor_edit', {id: p.id, _locale: app.request.locale}) }}">
+                            <input type="hidden" name="_token" value="{{ csrf_token('construccion_proveedor_edit_' ~ p.id) }}">
+                            <div class="modal-header">
+                                <h5 class="modal-title">Editar proveedor</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                            </div>
+                            <div class="modal-body" style="display:flex; flex-direction:column; gap:.6rem;">
+                                <input class="form-control form-control-sm" name="nombre" value="{{ p.nombre }}" placeholder="Nombre" required>
+                                <input class="form-control form-control-sm" name="telefono" value="{{ p.telefono }}" placeholder="Teléfono">
+                                <select class="form-select form-select-sm" name="especialidad">
+                                    {% for key, label in constant('App\\Module\\Construccion\\Entity\\ConstruccionProveedor::ESPECIALIDADES') %}
+                                    <option value="{{ key }}" {{ p.especialidad == key ? 'selected' : '' }}>{{ label }}</option>
+                                    {% endfor %}
+                                </select>
+                                <div class="form-check form-check-sm">
+                                    <input class="form-check-input" type="checkbox" name="activo" id="activo{{ p.id }}" {{ p.activo ? 'checked' : '' }}>
+                                    <label class="form-check-label" for="activo{{ p.id }}">Activo</label>
+                                </div>
+                                <textarea class="form-control form-control-sm" name="notas" rows="2" placeholder="Notas">{{ p.notas }}</textarea>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                                <button type="submit" class="btn btn-sm btn-primary">Guardar</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+</div>{# /row #}
+
+{# ── Modal nueva obra ── #}
+<div class="modal fade" id="modalNuevaObra" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="post" action="{{ path('grova_construccion_obra_create', {_locale: app.request.locale}) }}">
+                <input type="hidden" name="_token" value="{{ csrf_token('construccion_obra') }}">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="bi bi-building me-2"></i>Nueva obra</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body" style="display:flex; flex-direction:column; gap:.75rem;">
+                    <div>
+                        <label class="form-label form-label-sm">Nombre de la obra *</label>
+                        <input class="form-control form-control-sm" name="nombre" required placeholder="Ej: Casa Colonia Valle">
+                    </div>
+                    <div>
+                        <label class="form-label form-label-sm">Cliente / Dueño</label>
+                        <input class="form-control form-control-sm" name="cliente_nombre" placeholder="Nombre del cliente">
+                    </div>
+                    <div class="row g-2">
+                        <div class="col-6">
+                            <label class="form-label form-label-sm">Estado</label>
+                            <select class="form-select form-select-sm" name="estado">
+                                {% for key, label in constant('App\\Module\\Construccion\\Entity\\ConstruccionObra::ESTADOS') %}
+                                <option value="{{ key }}" {{ key == 'activa' ? 'selected' : '' }}>{{ label }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label form-label-sm">Presupuesto (L)</label>
+                            <input class="form-control form-control-sm" type="number" step="0.01" name="presupuesto" placeholder="0.00">
+                        </div>
+                    </div>
+                    <div class="row g-2">
+                        <div class="col-6">
+                            <label class="form-label form-label-sm">Fecha inicio</label>
+                            <input class="form-control form-control-sm" type="date" name="fecha_inicio">
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label form-label-sm">Fecha fin estimada</label>
+                            <input class="form-control form-control-sm" type="date" name="fecha_fin">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="form-label form-label-sm">Descripción</label>
+                        <textarea class="form-control form-control-sm" name="descripcion" rows="2" placeholder="Detalles del proyecto..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-sm btn-primary">Crear obra</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+{# ── Modal nuevo proveedor ── #}
+<div class="modal fade" id="modalNuevoProveedor" tabindex="-1">
+    <div class="modal-dialog modal-sm">
+        <div class="modal-content">
+            <form method="post" action="{{ path('grova_construccion_proveedor_create', {_locale: app.request.locale}) }}">
+                <input type="hidden" name="_token" value="{{ csrf_token('construccion_proveedor') }}">
+                <div class="modal-header">
+                    <h5 class="modal-title">Nuevo proveedor</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body" style="display:flex; flex-direction:column; gap:.6rem;">
+                    <input class="form-control form-control-sm" name="nombre" placeholder="Nombre del proveedor" required>
+                    <input class="form-control form-control-sm" name="telefono" placeholder="Teléfono (opc.)">
+                    <select class="form-select form-select-sm" name="especialidad">
+                        {% for key, label in constant('App\\Module\\Construccion\\Entity\\ConstruccionProveedor::ESPECIALIDADES') %}
+                        <option value="{{ key }}">{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                    <textarea class="form-control form-control-sm" name="notas" rows="2" placeholder="Notas (opc.)"></textarea>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-sm btn-primary">Guardar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

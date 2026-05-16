@@ -1,13 +1,758 @@
 {% extends 'workspace/app_layout.html.twig' %}
 
+{% block page_title %}{{ 'Inputs y formularios' | trans }}{% endblock %}
+{% block app_page_subtitle %}{{ 'Catálogo de campos de formulario. Copia el código y úsalo en cualquier vista.' | trans }}{% endblock %}
+
+{% block page_styles %}
+<style>
+.ui-component { border: 1px solid #1e293b; border-radius: 10px; overflow: hidden; margin-bottom: 1.5rem; }
+.ui-component-preview { padding: 1.5rem; background: #0f172a; }
+.ui-component-code { background: #020617; border-top: 1px solid #1e293b; }
+.ui-component-code-header { display: flex; align-items: center; justify-content: space-between; padding: .5rem 1rem; border-bottom: 1px solid #1e293b; }
+.ui-component-code-label { font-size: 11px; color: #64748b; text-transform: uppercase; letter-spacing: .5px; }
+.ui-component-code pre { margin: 0; padding: 1rem; font-size: 12px; color: #94a3b8; overflow-x: auto; }
+.btn-copy-code { font-size: 11px; padding: 2px 10px; }
+body.light-mode .ui-component { border-color: #dbe3ee; }
+body.light-mode .ui-component-preview { background: #f8fafc; }
+body.light-mode .ui-component-code { background: #f1f5f9; border-color: #dbe3ee; }
+body.light-mode .ui-component-code-header { border-color: #dbe3ee; }
+body.light-mode .ui-component-code pre { color: #475569; }
+/* Dual Listbox */
+.grova-dual-listbox { display: flex; gap: 1rem; align-items: flex-start; }
+.grova-dlb-col { flex: 1; display: flex; flex-direction: column; gap: .4rem; }
+.grova-dlb-label { font-size: 11px; text-transform: uppercase; letter-spacing: .5px; color: #64748b; font-weight: 600; }
+.grova-dlb-list { width: 100%; height: 220px; border: 1px solid #334155; border-radius: 8px; background: #0f172a; color: #f1f5f9; font-size: 13px; padding: .25rem 0; overflow-y: auto; }
+.grova-dlb-list option { padding: .4rem .75rem; cursor: pointer; }
+.grova-dlb-list option:checked { background: #2563eb; color: #fff; }
+.grova-dlb-list option:hover { background: #1e293b; }
+.grova-dlb-actions { display: flex; flex-direction: column; gap: .4rem; justify-content: center; padding-top: 1.6rem; }
+.grova-dlb-btn { width: 34px; height: 34px; display: flex; align-items: center; justify-content: center; padding: 0; }
+body.light-mode .grova-dlb-list { background: #fff; border-color: #dbe3ee; color: #0f172a; }
+body.light-mode .grova-dlb-list option:hover { background: #f1f5f9; }
+body.light-mode .grova-dlb-list option:checked { background: #2563eb; color: #fff; }
+/* Select2 overrides */
+.select2-container--default .select2-selection--single,
+.select2-container--default .select2-selection--multiple { background: #0f172a; border: 1px solid #334155; border-radius: 6px; color: #f1f5f9; min-height: 31px; }
+.select2-container--default .select2-selection--single .select2-selection__rendered { color: #f1f5f9; line-height: 29px; padding-left: 8px; }
+.select2-container--default .select2-selection--single .select2-selection__arrow { height: 29px; }
+.select2-dropdown { background: #0f172a; border: 1px solid #334155; }
+.select2-container--default .select2-results__option { color: #f1f5f9; font-size: 13px; }
+.select2-container--default .select2-results__option--highlighted { background: #2563eb; }
+.select2-search--dropdown .select2-search__field { background: #1e293b; border: 1px solid #334155; color: #f1f5f9; border-radius: 4px; }
+.select2-container--default .select2-selection--multiple .select2-selection__choice { background: #2563eb; border: none; color: #fff; font-size: 12px; }
+.select2-container--default .select2-selection--multiple .select2-selection__choice__remove { color: #fff; margin-right: 4px; }
+body.light-mode .select2-container--default .select2-selection--single,
+body.light-mode .select2-container--default .select2-selection--multiple { background: #fff; border-color: #dbe3ee; }
+body.light-mode .select2-container--default .select2-selection--single .select2-selection__rendered { color: #0f172a; }
+body.light-mode .select2-dropdown { background: #fff; border-color: #dbe3ee; }
+body.light-mode .select2-container--default .select2-results__option { color: #0f172a; }
+body.light-mode .select2-search--dropdown .select2-search__field { background: #f8fafc; border-color: #dbe3ee; color: #0f172a; }
+</style>
+{% endblock %}
+
 {% block app_main %}
 <div class="content-card">
     <div class="content-card-header">Inputs y formularios</div>
     <div class="content-card-body">
-        <p class="text-muted mb-0">
-            Referencia de inputs. La demo asociada al id <code>ui-inputs</code> se puede portar desde
-            <code>templates/dashboard/index.html.twig</code>.
-        </p>
+
+        {# ── Inputs básicos ── #}
+        <div class="ui-component">
+            <div class="ui-component-preview">
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <label class="form-label">Texto</label>
+                        <input type="text" class="form-control form-control-sm" placeholder="Nombre">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Email</label>
+                        <input type="email" class="form-control form-control-sm" placeholder="correo@dominio.com">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Contraseña</label>
+                        <input type="password" class="form-control form-control-sm" placeholder="••••••••">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Número</label>
+                        <input type="number" class="form-control form-control-sm" placeholder="0">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Fecha</label>
+                        <input type="date" class="form-control form-control-sm">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Teléfono</label>
+                        <input type="tel" class="form-control form-control-sm" placeholder="+506 0000-0000">
+                    </div>
+                </div>
+            </div>
+            <div class="ui-component-code">
+                <div class="ui-component-code-header">
+                    <span class="ui-component-code-label">Twig / HTML — Inputs básicos</span>
+                    <button type="button" class="btn btn-outline-secondary btn-sm btn-copy-code" data-copy-target="code-inputs-basic">Copiar</button>
+                </div>
+                <pre id="code-inputs-basic">{% verbatim %}<div class="col-md-4">
+    <label class="form-label">Texto</label>
+    <input type="text" class="form-control form-control-sm" placeholder="Nombre">
+</div>
+<div class="col-md-4">
+    <label class="form-label">Email</label>
+    <input type="email" class="form-control form-control-sm" placeholder="correo@dominio.com">
+</div>
+<div class="col-md-4">
+    <label class="form-label">Fecha</label>
+    <input type="date" class="form-control form-control-sm">
+</div>{% endverbatim %}</pre>
+            </div>
+        </div>
+
+        {# ── Select y Textarea ── #}
+        <div class="ui-component">
+            <div class="ui-component-preview">
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <label class="form-label">Select</label>
+                        <select class="form-select form-select-sm">
+                            <option value="">Seleccionar...</option>
+                            <option>Opción 1</option>
+                            <option>Opción 2</option>
+                        </select>
+                    </div>
+                    <div class="col-md-8">
+                        <label class="form-label">Textarea</label>
+                        <textarea class="form-control form-control-sm" rows="3" placeholder="Descripción..."></textarea>
+                    </div>
+                </div>
+            </div>
+            <div class="ui-component-code">
+                <div class="ui-component-code-header">
+                    <span class="ui-component-code-label">Twig / HTML — Select y Textarea</span>
+                    <button type="button" class="btn btn-outline-secondary btn-sm btn-copy-code" data-copy-target="code-select-textarea">Copiar</button>
+                </div>
+                <pre id="code-select-textarea">{% verbatim %}<div class="col-md-4">
+    <label class="form-label">Select</label>
+    <select class="form-select form-select-sm">
+        <option value="">Seleccionar...</option>
+        <option>Opción 1</option>
+    </select>
+</div>
+<div class="col-md-8">
+    <label class="form-label">Textarea</label>
+    <textarea class="form-control form-control-sm" rows="3" placeholder="Descripción..."></textarea>
+</div>{% endverbatim %}</pre>
+            </div>
+        </div>
+
+        {# ── Checkbox y Radio ── #}
+        <div class="ui-component">
+            <div class="ui-component-preview d-flex flex-wrap gap-4">
+                <div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="chk1" checked>
+                        <label class="form-check-label" for="chk1">Activo</label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="chk2">
+                        <label class="form-check-label" for="chk2">Inactivo</label>
+                    </div>
+                </div>
+                <div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="radio1" id="rd1" checked>
+                        <label class="form-check-label" for="rd1">Opción A</label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="radio1" id="rd2">
+                        <label class="form-check-label" for="rd2">Opción B</label>
+                    </div>
+                </div>
+                <div>
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" id="sw1" checked>
+                        <label class="form-check-label" for="sw1">Toggle activo</label>
+                    </div>
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" id="sw2">
+                        <label class="form-check-label" for="sw2">Toggle inactivo</label>
+                    </div>
+                </div>
+            </div>
+            <div class="ui-component-code">
+                <div class="ui-component-code-header">
+                    <span class="ui-component-code-label">Twig / HTML — Checkbox, Radio, Switch</span>
+                    <button type="button" class="btn btn-outline-secondary btn-sm btn-copy-code" data-copy-target="code-checks">Copiar</button>
+                </div>
+                <pre id="code-checks">{% verbatim %}{# Checkbox #}
+<div class="form-check">
+    <input class="form-check-input" type="checkbox" id="chk1" checked>
+    <label class="form-check-label" for="chk1">Activo</label>
+</div>
+
+{# Radio #}
+<div class="form-check">
+    <input class="form-check-input" type="radio" name="grupo" id="rd1" checked>
+    <label class="form-check-label" for="rd1">Opción A</label>
+</div>
+
+{# Switch / Toggle #}
+<div class="form-check form-switch">
+    <input class="form-check-input" type="checkbox" id="sw1" checked>
+    <label class="form-check-label" for="sw1">Toggle activo</label>
+</div>{% endverbatim %}</pre>
+            </div>
+        </div>
+
+        {# ── Select2 ── #}
+        <div class="ui-component">
+            <div class="ui-component-preview">
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <label class="form-label">Select2 — simple</label>
+                        <select class="grova-select2" data-placeholder="Seleccionar...">
+                            <option value=""></option>
+                            <option value="1">Opción 1</option>
+                            <option value="2">Opción 2</option>
+                            <option value="3">Opción 3</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Select2 — múltiple</label>
+                        <select class="grova-select2" multiple data-placeholder="Seleccionar etiquetas...">
+                            <option value="1">Etiqueta A</option>
+                            <option value="2" selected>Etiqueta B</option>
+                            <option value="3">Etiqueta C</option>
+                            <option value="4" selected>Etiqueta D</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Select2 — con búsqueda</label>
+                        <select class="grova-select2" data-placeholder="Buscar cliente..." data-allow-clear="true">
+                            <option value=""></option>
+                            <option value="1">Christian Solórzano</option>
+                            <option value="2">Jordi Construcción</option>
+                            <option value="3">Alcides Bufete</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            <div class="ui-component-code">
+                <div class="ui-component-code-header">
+                    <span class="ui-component-code-label">Twig / HTML — Select2</span>
+                    <button type="button" class="btn btn-outline-secondary btn-sm btn-copy-code" data-copy-target="code-select2">Copiar</button>
+                </div>
+                <pre id="code-select2">{% verbatim %}{# Solo agrega la clase grova-select2 — se inicializa solo, sin JS adicional #}
+
+{# Simple #}
+<select class="grova-select2" data-placeholder="Seleccionar...">
+    <option value=""></option>
+    <option value="1">Opción 1</option>
+    <option value="2">Opción 2</option>
+</select>
+
+{# Múltiple #}
+<select class="grova-select2" multiple data-placeholder="Seleccionar etiquetas...">
+    <option value="1">Etiqueta A</option>
+    <option value="2">Etiqueta B</option>
+</select>
+
+{# Con botón limpiar #}
+<select class="grova-select2" data-placeholder="Buscar cliente..." data-allow-clear="true">
+    <option value=""></option>
+    <option value="1">Cliente 1</option>
+    <option value="2">Cliente 2</option>
+</select>
+
+{# Si el select se agrega dinámicamente (modal, etc.) inicializar manualmente: #}
+<script>
+GrovaSelect2.initAll('#mi-modal');
+</script>{% endverbatim %}</pre>
+            </div>
+        </div>
+
+        {# ── Dual Listbox ── #}
+        <div class="ui-component">
+            <div class="ui-component-preview">
+                <div class="grova-dual-listbox" id="demo-dual-listbox">
+                    <div class="grova-dlb-col">
+                        <div class="grova-dlb-label">Disponibles / Available</div>
+                        <input type="text" class="grova-dlb-search form-control form-control-sm" placeholder="Buscar... / Search..." data-dlb-target="left">
+                        <select class="grova-dlb-list" multiple id="dlb-left">
+                            <option value="1">Módulo Facturación</option>
+                            <option value="2">Módulo Legal</option>
+                            <option value="3">Módulo Construcción</option>
+                            <option value="4">Módulo POS</option>
+                            <option value="5">Módulo Clínica</option>
+                            <option value="6">Módulo Restaurante</option>
+                        </select>
+                    </div>
+                    <div class="grova-dlb-actions">
+                        <button type="button" class="btn btn-primary btn-sm grova-dlb-btn" data-dlb-action="move-right" title="Mover seleccionados / Move selected"><i class="bi bi-chevron-right"></i></button>
+                        <button type="button" class="btn btn-primary btn-sm grova-dlb-btn" data-dlb-action="move-all-right" title="Mover todos / Move all"><i class="bi bi-chevron-double-right"></i></button>
+                        <button type="button" class="btn btn-outline-secondary btn-sm grova-dlb-btn" data-dlb-action="move-left" title="Quitar seleccionados / Remove selected"><i class="bi bi-chevron-left"></i></button>
+                        <button type="button" class="btn btn-outline-secondary btn-sm grova-dlb-btn" data-dlb-action="move-all-left" title="Quitar todos / Remove all"><i class="bi bi-chevron-double-left"></i></button>
+                    </div>
+                    <div class="grova-dlb-col">
+                        <div class="grova-dlb-label">Seleccionados / Selected</div>
+                        <input type="text" class="grova-dlb-search form-control form-control-sm" placeholder="Buscar... / Search..." data-dlb-target="right">
+                        <select class="grova-dlb-list" multiple id="dlb-right">
+                            <option value="7">Módulo Wallet</option>
+                            <option value="8">Módulo Pesca</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            <div class="ui-component-code">
+                <div class="ui-component-code-header">
+                    <span class="ui-component-code-label">Twig / HTML — Dual Listbox</span>
+                    <button type="button" class="btn btn-outline-secondary btn-sm btn-copy-code" data-copy-target="code-dual-listbox">Copiar</button>
+                </div>
+                <pre id="code-dual-listbox">{% verbatim %}<div class="grova-dual-listbox" id="mi-dual-listbox">
+    <div class="grova-dlb-col">
+        <div class="grova-dlb-label">Disponibles / Available</div>
+        <input type="text" class="grova-dlb-search form-control form-control-sm"
+               placeholder="Buscar... / Search..." data-dlb-target="left">
+        <select class="grova-dlb-list" multiple id="dlb-left">
+            <option value="1">Item 1</option>
+            <option value="2">Item 2</option>
+        </select>
+    </div>
+    <div class="grova-dlb-actions">
+        <button type="button" class="btn btn-primary btn-sm grova-dlb-btn" data-dlb-action="move-right"><i class="bi bi-chevron-right"></i></button>
+        <button type="button" class="btn btn-primary btn-sm grova-dlb-btn" data-dlb-action="move-all-right"><i class="bi bi-chevron-double-right"></i></button>
+        <button type="button" class="btn btn-outline-secondary btn-sm grova-dlb-btn" data-dlb-action="move-left"><i class="bi bi-chevron-left"></i></button>
+        <button type="button" class="btn btn-outline-secondary btn-sm grova-dlb-btn" data-dlb-action="move-all-left"><i class="bi bi-chevron-double-left"></i></button>
+    </div>
+    <div class="grova-dlb-col">
+        <div class="grova-dlb-label">Seleccionados / Selected</div>
+        <input type="text" class="grova-dlb-search form-control form-control-sm"
+               placeholder="Buscar... / Search..." data-dlb-target="right">
+        <select class="grova-dlb-list" multiple id="dlb-right">
+        </select>
     </div>
 </div>
+
+{# JS — inicializar (se incluye automáticamente via grova-dual-listbox.js) #}
+{# Al guardar el form, recoger los valores del lado derecho: #}
+<script>
+document.getElementById('mi-form').addEventListener('submit', function () {
+    var selected = Array.from(document.getElementById('dlb-right').options).map(o => o.value);
+    document.getElementById('mi-input-hidden').value = selected.join(',');
+});
+</script>{% endverbatim %}</pre>
+            </div>
+        </div>
+
+        {# ── Estados de validación ── #}
+        <div class="ui-component">
+            <div class="ui-component-preview">
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <label class="form-label">Campo válido</label>
+                        <input type="text" class="form-control form-control-sm is-valid" value="Correcto">
+                        <div class="valid-feedback">Se ve bien.</div>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Campo inválido</label>
+                        <input type="text" class="form-control form-control-sm is-invalid" value="Error">
+                        <div class="invalid-feedback">Este campo es requerido.</div>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Deshabilitado</label>
+                        <input type="text" class="form-control form-control-sm" value="No editable" disabled>
+                    </div>
+                </div>
+            </div>
+            <div class="ui-component-code">
+                <div class="ui-component-code-header">
+                    <span class="ui-component-code-label">Twig / HTML — Estados</span>
+                    <button type="button" class="btn btn-outline-secondary btn-sm btn-copy-code" data-copy-target="code-states">Copiar</button>
+                </div>
+                <pre id="code-states">{% verbatim %}<input type="text" class="form-control form-control-sm is-valid" value="Correcto">
+<div class="valid-feedback">Se ve bien.</div>
+
+<input type="text" class="form-control form-control-sm is-invalid" value="Error">
+<div class="invalid-feedback">Este campo es requerido.</div>
+
+<input type="text" class="form-control form-control-sm" value="No editable" disabled>{% endverbatim %}</pre>
+            </div>
+        </div>
+
+        {# ── Range ── #}
+        <div class="ui-component">
+            <div class="ui-component-preview">
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <label class="form-label">Range simple <span id="range-val-1" class="text-muted" style="font-size:11px;">50</span></label>
+                        <input type="range" class="form-range" min="0" max="100" value="50" id="range-demo-1">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Range con pasos <span id="range-val-2" class="text-muted" style="font-size:11px;">0</span></label>
+                        <input type="range" class="form-range" min="0" max="10" step="1" value="0" id="range-demo-2">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Range deshabilitado</label>
+                        <input type="range" class="form-range" value="30" disabled>
+                    </div>
+                </div>
+            </div>
+            <div class="ui-component-code">
+                <div class="ui-component-code-header">
+                    <span class="ui-component-code-label">Twig / HTML — Range</span>
+                    <button type="button" class="btn btn-outline-secondary btn-sm btn-copy-code" data-copy-target="code-range">Copiar</button>
+                </div>
+                <pre id="code-range">{% verbatim %}<label class="form-label">Porcentaje <span id="range-val"></span></label>
+<input type="range" class="form-range" min="0" max="100" value="50" id="mi-range">
+
+<script>
+document.getElementById('mi-range').addEventListener('input', function () {
+    document.getElementById('range-val').textContent = this.value + '%';
+});
+</script>{% endverbatim %}</pre>
+            </div>
+        </div>
+
+        {# ── Input Group ── #}
+        <div class="ui-component">
+            <div class="ui-component-preview">
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <label class="form-label">Con prefijo</label>
+                        <div class="input-group input-group-sm">
+                            <span class="input-group-text"><i class="bi bi-search"></i></span>
+                            <input type="text" class="form-control" placeholder="Buscar...">
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Con sufijo texto</label>
+                        <div class="input-group input-group-sm">
+                            <input type="number" class="form-control" placeholder="0.00">
+                            <span class="input-group-text">USD</span>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Con botón</label>
+                        <div class="input-group input-group-sm">
+                            <input type="text" class="form-control" placeholder="Código...">
+                            <button type="button" class="btn btn-primary">Aplicar</button>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">URL / slug</label>
+                        <div class="input-group input-group-sm">
+                            <span class="input-group-text">grova.app/</span>
+                            <input type="text" class="form-control" placeholder="mi-empresa">
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Monto con moneda</label>
+                        <div class="input-group input-group-sm">
+                            <span class="input-group-text">₡</span>
+                            <input type="number" class="form-control" placeholder="0.00">
+                            <span class="input-group-text">.00</span>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Email con dominio fijo</label>
+                        <div class="input-group input-group-sm">
+                            <input type="text" class="form-control" placeholder="usuario">
+                            <span class="input-group-text">@empresa.com</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="ui-component-code">
+                <div class="ui-component-code-header">
+                    <span class="ui-component-code-label">Twig / HTML — Input Group</span>
+                    <button type="button" class="btn btn-outline-secondary btn-sm btn-copy-code" data-copy-target="code-input-group">Copiar</button>
+                </div>
+                <pre id="code-input-group">{% verbatim %}{# Con ícono prefijo #}
+<div class="input-group input-group-sm">
+    <span class="input-group-text"><i class="bi bi-search"></i></span>
+    <input type="text" class="form-control" placeholder="Buscar...">
+</div>
+
+{# Con sufijo texto #}
+<div class="input-group input-group-sm">
+    <input type="number" class="form-control" placeholder="0.00">
+    <span class="input-group-text">USD</span>
+</div>
+
+{# Con botón #}
+<div class="input-group input-group-sm">
+    <input type="text" class="form-control" placeholder="Código...">
+    <button type="button" class="btn btn-primary">Aplicar</button>
+</div>
+
+{# Monto con símbolo de moneda #}
+<div class="input-group input-group-sm">
+    <span class="input-group-text">₡</span>
+    <input type="number" class="form-control" placeholder="0.00">
+</div>{% endverbatim %}</pre>
+            </div>
+        </div>
+
+        {# ── Floating Labels ── #}
+        <div class="ui-component">
+            <div class="ui-component-preview">
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <div class="form-floating">
+                            <input type="text" class="form-control form-control-sm" id="fl-nombre" placeholder="Nombre">
+                            <label for="fl-nombre">Nombre completo</label>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="form-floating">
+                            <input type="email" class="form-control" id="fl-email" placeholder="Email">
+                            <label for="fl-email">Correo electrónico</label>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="form-floating">
+                            <select class="form-select" id="fl-estado">
+                                <option value="">Seleccionar...</option>
+                                <option>Activo</option>
+                                <option>Inactivo</option>
+                            </select>
+                            <label for="fl-estado">Estado</label>
+                        </div>
+                    </div>
+                    <div class="col-md-8">
+                        <div class="form-floating">
+                            <textarea class="form-control" id="fl-obs" placeholder="Observaciones" style="height:80px;"></textarea>
+                            <label for="fl-obs">Observaciones</label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="ui-component-code">
+                <div class="ui-component-code-header">
+                    <span class="ui-component-code-label">Twig / HTML — Floating Labels</span>
+                    <button type="button" class="btn btn-outline-secondary btn-sm btn-copy-code" data-copy-target="code-floating">Copiar</button>
+                </div>
+                <pre id="code-floating">{% verbatim %}{# Input con floating label #}
+<div class="form-floating">
+    <input type="text" class="form-control" id="fl-nombre" placeholder="Nombre">
+    <label for="fl-nombre">Nombre completo</label>
+</div>
+
+{# Select con floating label #}
+<div class="form-floating">
+    <select class="form-select" id="fl-estado">
+        <option value="">Seleccionar...</option>
+        <option>Activo</option>
+    </select>
+    <label for="fl-estado">Estado</label>
+</div>
+
+{# Textarea con floating label #}
+<div class="form-floating">
+    <textarea class="form-control" id="fl-obs" placeholder="x" style="height:80px;"></textarea>
+    <label for="fl-obs">Observaciones</label>
+</div>{% endverbatim %}</pre>
+            </div>
+        </div>
+
+        {# ── Validation ── #}
+        <div class="ui-component">
+            <div class="ui-component-preview">
+                <form class="needs-validation" id="demo-validation-form" novalidate>
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <label class="form-label">Nombre <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control form-control-sm is-valid" value="Christian" required>
+                            <div class="valid-feedback">Correcto.</div>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Email <span class="text-danger">*</span></label>
+                            <input type="email" class="form-control form-control-sm is-invalid" value="no-es-email" required>
+                            <div class="invalid-feedback">Ingresa un email válido.</div>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Teléfono</label>
+                            <input type="tel" class="form-control form-control-sm" placeholder="Opcional">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Select requerido <span class="text-danger">*</span></label>
+                            <select class="form-select form-select-sm is-invalid" required>
+                                <option value="">Seleccionar...</option>
+                                <option>Opción 1</option>
+                            </select>
+                            <div class="invalid-feedback">Selecciona una opción.</div>
+                        </div>
+                        <div class="col-12">
+                            <div class="form-check">
+                                <input class="form-check-input is-invalid" type="checkbox" id="val-terms" required>
+                                <label class="form-check-label" for="val-terms">Acepto los términos y condiciones</label>
+                                <div class="invalid-feedback">Debes aceptar los términos.</div>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="ui-component-code">
+                <div class="ui-component-code-header">
+                    <span class="ui-component-code-label">Twig / HTML — Validation</span>
+                    <button type="button" class="btn btn-outline-secondary btn-sm btn-copy-code" data-copy-target="code-validation">Copiar</button>
+                </div>
+                <pre id="code-validation">{% verbatim %}{# Agregar novalidate al form para usar validación de Bootstrap #}
+<form class="needs-validation" novalidate>
+    <div class="col-md-4">
+        <label class="form-label">Nombre <span class="text-danger">*</span></label>
+        <input type="text" class="form-control form-control-sm" required>
+        <div class="valid-feedback">Correcto.</div>
+        <div class="invalid-feedback">Este campo es requerido.</div>
+    </div>
+
+    <div class="col-md-4">
+        <label class="form-label">Email <span class="text-danger">*</span></label>
+        <input type="email" class="form-control form-control-sm" required>
+        <div class="invalid-feedback">Ingresa un email válido.</div>
+    </div>
+
+    <button type="submit" class="btn btn-primary btn-sm">Guardar</button>
+</form>
+
+{# JS — activar validación al submit #}
+<script>
+document.querySelectorAll('.needs-validation').forEach(function (form) {
+    form.addEventListener('submit', function (e) {
+        if (!form.checkValidity()) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+        form.classList.add('was-validated');
+    });
+});
+</script>{% endverbatim %}</pre>
+            </div>
+        </div>
+
+        {# ── Components (combinados) ── #}
+        <div class="ui-component">
+            <div class="ui-component-preview">
+                <div class="row g-3">
+                    {# Buscador con botón limpiar #}
+                    <div class="col-md-4">
+                        <label class="form-label">Buscador con limpiar</label>
+                        <div class="input-group input-group-sm">
+                            <span class="input-group-text"><i class="bi bi-search"></i></span>
+                            <input type="text" class="form-control" id="search-clearable" placeholder="Buscar...">
+                            <button type="button" class="btn btn-outline-secondary" id="btn-clear-search"><i class="bi bi-x"></i></button>
+                        </div>
+                    </div>
+                    {# Input con contador de caracteres #}
+                    <div class="col-md-4">
+                        <label class="form-label">Textarea con contador</label>
+                        <textarea class="form-control form-control-sm" id="char-counter-input" rows="2" maxlength="100" placeholder="Máximo 100 caracteres..."></textarea>
+                        <div class="d-flex justify-content-end"><small class="text-muted"><span id="char-count">0</span>/100</small></div>
+                    </div>
+                    {# Input con visibilidad de contraseña #}
+                    <div class="col-md-4">
+                        <label class="form-label">Password con toggle</label>
+                        <div class="input-group input-group-sm">
+                            <input type="password" class="form-control" id="pwd-toggle-input" placeholder="Contraseña">
+                            <button type="button" class="btn btn-outline-secondary" id="btn-toggle-pwd">
+                                <i class="bi bi-eye" id="pwd-icon"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="ui-component-code">
+                <div class="ui-component-code-header">
+                    <span class="ui-component-code-label">Twig / HTML — Components combinados</span>
+                    <button type="button" class="btn btn-outline-secondary btn-sm btn-copy-code" data-copy-target="code-components">Copiar</button>
+                </div>
+                <pre id="code-components">{% verbatim %}{# Buscador con botón limpiar #}
+<div class="input-group input-group-sm">
+    <span class="input-group-text"><i class="bi bi-search"></i></span>
+    <input type="text" class="form-control" id="mi-search" placeholder="Buscar...">
+    <button type="button" class="btn btn-outline-secondary" id="btn-clear">
+        <i class="bi bi-x"></i>
+    </button>
+</div>
+<script>
+document.getElementById('btn-clear').addEventListener('click', function () {
+    document.getElementById('mi-search').value = '';
+    document.getElementById('mi-search').focus();
+});
+</script>
+
+{# Textarea con contador de caracteres #}
+<textarea class="form-control form-control-sm" id="mi-textarea" maxlength="100"></textarea>
+<div class="d-flex justify-content-end">
+    <small class="text-muted"><span id="mi-count">0</span>/100</small>
+</div>
+<script>
+document.getElementById('mi-textarea').addEventListener('input', function () {
+    document.getElementById('mi-count').textContent = this.value.length;
+});
+</script>
+
+{# Password con toggle visibilidad #}
+<div class="input-group input-group-sm">
+    <input type="password" class="form-control" id="mi-pwd" placeholder="Contraseña">
+    <button type="button" class="btn btn-outline-secondary" id="btn-toggle-pwd">
+        <i class="bi bi-eye" id="mi-pwd-icon"></i>
+    </button>
+</div>
+<script>
+document.getElementById('btn-toggle-pwd').addEventListener('click', function () {
+    var input = document.getElementById('mi-pwd');
+    var icon  = document.getElementById('mi-pwd-icon');
+    var show  = input.type === 'password';
+    input.type = show ? 'text' : 'password';
+    icon.className = show ? 'bi bi-eye-slash' : 'bi bi-eye';
+});
+</script>{% endverbatim %}</pre>
+            </div>
+        </div>
+
+    </div>
+</div>
+{% endblock %}
+
+{% block app_page_scripts %}
+<script>
+// Range demos
+document.getElementById('range-demo-1').addEventListener('input', function () {
+    document.getElementById('range-val-1').textContent = this.value;
+});
+document.getElementById('range-demo-2').addEventListener('input', function () {
+    document.getElementById('range-val-2').textContent = this.value;
+});
+
+// Buscador con limpiar
+document.getElementById('btn-clear-search').addEventListener('click', function () {
+    document.getElementById('search-clearable').value = '';
+    document.getElementById('search-clearable').focus();
+});
+
+// Contador de caracteres
+document.getElementById('char-counter-input').addEventListener('input', function () {
+    document.getElementById('char-count').textContent = this.value.length;
+});
+
+// Password toggle
+document.getElementById('btn-toggle-pwd').addEventListener('click', function () {
+    var input = document.getElementById('pwd-toggle-input');
+    var icon  = document.getElementById('pwd-icon');
+    var show  = input.type === 'password';
+    input.type = show ? 'text' : 'password';
+    icon.className = show ? 'bi bi-eye-slash' : 'bi bi-eye';
+});
+</script>
+<script>
+document.querySelectorAll('.btn-copy-code').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+        var target = document.getElementById(btn.getAttribute('data-copy-target'));
+        if (!target) return;
+        navigator.clipboard.writeText(target.textContent.trim()).then(function () {
+            var old = btn.textContent;
+            btn.textContent = 'Copiado';
+            setTimeout(function () { btn.textContent = old; }, 1200);
+        });
+    });
+});
+</script>
 {% endblock %}

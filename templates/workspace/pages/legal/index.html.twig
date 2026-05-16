@@ -1,0 +1,230 @@
+{% extends 'workspace/app_layout.html.twig' %}
+{% block page_title %}Legal{% endblock %}
+{% block app_page_subtitle %}Casos, seguimientos y cobros{% endblock %}
+
+{% block page_styles %}
+<style>
+.legal-stat { background:#111827; border:1px solid #1e293b; border-radius:12px; padding:1.25rem; }
+body.light-mode .legal-stat { background:#fff; border-color:#e2e8f0; }
+.legal-stat-label { font-size:11px; color:#64748b; text-transform:uppercase; letter-spacing:.06em; margin-bottom:.35rem; }
+.legal-stat-value { font-size:26px; font-weight:800; }
+.estado-abierto    { background:#1d4ed822; color:#60a5fa; }
+.estado-en_proceso { background:#f59e0b22; color:#fbbf24; }
+.estado-cerrado    { background:#16a34a22; color:#4ade80; }
+.estado-archivado  { background:#1e293b;   color:#64748b; }
+.estado-badge { font-size:10px; padding:2px 8px; border-radius:10px; font-weight:600; }
+.tipo-badge { font-size:10px; padding:2px 7px; border-radius:8px; background:#1e293b; color:#94a3b8; }
+</style>
+{% endblock %}
+
+{% block app_main %}
+
+{# ── Stats ── #}
+<div class="row g-3 mb-4">
+    <div class="col-sm-3">
+        <div class="legal-stat">
+            <div class="legal-stat-label">Abiertos</div>
+            <div class="legal-stat-value" style="color:#60a5fa;">{{ (stats.abierto ?? 0) + (stats.en_proceso ?? 0) }}</div>
+        </div>
+    </div>
+    <div class="col-sm-3">
+        <div class="legal-stat">
+            <div class="legal-stat-label">Cerrados</div>
+            <div class="legal-stat-value" style="color:#4ade80;">{{ stats.cerrado ?? 0 }}</div>
+        </div>
+    </div>
+    <div class="col-sm-3">
+        <div class="legal-stat">
+            <div class="legal-stat-label">Honorarios pendientes</div>
+            <div class="legal-stat-value" style="color:#f59e0b;">${{ pendiente|number_format(2) }}</div>
+        </div>
+    </div>
+    <div class="col-sm-3">
+        <div class="legal-stat">
+            <div class="legal-stat-label">Total casos</div>
+            <div class="legal-stat-value">{{ cases|length }}</div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-3">
+
+    {# ── Lista de casos ── #}
+    <div class="col-lg-8">
+        <div class="content-card">
+            <div class="content-card-header">
+                Casos
+                <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#modal-nuevo-caso">
+                    <i class="bi bi-plus-lg me-1"></i>Nuevo caso
+                </button>
+            </div>
+            <div class="content-card-body p-0">
+                {% if cases|length > 0 %}
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0" style="color:inherit;">
+                        <thead>
+                            <tr>
+                                <th>Título</th>
+                                <th>Cliente</th>
+                                <th>Tipo</th>
+                                <th>Estado</th>
+                                <th style="width:100px;">Honorarios</th>
+                                <th style="width:50px;"></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for case in cases %}
+                            <tr>
+                                <td>
+                                    <div style="font-weight:600;font-size:13px;">{{ case.titulo }}</div>
+                                    {% if case.numero %}<div style="font-size:11px;color:#64748b;">#{{ case.numero }}</div>{% endif %}
+                                </td>
+                                <td style="font-size:12px;">{{ case.contact.nombreCompleto }}</td>
+                                <td><span class="tipo-badge">{{ case.tipoLabel }}</span></td>
+                                <td><span class="estado-badge estado-{{ case.estado }}">{{ case.estadoLabel }}</span></td>
+                                <td style="font-size:12px;">
+                                    {% if case.honorarios %}
+                                    <span style="color:#f59e0b;font-weight:600;">${{ case.honorarios|number_format(0) }}</span>
+                                    {% else %}—{% endif %}
+                                </td>
+                                <td>
+                                    <a href="{{ path('grova_legal_case_show', {id: case.id, _locale: app.request.locale}) }}"
+                                       class="btn btn-outline-secondary btn-sm" style="padding:2px 7px;font-size:11px;">
+                                        <i class="bi bi-eye"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="grova-empty-state">
+                    <div class="grova-empty-icon"><i class="bi bi-briefcase2"></i></div>
+                    <div class="grova-empty-title">Sin casos</div>
+                    <div class="grova-empty-desc">Registra tu primer caso legal.</div>
+                    <div class="grova-empty-actions">
+                        <button type="button" class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#modal-nuevo-caso">
+                            <i class="bi bi-plus-lg me-1"></i>Nuevo caso
+                        </button>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    {# ── Próximas audiencias ── #}
+    <div class="col-lg-4">
+        <div class="content-card">
+            <div class="content-card-header">Próximas audiencias</div>
+            <div class="content-card-body p-0">
+                {% if audiencias|length > 0 %}
+                <ul class="list-group list-group-flush">
+                    {% for fu in audiencias %}
+                    <li class="list-group-item" style="background:transparent;border-color:#1e293b;">
+                        <div style="font-size:12px;font-weight:600;color:#60a5fa;">
+                            {{ fu.proximaAudiencia|date('d/m/Y H:i') }}
+                        </div>
+                        <div style="font-size:12px;">{{ fu.case.titulo }}</div>
+                        <div style="font-size:11px;color:#64748b;">{{ fu.case.contact.nombreCompleto }}</div>
+                    </li>
+                    {% endfor %}
+                </ul>
+                {% else %}
+                <div style="padding:1.5rem;text-align:center;font-size:12px;color:#475569;">Sin audiencias próximas</div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+{# ── Modal: Nuevo caso ── #}
+<div class="modal fade" id="modal-nuevo-caso" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content">
+            <form method="post" action="{{ path('grova_legal_case_create', {_locale: app.request.locale}) }}">
+                <input type="hidden" name="_token" value="{{ csrf_token('legal_case') }}">
+                <div class="modal-header">
+                    <h5 class="modal-title">Nuevo caso</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row g-3">
+                        <div class="col-12">
+                            <label class="form-label">Cliente *</label>
+                            <select class="form-select form-select-sm" name="contact_id" required>
+                                <option value="">Selecciona un contacto...</option>
+                                {% set clientes = [] %}
+                                {% for case in cases %}{% endfor %}
+                            </select>
+                            <div class="form-text">
+                                <a href="{{ path('grova_contacts_index', {_locale: app.request.locale}) }}" target="_blank">
+                                    Agregar contacto primero →
+                                </a>
+                            </div>
+                        </div>
+                        <div class="col-sm-8">
+                            <label class="form-label">Título del caso *</label>
+                            <input type="text" class="form-control form-control-sm" name="titulo" required maxlength="255">
+                        </div>
+                        <div class="col-sm-4">
+                            <label class="form-label">N° expediente</label>
+                            <input type="text" class="form-control form-control-sm" name="numero" maxlength="50">
+                        </div>
+                        <div class="col-sm-4">
+                            <label class="form-label">Tipo</label>
+                            <select class="form-select form-select-sm" name="tipo">
+                                {% for key, label in {'penal':'Penal','civil':'Civil','laboral':'Laboral','familiar':'Familiar','mercantil':'Mercantil','administrativo':'Administrativo','otro':'Otro'} %}
+                                <option value="{{ key }}">{{ label }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-sm-4">
+                            <label class="form-label">Fecha apertura</label>
+                            <input type="date" class="form-control form-control-sm" name="fecha_apertura" value="{{ 'now'|date('Y-m-d') }}">
+                        </div>
+                        <div class="col-sm-4">
+                            <label class="form-label">Honorarios ($)</label>
+                            <div class="input-group input-group-sm">
+                                <span class="input-group-text">$</span>
+                                <input type="number" step="0.01" class="form-control" name="honorarios" min="0">
+                            </div>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label">Descripción</label>
+                            <textarea class="form-control form-control-sm" name="descripcion" rows="3"></textarea>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary btn-sm">Crear caso</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block app_page_scripts %}
+<script>
+// Cargar contactos en el select del modal
+document.getElementById('modal-nuevo-caso').addEventListener('show.bs.modal', function () {
+    const select = this.querySelector('select[name="contact_id"]');
+    if (select.options.length > 1) return;
+
+    fetch('{{ path('grova_contacts_api_search', {_locale: app.request.locale}) }}?tipo=cliente')
+        .then(r => r.json())
+        .then(data => {
+            data.forEach(c => {
+                const opt = document.createElement('option');
+                opt.value = c.id;
+                opt.text  = c.text;
+                select.appendChild(opt);
+            });
+        });
+});
+</script>
+{% endblock %}

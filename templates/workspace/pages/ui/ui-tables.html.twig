@@ -1,12 +1,230 @@
 {% extends 'workspace/app_layout.html.twig' %}
 
+{% block main_attributes %} data-grova-filter-schema="filter-scale-9-20"{% endblock %}
+
+{% block app_filters_row %}{% include 'workspace/partials/_filters_active_row.html.twig' %}{% endblock %}
+{% block app_filters_drawer %}{% include 'workspace/partials/_filters_drawer.html.twig' %}{% endblock %}
+
+{% block page_title %}{{ 'Tablas y DataTables' | trans }}{% endblock %}
+{% block app_page_subtitle %}{{ 'Referencia de tablas con DataTables. Copia el código y úsalo en cualquier vista.' | trans }}{% endblock %}
+
+{% block page_styles %}
+<style>
+.ui-component { border: 1px solid #1e293b; border-radius: 10px; overflow: hidden; margin-bottom: 1.5rem; }
+.ui-component-preview { padding: 1.5rem; background: #0f172a; }
+.ui-component-code { background: #020617; border-top: 1px solid #1e293b; }
+.ui-component-code-header { display: flex; align-items: center; justify-content: space-between; padding: .5rem 1rem; border-bottom: 1px solid #1e293b; }
+.ui-component-code-label { font-size: 11px; color: #64748b; text-transform: uppercase; letter-spacing: .5px; }
+.ui-component-code pre { margin: 0; padding: 1rem; font-size: 12px; color: #94a3b8; overflow-x: auto; }
+.btn-copy-code { font-size: 11px; padding: 2px 10px; }
+body.light-mode .ui-component { border-color: #dbe3ee; }
+body.light-mode .ui-component-preview { background: #f8fafc; }
+body.light-mode .ui-component-code { background: #f1f5f9; border-color: #dbe3ee; }
+body.light-mode .ui-component-code-header { border-color: #dbe3ee; }
+body.light-mode .ui-component-code pre { color: #475569; }
+</style>
+{% endblock %}
+
 {% block app_main %}
 <div class="content-card">
-    <div class="content-card-header">Tablas</div>
+    <div class="content-card-header">Tablas y DataTables</div>
     <div class="content-card-body">
-        <p class="text-muted mb-0">
-            Referencia de tablas. Módulo <code>ui-tables</code> en la demo legacy.
-        </p>
+
+        {# ── Tabla estándar con acciones ── #}
+        <div class="ui-component">
+            <div class="ui-component-preview">
+                <div class="content-card">
+                    <div class="content-card-header d-flex flex-wrap align-items-center justify-content-between gap-2">
+                        <span>Usuarios</span>
+                        <button type="button" class="btn btn-sm btn-primary">
+                            <i class="bi bi-plus me-1"></i>Nuevo
+                        </button>
+                    </div>
+                    <div class="content-card-body">
+                        <table class="table table-hover w-100" style="color:inherit;">
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>Nombre</th>
+                                    <th>Email</th>
+                                    <th>Rol</th>
+                                    <th>Estado</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>1</td>
+                                    <td>Christian Solórzano</td>
+                                    <td>christian@grova.com</td>
+                                    <td><span class="badge bg-primary">Admin</span></td>
+                                    <td><span class="badge bg-success">Activo</span></td>
+                                    <td>
+                                        <button type="button" class="btn btn-sm btn-outline-secondary me-1"><i class="bi bi-pencil"></i></button>
+                                        <button type="button" class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i></button>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>2</td>
+                                    <td>Ana García</td>
+                                    <td>ana@grova.com</td>
+                                    <td><span class="badge bg-secondary">Editor</span></td>
+                                    <td><span class="badge bg-warning text-dark">Pendiente</span></td>
+                                    <td>
+                                        <button type="button" class="btn btn-sm btn-outline-secondary me-1"><i class="bi bi-pencil"></i></button>
+                                        <button type="button" class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i></button>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            <div class="ui-component-code">
+                <div class="ui-component-code-header">
+                    <span class="ui-component-code-label">Twig / HTML — Tabla estándar</span>
+                    <button type="button" class="btn btn-outline-secondary btn-sm btn-copy-code" data-copy-target="code-table-standard">Copiar</button>
+                </div>
+                <pre id="code-table-standard">{% verbatim %}<div class="content-card">
+    <div class="content-card-header d-flex flex-wrap align-items-center justify-content-between gap-2">
+        <span>Título</span>
+        <button type="button" class="btn btn-sm btn-primary">
+            <i class="bi bi-plus me-1"></i>Nuevo
+        </button>
+    </div>
+    <div class="content-card-body">
+        <table id="mi-tabla" class="table table-hover w-100" style="color:inherit;">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Nombre</th>
+                    <th>Estado</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>1</td>
+                    <td>Ejemplo</td>
+                    <td><span class="badge bg-success">Activo</span></td>
+                    <td>
+                        <button type="button" class="btn btn-sm btn-outline-secondary me-1"><i class="bi bi-pencil"></i></button>
+                        <button type="button" class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i></button>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>{% endverbatim %}</pre>
+            </div>
+        </div>
+
+        {# ── Tabla con DataTables 2 (misma piel que el resto del workspace) ── #}
+        <div class="ui-component">
+            <div class="ui-component-preview">
+                <div class="content-card">
+                    <div class="content-card-header">DataTables 2</div>
+                    <div class="content-card-body p-0">
+                        <div class="table-responsive">
+                            <table id="grova-ui-tables-dt-demo" class="table table-hover mb-0" style="color:inherit;">
+                                <thead>
+                                    <tr>
+                                        <th class="text-nowrap">ID</th>
+                                        <th class="text-nowrap">Nombre</th>
+                                        <th class="text-end text-nowrap">Importe (€)</th>
+                                        <th class="text-nowrap">Estado</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr><td>1</td><td>Ana García</td><td class="text-end">€1.250,00</td><td><span class="badge bg-success">Activo</span></td></tr>
+                                    <tr><td>2</td><td>Christian Solórzano</td><td class="text-end">€2.180,50</td><td><span class="badge bg-success">Activo</span></td></tr>
+                                    <tr><td>3</td><td>Equipo demo</td><td class="text-end">€0,00</td><td><span class="badge bg-secondary">Invitado</span></td></tr>
+                                    <tr><td>4</td><td>Otro registro</td><td class="text-end">€99,90</td><td><span class="badge bg-warning text-dark">Pendiente</span></td></tr>
+                                    <tr><td>5</td><td>Más datos</td><td class="text-end">€450,25</td><td><span class="badge bg-success">Activo</span></td></tr>
+                                    <tr><td>6</td><td>Última fila</td><td class="text-end">€12,00</td><td><span class="badge bg-danger">Baja</span></td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="ui-component-code">
+                <div class="ui-component-code-header">
+                    <span class="ui-component-code-label">JS — DataTables 2 (Grova)</span>
+                    <button type="button" class="btn btn-outline-secondary btn-sm btn-copy-code" data-copy-target="code-datatable-init">Copiar</button>
+                </div>
+                <pre id="code-datatable-init">{% verbatim %}<!-- En Grova workspace, app_layout ya carga dataTables + integración Bootstrap antes de app_page_scripts. -->
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    var el = document.getElementById('mi-tabla');
+    if (!el || typeof DataTable === 'undefined') return;
+    var locale = document.documentElement.lang || 'es';
+    var langUrl = locale.indexOf('en') === 0
+        ? 'https://cdn.datatables.net/plug-ins/2.1.8/i18n/en-GB.json'
+        : 'https://cdn.datatables.net/plug-ins/2.1.8/i18n/es-ES.json';
+    new DataTable(el, {
+        language: { url: langUrl },
+        pageLength: 10,
+        layout: {
+            topStart: { pageLength: { menu: [5, 10, 25, 50, -1] } },
+            topEnd: { search: { placeholder: 'Buscar…' } }
+        }
+    });
+});
+</script>{% endverbatim %}</pre>
+            </div>
+        </div>
+
+        {# ── Nota API antigua (jQuery) ── #}
+        <div class="ui-component">
+            <div class="ui-component-preview">
+                <div class="alert alert-secondary mb-0 py-2" style="font-size:13px;">
+                    <i class="bi bi-info-circle me-2"></i>CSS global + piel Grova. <code>GrovaDataTable.init</code>: sin <code>buttons</code> → ninguno; <code>buttons: 'full'</code> → todos; <code>buttons: ['excel','pdf']</code> → manual; <code>buttons: 'export'</code> → preset.
+                </div>
+            </div>
+        </div>
+
     </div>
 </div>
+{% endblock %}
+
+{% block app_page_scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    var el = document.getElementById('grova-ui-tables-dt-demo');
+    if (!el || typeof DataTable === 'undefined') return;
+    var locale = {{ app.request.locale|json_encode|raw }};
+    var langUrl = locale === 'en'
+        ? 'https://cdn.datatables.net/plug-ins/2.1.8/i18n/en-GB.json'
+        : 'https://cdn.datatables.net/plug-ins/2.1.8/i18n/es-ES.json';
+    try {
+        var initDt = (window.GrovaDataTable && window.GrovaDataTable.init) ? window.GrovaDataTable.init : function (t, o) { return new DataTable(t, o); };
+        initDt(el, {
+            language: { url: langUrl },
+            pageLength: 5,
+            order: [[0, 'asc']],
+            buttons: ['copy', 'excel', 'colvis'],
+            layout: {
+                topStart: { pageLength: { menu: [5, 10, 25, -1] } },
+                topEnd: { search: { placeholder: {{ (app.request.locale == 'en' ? 'Search…' : 'Buscar…')|json_encode|raw }} } }
+            }
+        });
+    } catch (e) {
+        console.error(e);
+    }
+});
+</script>
+<script>
+document.querySelectorAll('.btn-copy-code').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+        var target = document.getElementById(btn.getAttribute('data-copy-target'));
+        if (!target) return;
+        navigator.clipboard.writeText(target.textContent.trim()).then(function () {
+            var old = btn.textContent;
+            btn.textContent = 'Copiado';
+            setTimeout(function () { btn.textContent = old; }, 1200);
+        });
+    });
+});
+</script>
 {% endblock %}

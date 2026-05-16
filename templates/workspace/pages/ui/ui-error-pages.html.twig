@@ -1,0 +1,547 @@
+{% extends 'workspace/app_layout.html.twig' %}
+
+{% block page_title %}Páginas de error{% endblock %}
+{% block app_page_subtitle %}Errores HTTP más comunes. Copia el bloque y colócalo en templates/bundles/TwigBundle/Exception/errorXXX.html.twig.{% endblock %}
+
+{% block page_styles %}
+<style>
+.ui-component { border: 1px solid #1e293b; border-radius: 10px; overflow: hidden; margin-bottom: 1.5rem; }
+.ui-component-preview { padding: 2.5rem 1.5rem; background: #0f172a; display: flex; justify-content: center; }
+.ui-component-code { background: #020617; border-top: 1px solid #1e293b; }
+.ui-component-code-header { display: flex; align-items: center; justify-content: space-between; padding: .5rem 1rem; border-bottom: 1px solid #1e293b; }
+.ui-component-code-label { font-size: 11px; color: #64748b; text-transform: uppercase; letter-spacing: .5px; }
+.ui-component-code pre { margin: 0; padding: 1rem; font-size: 12px; color: #94a3b8; overflow-x: auto; white-space: pre; }
+.btn-copy-code { font-size: 11px; padding: 2px 10px; }
+body.light-mode .ui-component { border-color: #dbe3ee; }
+body.light-mode .ui-component-preview { background: #f8fafc; }
+body.light-mode .ui-component-code { background: #f1f5f9; border-color: #dbe3ee; }
+body.light-mode .ui-component-code-header { border-color: #dbe3ee; }
+body.light-mode .ui-component-code pre { color: #475569; }
+
+/* Preview local */
+.err-preview {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 1rem;
+    width: 100%;
+    max-width: 480px;
+}
+.err-code {
+    font-size: 80px;
+    font-weight: 800;
+    line-height: 1;
+    letter-spacing: -.04em;
+    color: #1e3a5f;
+}
+.err-code-403 { color: #7c1d1d; }
+.err-code-404 { color: #1e3a5f; }
+.err-code-500 { color: #3b1f00; }
+.err-code-503 { color: #1a2e1a; }
+.err-title { font-size: 20px; font-weight: 700; color: #e2e8f0; }
+.err-desc  { font-size: 14px; color: #64748b; max-width: 360px; }
+.err-actions { display: flex; gap: .5rem; flex-wrap: wrap; justify-content: center; margin-top: .25rem; }
+body.light-mode .err-title { color: #1e293b; }
+</style>
+{% endblock %}
+
+{% block app_main %}
+<div class="content-card">
+    <div class="content-card-header">Páginas de error</div>
+    <div class="content-card-body">
+
+        <p class="mb-4" style="font-size:13px;color:#64748b;">
+            En Symfony, cada plantilla de error va en
+            <code>templates/bundles/TwigBundle/Exception/</code>.
+            Crea <code>error403.html.twig</code>, <code>error404.html.twig</code>, etc.
+            extendiendo tu layout base.
+        </p>
+
+        {# ── 403 Forbidden ── #}
+        <div class="ui-component">
+            <div class="ui-component-preview">
+                <div class="err-preview">
+                    <div class="err-code err-code-403">403</div>
+                    <div class="err-title">Sin permisos</div>
+                    <div class="err-desc">No tienes autorización para acceder a esta sección. Contacta al administrador si crees que es un error.</div>
+                    <div class="err-actions">
+                        <a href="#" class="btn btn-outline-secondary btn-sm"><i class="bi bi-arrow-left me-1"></i>Volver</a>
+                        <a href="#" class="btn btn-primary btn-sm"><i class="bi bi-house me-1"></i>Ir al inicio</a>
+                    </div>
+                </div>
+            </div>
+            <div class="ui-component-code">
+                <div class="ui-component-code-header">
+                    <span class="ui-component-code-label">Twig — error403.html.twig</span>
+                    <button type="button" class="btn btn-outline-secondary btn-sm btn-copy-code" data-copy-target="code-403">Copiar</button>
+                </div>
+                <pre id="code-403">{% verbatim %}{# templates/bundles/TwigBundle/Exception/error403.html.twig #}
+{% extends 'base.html.twig' %}
+
+{% block body %}
+<div class="grova-error-page">
+    <div class="grova-error-code">403</div>
+    <h1 class="grova-error-title">Sin permisos</h1>
+    <p class="grova-error-desc">
+        No tienes autorización para acceder a esta sección.
+        Contacta al administrador si crees que es un error.
+    </p>
+    <div class="grova-error-actions">
+        <a href="javascript:history.back()" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-arrow-left me-1"></i>Volver
+        </a>
+        <a href="{{ path('grova_page_dashboard') }}" class="btn btn-primary btn-sm">
+            <i class="bi bi-house me-1"></i>Ir al inicio
+        </a>
+    </div>
+</div>
+{% endblock %}{% endverbatim %}</pre>
+            </div>
+        </div>
+
+        {# ── 404 Not Found ── #}
+        <div class="ui-component">
+            <div class="ui-component-preview">
+                <div class="err-preview">
+                    <div class="err-code err-code-404">404</div>
+                    <div class="err-title">Página no encontrada</div>
+                    <div class="err-desc">La URL que buscas no existe o fue movida. Verifica la dirección o regresa al inicio.</div>
+                    <div class="err-actions">
+                        <a href="#" class="btn btn-outline-secondary btn-sm"><i class="bi bi-arrow-left me-1"></i>Volver</a>
+                        <a href="#" class="btn btn-primary btn-sm"><i class="bi bi-house me-1"></i>Ir al inicio</a>
+                    </div>
+                </div>
+            </div>
+            <div class="ui-component-code">
+                <div class="ui-component-code-header">
+                    <span class="ui-component-code-label">Twig — error404.html.twig</span>
+                    <button type="button" class="btn btn-outline-secondary btn-sm btn-copy-code" data-copy-target="code-404">Copiar</button>
+                </div>
+                <pre id="code-404">{% verbatim %}{# templates/bundles/TwigBundle/Exception/error404.html.twig #}
+{% extends 'base.html.twig' %}
+
+{% block body %}
+<div class="grova-error-page">
+    <div class="grova-error-code">404</div>
+    <h1 class="grova-error-title">Página no encontrada</h1>
+    <p class="grova-error-desc">
+        La URL que buscas no existe o fue movida.
+        Verifica la dirección o regresa al inicio.
+    </p>
+    <div class="grova-error-actions">
+        <a href="javascript:history.back()" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-arrow-left me-1"></i>Volver
+        </a>
+        <a href="{{ path('grova_page_dashboard') }}" class="btn btn-primary btn-sm">
+            <i class="bi bi-house me-1"></i>Ir al inicio
+        </a>
+    </div>
+</div>
+{% endblock %}{% endverbatim %}</pre>
+            </div>
+        </div>
+
+        {# ── 500 Internal Server Error ── #}
+        <div class="ui-component">
+            <div class="ui-component-preview">
+                <div class="err-preview">
+                    <div class="err-code err-code-500">500</div>
+                    <div class="err-title">Error del servidor</div>
+                    <div class="err-desc">Ocurrió un problema interno. Ya fuimos notificados. Intenta de nuevo en unos minutos.</div>
+                    <div class="err-actions">
+                        <a href="#" class="btn btn-outline-secondary btn-sm"><i class="bi bi-arrow-clockwise me-1"></i>Reintentar</a>
+                        <a href="#" class="btn btn-primary btn-sm"><i class="bi bi-house me-1"></i>Ir al inicio</a>
+                    </div>
+                </div>
+            </div>
+            <div class="ui-component-code">
+                <div class="ui-component-code-header">
+                    <span class="ui-component-code-label">Twig — error500.html.twig</span>
+                    <button type="button" class="btn btn-outline-secondary btn-sm btn-copy-code" data-copy-target="code-500">Copiar</button>
+                </div>
+                <pre id="code-500">{% verbatim %}{# templates/bundles/TwigBundle/Exception/error500.html.twig #}
+{% extends 'base.html.twig' %}
+
+{% block body %}
+<div class="grova-error-page">
+    <div class="grova-error-code">500</div>
+    <h1 class="grova-error-title">Error del servidor</h1>
+    <p class="grova-error-desc">
+        Ocurrió un problema interno. Ya fuimos notificados.
+        Intenta de nuevo en unos minutos.
+    </p>
+    <div class="grova-error-actions">
+        <a href="javascript:location.reload()" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-arrow-clockwise me-1"></i>Reintentar
+        </a>
+        <a href="{{ path('grova_page_dashboard') }}" class="btn btn-primary btn-sm">
+            <i class="bi bi-house me-1"></i>Ir al inicio
+        </a>
+    </div>
+</div>
+{% endblock %}{% endverbatim %}</pre>
+            </div>
+        </div>
+
+        {# ── 503 Service Unavailable ── #}
+        <div class="ui-component">
+            <div class="ui-component-preview">
+                <div class="err-preview">
+                    <div class="err-code err-code-503">503</div>
+                    <div class="err-title">Servicio no disponible</div>
+                    <div class="err-desc">El sistema está en mantenimiento. Regresa en unos minutos. Disculpa las molestias.</div>
+                    <div class="err-actions">
+                        <a href="#" class="btn btn-outline-secondary btn-sm"><i class="bi bi-arrow-clockwise me-1"></i>Reintentar</a>
+                    </div>
+                </div>
+            </div>
+            <div class="ui-component-code">
+                <div class="ui-component-code-header">
+                    <span class="ui-component-code-label">Twig — error503.html.twig</span>
+                    <button type="button" class="btn btn-outline-secondary btn-sm btn-copy-code" data-copy-target="code-503">Copiar</button>
+                </div>
+                <pre id="code-503">{% verbatim %}{# templates/bundles/TwigBundle/Exception/error503.html.twig #}
+{% extends 'base.html.twig' %}
+
+{% block body %}
+<div class="grova-error-page">
+    <div class="grova-error-code">503</div>
+    <h1 class="grova-error-title">Servicio no disponible</h1>
+    <p class="grova-error-desc">
+        El sistema está en mantenimiento.
+        Regresa en unos minutos. Disculpa las molestias.
+    </p>
+    <div class="grova-error-actions">
+        <a href="javascript:location.reload()" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-arrow-clockwise me-1"></i>Reintentar
+        </a>
+    </div>
+</div>
+{% endblock %}{% endverbatim %}</pre>
+            </div>
+        </div>
+
+        {# ── 401 Unauthorized ── #}
+        <div class="ui-component">
+            <div class="ui-component-preview">
+                <div class="err-preview">
+                    <div class="err-code" style="color:#312e81;opacity:.9;">401</div>
+                    <div class="err-title">No autenticado</div>
+                    <div class="err-desc">Tu sesión no es válida o ha expirado. Inicia sesión para continuar.</div>
+                    <div class="err-actions">
+                        <a href="#" class="btn btn-primary btn-sm"><i class="bi bi-box-arrow-in-right me-1"></i>Iniciar sesión</a>
+                    </div>
+                </div>
+            </div>
+            <div class="ui-component-code">
+                <div class="ui-component-code-header">
+                    <span class="ui-component-code-label">Twig — error401.html.twig</span>
+                    <button type="button" class="btn btn-outline-secondary btn-sm btn-copy-code" data-copy-target="code-401">Copiar</button>
+                </div>
+                <pre id="code-401">{% verbatim %}{# templates/bundles/TwigBundle/Exception/error401.html.twig #}
+{% extends 'base.html.twig' %}
+{% block body %}
+<div class="grova-error-page">
+    <div class="grova-error-code">401</div>
+    <h1 class="grova-error-title">No autenticado</h1>
+    <p class="grova-error-desc">Tu sesión no es válida o ha expirado. Inicia sesión para continuar.</p>
+    <div class="grova-error-actions">
+        <a href="{{ path('app_login') }}" class="btn btn-primary btn-sm">
+            <i class="bi bi-box-arrow-in-right me-1"></i>Iniciar sesión
+        </a>
+    </div>
+</div>
+{% endblock %}{% endverbatim %}</pre>
+            </div>
+        </div>
+
+        {# ── 419 Session Expired ── #}
+        <div class="ui-component">
+            <div class="ui-component-preview">
+                <div class="err-preview">
+                    <div class="err-code" style="color:#3b0764;opacity:.9;">419</div>
+                    <div class="err-title">Sesión expirada</div>
+                    <div class="err-desc">Tu sesión expiró por inactividad. Vuelve a iniciar sesión para continuar donde lo dejaste.</div>
+                    <div class="err-actions">
+                        <a href="#" class="btn btn-primary btn-sm"><i class="bi bi-arrow-clockwise me-1"></i>Renovar sesión</a>
+                    </div>
+                </div>
+            </div>
+            <div class="ui-component-code">
+                <div class="ui-component-code-header">
+                    <span class="ui-component-code-label">Twig — error419.html.twig + JS banner en pantalla activa</span>
+                    <button type="button" class="btn btn-outline-secondary btn-sm btn-copy-code" data-copy-target="code-419">Copiar</button>
+                </div>
+                <pre id="code-419">{% verbatim %}{# templates/bundles/TwigBundle/Exception/error419.html.twig #}
+{% extends 'base.html.twig' %}
+{% block body %}
+<div class="grova-error-page">
+    <div class="grova-error-code">419</div>
+    <h1 class="grova-error-title">Sesión expirada</h1>
+    <p class="grova-error-desc">Tu sesión expiró por inactividad. Vuelve a iniciar sesión.</p>
+    <div class="grova-error-actions">
+        <a href="{{ path('app_login') }}" class="btn btn-primary btn-sm">
+            <i class="bi bi-arrow-clockwise me-1"></i>Renovar sesión
+        </a>
+    </div>
+</div>
+{% endblock %}{% endverbatim %}
+
+{# ── Alternativa: banner inline (sin recargar página) ── #}
+{% verbatim %}<div class="alert alert-warning d-flex align-items-center gap-2 mb-3" id="session-expired-banner" style="display:none!important;">
+    <i class="bi bi-clock-history"></i>
+    <span>Tu sesión expiró. <a href="{{ path('app_login') }}" class="alert-link">Inicia sesión de nuevo</a>.</span>
+</div>{% endverbatim %}</pre>
+            </div>
+        </div>
+
+        {# ── 422 Unprocessable Entity ── #}
+        <div class="ui-component">
+            <div class="ui-component-preview">
+                <div class="err-preview">
+                    <div class="err-code" style="color:#713f12;opacity:.9;">422</div>
+                    <div class="err-title">Datos inválidos</div>
+                    <div class="err-desc">El servidor no pudo procesar la solicitud. Revisa los campos e inténtalo de nuevo.</div>
+                    <div class="err-actions">
+                        <a href="#" class="btn btn-outline-secondary btn-sm"><i class="bi bi-arrow-left me-1"></i>Volver al formulario</a>
+                    </div>
+                </div>
+            </div>
+            <div class="ui-component-code">
+                <div class="ui-component-code-header">
+                    <span class="ui-component-code-label">Twig — error422.html.twig</span>
+                    <button type="button" class="btn btn-outline-secondary btn-sm btn-copy-code" data-copy-target="code-422">Copiar</button>
+                </div>
+                <pre id="code-422">{% verbatim %}{# templates/bundles/TwigBundle/Exception/error422.html.twig #}
+{% extends 'base.html.twig' %}
+{% block body %}
+<div class="grova-error-page">
+    <div class="grova-error-code">422</div>
+    <h1 class="grova-error-title">Datos inválidos</h1>
+    <p class="grova-error-desc">El servidor no pudo procesar la solicitud. Revisa los campos e inténtalo de nuevo.</p>
+    <div class="grova-error-actions">
+        <a href="javascript:history.back()" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-arrow-left me-1"></i>Volver al formulario
+        </a>
+    </div>
+</div>
+{% endblock %}{% endverbatim %}</pre>
+            </div>
+        </div>
+
+        {# ── 429 Too Many Requests ── #}
+        <div class="ui-component">
+            <div class="ui-component-preview">
+                <div class="err-preview">
+                    <div class="err-code" style="color:#7c2d12;opacity:.9;">429</div>
+                    <div class="err-title">Demasiadas solicitudes</div>
+                    <div class="err-desc">Has superado el límite de solicitudes permitidas. Espera un momento antes de continuar.</div>
+                    <div class="err-actions">
+                        <a href="#" class="btn btn-outline-secondary btn-sm"><i class="bi bi-hourglass-split me-1"></i>Espera y reintenta</a>
+                    </div>
+                </div>
+            </div>
+            <div class="ui-component-code">
+                <div class="ui-component-code-header">
+                    <span class="ui-component-code-label">Twig — error429.html.twig</span>
+                    <button type="button" class="btn btn-outline-secondary btn-sm btn-copy-code" data-copy-target="code-429">Copiar</button>
+                </div>
+                <pre id="code-429">{% verbatim %}{# templates/bundles/TwigBundle/Exception/error429.html.twig #}
+{% extends 'base.html.twig' %}
+{% block body %}
+<div class="grova-error-page">
+    <div class="grova-error-code">429</div>
+    <h1 class="grova-error-title">Demasiadas solicitudes</h1>
+    <p class="grova-error-desc">Has superado el límite permitido. Espera un momento antes de continuar.</p>
+    <div class="grova-error-actions">
+        <a href="javascript:location.reload()" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-hourglass-split me-1"></i>Reintentar
+        </a>
+        <a href="{{ path('grova_page_dashboard') }}" class="btn btn-primary btn-sm">
+            <i class="bi bi-house me-1"></i>Ir al inicio
+        </a>
+    </div>
+</div>
+{% endblock %}{% endverbatim %}</pre>
+            </div>
+        </div>
+
+        {# ── 502 Bad Gateway ── #}
+        <div class="ui-component">
+            <div class="ui-component-preview">
+                <div class="err-preview">
+                    <div class="err-code" style="color:#1e3a5f;opacity:.9;">502</div>
+                    <div class="err-title">Puerta de enlace incorrecta</div>
+                    <div class="err-desc">El servidor recibió una respuesta inválida. Puede ser un problema temporal. Intenta de nuevo.</div>
+                    <div class="err-actions">
+                        <a href="#" class="btn btn-outline-secondary btn-sm"><i class="bi bi-arrow-clockwise me-1"></i>Reintentar</a>
+                    </div>
+                </div>
+            </div>
+            <div class="ui-component-code">
+                <div class="ui-component-code-header">
+                    <span class="ui-component-code-label">Twig — error502.html.twig</span>
+                    <button type="button" class="btn btn-outline-secondary btn-sm btn-copy-code" data-copy-target="code-502">Copiar</button>
+                </div>
+                <pre id="code-502">{% verbatim %}{# templates/bundles/TwigBundle/Exception/error502.html.twig #}
+{% extends 'base.html.twig' %}
+{% block body %}
+<div class="grova-error-page">
+    <div class="grova-error-code">502</div>
+    <h1 class="grova-error-title">Puerta de enlace incorrecta</h1>
+    <p class="grova-error-desc">El servidor recibió una respuesta inválida. Es un problema temporal.</p>
+    <div class="grova-error-actions">
+        <a href="javascript:location.reload()" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-arrow-clockwise me-1"></i>Reintentar
+        </a>
+        <a href="{{ path('grova_page_dashboard') }}" class="btn btn-primary btn-sm">
+            <i class="bi bi-house me-1"></i>Ir al inicio
+        </a>
+    </div>
+</div>
+{% endblock %}{% endverbatim %}</pre>
+            </div>
+        </div>
+
+        {# ── 504 Gateway Timeout ── #}
+        <div class="ui-component">
+            <div class="ui-component-preview">
+                <div class="err-preview">
+                    <div class="err-code" style="color:#1a2e1a;opacity:.9;">504</div>
+                    <div class="err-title">Tiempo de espera agotado</div>
+                    <div class="err-desc">El servidor tardó demasiado en responder. Verifica tu conexión e inténtalo de nuevo.</div>
+                    <div class="err-actions">
+                        <a href="#" class="btn btn-outline-secondary btn-sm"><i class="bi bi-arrow-clockwise me-1"></i>Reintentar</a>
+                    </div>
+                </div>
+            </div>
+            <div class="ui-component-code">
+                <div class="ui-component-code-header">
+                    <span class="ui-component-code-label">Twig — error504.html.twig</span>
+                    <button type="button" class="btn btn-outline-secondary btn-sm btn-copy-code" data-copy-target="code-504">Copiar</button>
+                </div>
+                <pre id="code-504">{% verbatim %}{# templates/bundles/TwigBundle/Exception/error504.html.twig #}
+{% extends 'base.html.twig' %}
+{% block body %}
+<div class="grova-error-page">
+    <div class="grova-error-code">504</div>
+    <h1 class="grova-error-title">Tiempo de espera agotado</h1>
+    <p class="grova-error-desc">El servidor tardó demasiado en responder. Verifica tu conexión e inténtalo de nuevo.</p>
+    <div class="grova-error-actions">
+        <a href="javascript:location.reload()" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-arrow-clockwise me-1"></i>Reintentar
+        </a>
+        <a href="{{ path('grova_page_dashboard') }}" class="btn btn-primary btn-sm">
+            <i class="bi bi-house me-1"></i>Ir al inicio
+        </a>
+    </div>
+</div>
+{% endblock %}{% endverbatim %}</pre>
+            </div>
+        </div>
+
+        {# ── CSS de referencia ── #}
+        <div class="ui-component">
+            <div class="ui-component-code" style="border-top:0;">
+                <div class="ui-component-code-header">
+                    <span class="ui-component-code-label">CSS — Clases .grova-error-* (agregar en _styles o base.html.twig)</span>
+                    <button type="button" class="btn btn-outline-secondary btn-sm btn-copy-code" data-copy-target="code-error-css">Copiar</button>
+                </div>
+                <pre id="code-error-css">.grova-error-page {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 2rem;
+    gap: 1rem;
+}
+.grova-error-code {
+    font-size: 96px;
+    font-weight: 800;
+    line-height: 1;
+    letter-spacing: -.04em;
+    color: #1e3a8a;
+    opacity: .18;
+}
+.grova-error-title {
+    font-size: 22px;
+    font-weight: 700;
+    color: #f1f5f9;
+    margin: 0;
+}
+.grova-error-desc {
+    font-size: 14px;
+    color: #64748b;
+    max-width: 400px;
+    margin: 0;
+}
+.grova-error-actions {
+    display: flex;
+    gap: .5rem;
+    flex-wrap: wrap;
+    justify-content: center;
+    margin-top: .5rem;
+}</pre>
+            </div>
+        </div>
+
+        {# ── error genérico (fallback) ── #}
+        <div class="ui-component">
+            <div class="ui-component-code" style="border-top:0;">
+                <div class="ui-component-code-header">
+                    <span class="ui-component-code-label">Twig — error.html.twig (fallback genérico para cualquier código)</span>
+                    <button type="button" class="btn btn-outline-secondary btn-sm btn-copy-code" data-copy-target="code-generic">Copiar</button>
+                </div>
+                <pre id="code-generic">{% verbatim %}{# templates/bundles/TwigBundle/Exception/error.html.twig #}
+{% extends 'base.html.twig' %}
+
+{% block body %}
+<div class="grova-error-page">
+    <div class="grova-error-code">{{ status_code }}</div>
+    <h1 class="grova-error-title">{{ status_text }}</h1>
+    <p class="grova-error-desc">
+        {% if status_code == 403 %}
+            No tienes permisos para acceder a esta sección.
+        {% elseif status_code == 404 %}
+            La página que buscas no existe o fue movida.
+        {% elseif status_code >= 500 %}
+            Ocurrió un error interno. Inténtalo de nuevo en unos minutos.
+        {% else %}
+            Ocurrió un error inesperado.
+        {% endif %}
+    </p>
+    <div class="grova-error-actions">
+        <a href="javascript:history.back()" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-arrow-left me-1"></i>Volver
+        </a>
+        <a href="{{ path('grova_page_dashboard') }}" class="btn btn-primary btn-sm">
+            <i class="bi bi-house me-1"></i>Ir al inicio
+        </a>
+    </div>
+</div>
+{% endblock %}{% endverbatim %}</pre>
+            </div>
+        </div>
+
+    </div>
+</div>
+{% endblock %}
+
+{% block app_page_scripts %}
+<script>
+document.querySelectorAll('.btn-copy-code').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+        var target = document.getElementById(btn.getAttribute('data-copy-target'));
+        if (!target) return;
+        navigator.clipboard.writeText(target.textContent.trim()).then(function () {
+            var old = btn.textContent;
+            btn.textContent = 'Copiado';
+            setTimeout(function () { btn.textContent = old; }, 1200);
+        });
+    });
+});
+</script>
+{% endblock %}

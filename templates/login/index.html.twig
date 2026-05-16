@@ -10,10 +10,11 @@
         display: flex;
         align-items: center;
         justify-content: center;
+        padding: 16px;
     }
     .login-card {
         width: 100%;
-        max-width: 420px;
+        max-width: 560px;
         background: #1e293b;
         border: 1px solid #334155;
         border-radius: 12px;
@@ -25,9 +26,9 @@
         display: flex; align-items: center; justify-content: center;
         font-weight: 700; color: #fff; font-size: 1.1rem;
     }
-    .login-title { color: #f1f5f9; font-weight: 700; font-size: 1.4rem; letter-spacing: -0.5px; }
-    .login-subtitle { color: #94a3b8; font-size: .875rem; }
-    .form-label { color: #cbd5e1; font-size: .8rem; font-weight: 500; }
+    .login-title { color: #f1f5f9; font-weight: 700; font-size: 1.65rem; letter-spacing: -0.5px; }
+    .login-subtitle { color: #94a3b8; font-size: .95rem; }
+    .form-label { color: #cbd5e1; font-size: .9rem; font-weight: 600; margin-bottom: .45rem; }
     .form-control, .input-group-text {
         background: #0f172a;
         border-color: #334155;
@@ -45,7 +46,8 @@
         background: #2563eb;
         border: none;
         font-weight: 600;
-        padding: .65rem;
+        padding: .78rem;
+        font-size: .98rem;
         transition: background .2s;
     }
     .btn-grova:hover { background: #1d4ed8; }
@@ -61,17 +63,17 @@
     .attempts-warning { color: #fbbf24; font-size: .78rem; }
     .login-wrapper {
         width: 100%;
-        max-width: 520px;
+        max-width: 560px;
     }
     .login-footer {
-        margin-top: 14px;
+        margin-top: 18px;
         border: 1px solid #334155;
         border-radius: 12px;
         overflow: hidden;
         background: #1e293b;
     }
     .login-footer-main {
-        padding: 10px 12px;
+        padding: 12px 14px;
         border-bottom: 1px solid #334155;
         display: flex;
         align-items: center;
@@ -93,7 +95,7 @@
         font-size: .72rem;
     }
     .login-footer-copy {
-        padding: 8px 12px;
+        padding: 10px 12px;
         text-align: center;
         color: #64748b;
         font-size: .72rem;
@@ -107,7 +109,7 @@
         text-decoration: underline;
     }
     .login-footer-form {
-        padding: 10px 12px 4px;
+        padding: 12px 14px 6px;
     }
     .login-footer-form .form-label {
         color: #94a3b8;
@@ -123,10 +125,24 @@
     .login-footer-form .form-control::placeholder {
         color: #64748b;
     }
+    @media (max-width: 768px) {
+        .login-card { max-width: 100%; }
+        .login-title { font-size: 1.45rem; }
+        .login-subtitle { font-size: .9rem; }
+        .card.login-card { padding: 18px !important; }
+    }
     @media (max-width: 480px) {
+        body { padding: 10px; }
+        .login-wrapper { max-width: 100%; }
+        .card.login-card { padding: 14px !important; }
+        .login-title { font-size: 1.32rem; }
         .login-footer-main {
             flex-direction: column;
             align-items: flex-start;
+        }
+        .login-footer-links { gap: 8px; }
+        .login-footer-form .row > [class*="col-"] {
+            width: 100%;
         }
     }
 
@@ -141,7 +157,7 @@
         box-shadow: none !important;
     }
     .login-title {
-        font-size: 1.25rem;
+        font-size: 1.55rem;
         letter-spacing: -0.3px;
     }
     .login-subtitle {
@@ -307,30 +323,43 @@
             </button>
         </form>
 
+        {# ── Biométrico ── #}
+        <div id="webauthn-section" style="display:none;margin-top:1.25rem;">
+            <div style="display:flex;align-items:center;gap:.75rem;margin-bottom:.85rem;color:#334155;font-size:.78rem;">
+                <div style="flex:1;height:1px;background:#1f2937;"></div>
+                <span style="color:#475569;white-space:nowrap;">o accede sin contraseña</span>
+                <div style="flex:1;height:1px;background:#1f2937;"></div>
+            </div>
+            <button type="button" id="btn-webauthn" style="width:100%;padding:.78rem;background:#1e293b;border:1px solid #334155;color:#f1f5f9;border-radius:8px;font-size:.95rem;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:.6rem;transition:background .2s,border-color .2s;">
+                <i class="bi bi-fingerprint" style="font-size:22px;color:#6366f1;"></i>
+                <span id="webauthn-label">Entrar con huella / Face ID</span>
+            </button>
+        </div>
+
         </div>
     </div>
     <footer class="login-footer">
         <div class="login-footer-main">
             <span class="login-footer-title">{{ 'app.name' | trans }}</span>
             <div class="login-footer-links">
-                <a href="#">Privacidad</a>
-                <a href="#">Soporte</a>
+                <a href="#">{{ 'auth.login.footer.privacy' | trans }}</a>
+                <a href="#">{{ 'auth.login.footer.support' | trans }}</a>
             </div>
         </div>
         <div class="login-footer-form">
             <div class="row g-2">
                 <div class="col-6">
-                    <label class="form-label" for="login-footer-email">Email demo</label>
-                    <input id="login-footer-email" type="email" class="form-control form-control-sm" placeholder="nombre@empresa.com">
+                    <label class="form-label" for="login-footer-email">{{ 'auth.login.footer.email_demo' | trans }}</label>
+                    <input id="login-footer-email" type="email" class="form-control form-control-sm" placeholder="{{ 'auth.login.footer.email_placeholder' | trans }}">
                 </div>
                 <div class="col-6">
-                    <label class="form-label" for="login-footer-phone">Telefono demo</label>
-                    <input id="login-footer-phone" type="text" class="form-control form-control-sm" placeholder="+34 600 123 456">
+                    <label class="form-label" for="login-footer-phone">{{ 'auth.login.footer.phone_demo' | trans }}</label>
+                    <input id="login-footer-phone" type="text" class="form-control form-control-sm" placeholder="{{ 'auth.login.footer.phone_placeholder' | trans }}">
                 </div>
             </div>
         </div>
         <div class="login-footer-copy">
-            &copy; {{ "now"|date("Y") }} {{ 'app.name' | trans }}. Todos los derechos reservados. ·
+            &copy; {{ "now"|date("Y") }} {{ 'app.name' | trans }}. {{ 'auth.login.footer.rights' | trans }} ·
             v{{ build_info.display_version|default(build_info.version) }} ·
             {% if is_granted('ROLE_DEVELOPER') and build_info.commit_url %}
                 <a href="{{ build_info.commit_url }}" target="_blank" rel="noopener noreferrer">{{ build_info.git_sha }}</a>
@@ -352,5 +381,85 @@ document.getElementById('login-form').addEventListener('submit', function() {
     text.textContent = {{ 'auth.login.submitting' | trans | json_encode | raw }};
     spinner.classList.remove('d-none');
 });
+
+// ── WebAuthn login ──────────────────────────────────────────────────────────
+const locale = '{{ app.request.locale }}';
+
+function b64url(buf) {
+    return btoa(String.fromCharCode(...new Uint8Array(buf)))
+        .replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+}
+function fromB64(s) {
+    s = s.replace(/-/g,'+').replace(/_/g,'/');
+    while (s.length % 4) s += '=';
+    return Uint8Array.from(atob(s), c => c.charCodeAt(0));
+}
+
+// Mostrar botón solo si el navegador soporta WebAuthn
+if (window.PublicKeyCredential) {
+    PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable().then(available => {
+        if (available) {
+            document.getElementById('webauthn-section').style.display = 'block';
+        }
+    }).catch(() => {});
+}
+
+async function loginWithBiometric() {
+    const btn   = document.getElementById('btn-webauthn');
+    const label = document.getElementById('webauthn-label');
+    btn.disabled = true;
+    label.textContent = 'Verificando…';
+
+    try {
+        const res  = await fetch(`/${locale}/lock/login-webauthn/challenge`);
+        const args = await res.json();
+        if (args.error) throw new Error(args.error);
+
+        args.publicKey.challenge = fromB64(args.publicKey.challenge);
+        if (args.publicKey.allowCredentials) {
+            args.publicKey.allowCredentials = args.publicKey.allowCredentials.map(c => ({
+                ...c, id: fromB64(c.id)
+            }));
+        }
+
+        const credential = await navigator.credentials.get({ publicKey: args.publicKey });
+
+        const payload = {
+            id:                b64url(credential.rawId),
+            clientDataJSON:    b64url(credential.response.clientDataJSON),
+            authenticatorData: b64url(credential.response.authenticatorData),
+            signature:         b64url(credential.response.signature),
+        };
+
+        const verRes  = await fetch(`/${locale}/lock/login-webauthn/verify`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload),
+        });
+        const verData = await verRes.json();
+
+        if (verData.ok) {
+            label.textContent = '¡Acceso concedido!';
+            btn.style.borderColor = '#16a34a';
+            btn.style.color = '#4ade80';
+            setTimeout(() => { window.location.href = verData.redirect; }, 300);
+        } else {
+            throw new Error(verData.error || 'Verificación fallida');
+        }
+    } catch (e) {
+        btn.style.borderColor = '#dc2626';
+        btn.style.color = '#fca5a5';
+        label.textContent = e.name === 'NotAllowedError' ? 'Cancelado' : 'Error — intenta con contraseña';
+        btn.disabled = false;
+        setTimeout(() => {
+            btn.style.borderColor = '#334155';
+            btn.style.color = '#f1f5f9';
+            label.textContent = 'Reintentar huella / Face ID';
+        }, 3000);
+    }
+}
+
+document.getElementById('btn-webauthn')?.addEventListener('click', loginWithBiometric);
+
 </script>
 {% endblock %}

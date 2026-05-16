@@ -1,0 +1,466 @@
+{% extends 'workspace/app_layout.html.twig' %}
+{% trans_default_domain 'menu_builder' %}
+
+{% block page_title %}{{ 'Menu Builder'|trans }}{% endblock %}
+{% block app_page_subtitle %}{{ 'Construye y visualiza la jerarquía del menú en tiempo real.'|trans }}{% endblock %}
+
+{% block page_styles %}
+<link rel="stylesheet" href="{{ asset('css/menu-builder.css') }}">
+{% endblock %}
+
+{% block app_main %}
+{% for label, messages in app.flashes %}
+    {% for message in messages %}
+        <div class="alert alert-{{ label == 'danger' ? 'danger' : 'success' }} mb-3" role="alert">{{ message }}</div>
+    {% endfor %}
+{% endfor %}
+
+<div class="row g-3 menu-builder-page">
+    <div class="menu-builder-actions-bar">
+        <a class="btn btn-sm btn-outline-secondary" href="{{ path('grova_page_config_menu_builder_export', {_locale: app.request.locale}) }}" title="{{ 'Exportar JSON'|trans }}">
+            <i class="bi bi-download me-1"></i>{{ 'Exportar JSON'|trans }}
+        </a>
+        <button type="button"
+                class="btn btn-sm btn-outline-secondary"
+                title="Exportar JSON: descarga un archivo con el menú actual (paths, nombres, iconos, estado y orden). Te sirve como respaldo o para copiar esta configuración a otro Grova."
+                aria-label="Ayuda sobre exportación JSON">
+            <i class="bi bi-info-circle"></i>
+        </button>
+        <input type="file" id="menu-import-file" accept="application/json" style="display:none;">
+        <button type="button" id="menu-import-btn" class="btn btn-sm btn-outline-secondary" title="{{ 'Importar JSON'|trans }}">
+            <i class="bi bi-upload me-1"></i>{{ 'Importar JSON'|trans }}
+        </button>
+        <button type="button"
+                class="btn btn-sm btn-outline-secondary"
+                title="Importar JSON: subes un archivo de respaldo. Grova busca por Path: si el ítem ya existe lo actualiza; si no existe lo crea. Lo que no venga en el archivo se queda como está."
+                aria-label="Ayuda sobre importación JSON">
+            <i class="bi bi-info-circle"></i>
+        </button>
+        <div class="form-check form-switch d-inline-flex align-items-center gap-2 ms-1">
+            <input class="form-check-input" type="checkbox" role="switch" id="menu-import-replace" title="Si está activo: borra todo el menú actual y lo reemplaza con el JSON.">
+            <label class="form-check-label small" for="menu-import-replace" title="Merge/Upsert: crea/actualiza por Path. Reemplazar todo: borra y restaura desde el JSON.">{{ 'Reemplazar todo'|trans }}</label>
+        </div>
+        <button type="button"
+                class="btn btn-sm btn-outline-secondary"
+                title="Reemplazar todo (switch): APAGADO = importa y mezcla (si existe actualiza, si no existe crea; lo demás se queda igual). ENCENDIDO = borra el menú actual y restaura el JSON tal cual (pide confirmación)."
+                aria-label="Ayuda sobre reemplazar todo">
+            <i class="bi bi-info-circle"></i>
+        </button>
+        <button type="button" id="menu-builder-open-create" class="btn btn-sm btn-primary"><i class="bi bi-plus-lg me-1"></i>{{ 'Crear nuevo'|trans }}</button>
+    </div>
+
+    <div id="menu-builder-editor-backdrop" class="menu-builder-editor-backdrop" data-grova-modal-backdrop data-grova-portal="body"></div>
+
+    <div id="menu-builder-editor-col" class="menu-builder-editor-col" data-grova-modal-layer data-grova-portal="body">
+        <div class="menu-builder-editor-dialog">
+            <div class="content-card h-100 mb-0">
+                <div class="content-card-header d-flex justify-content-between align-items-center">
+                    <span id="menu-builder-editor-title">{{ 'Menu Builder'|trans }}</span>
+                    <button type="button" id="menu-builder-close-editor" class="btn-close" aria-label="Cerrar"></button>
+                </div>
+                <div class="content-card-body">
+                    <form id="menu-builder-form" method="post" action="{{ path('grova_page_config_menu_builder', {_locale: app.request.locale}) }}">
+                        <input type="hidden" name="_token" value="{{ csrf_token('menu_governance_save') }}">
+                        <input type="hidden" id="menu-builder-edit-key" name="edit_menu_key" value="">
+
+                    <div class="mb-2 menu-builder-hidden-fields">
+                        <label class="form-label">{{ '¿Qué quieres crear?'|trans }}</label>
+                        <select id="demo-create-mode" name="create_mode" class="form-select form-select-sm js-select2">
+                            <option value="single" selected>{{ 'Solo 1 ítem de menú'|trans }}</option>
+                            <option value="bundle">{{ 'Menú completo (principal + submenú + subopción)'|trans }}</option>
+                        </select>
+                    </div>
+
+                    <div id="single-create-fields">
+                        <div class="mb-2">
+                            <label class="form-label">{{ 'Path'|trans }}</label>
+                            <div class="d-flex align-items-center gap-2">
+                                <input id="demo-menu-key" name="single_path" type="text" class="form-control form-control-sm" placeholder="gestion-menu">
+                                <button type="button" class="btn btn-sm btn-outline-info js-copy-path" data-copy-target="#demo-menu-key" title="{{ 'Copiar path'|trans }}" aria-label="{{ 'Copiar path'|trans }}">
+                                    <i class="bi bi-clipboard"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="mb-2">
+                            <label class="form-label">{{ 'Título del menú'|trans }}</label>
+                            <input id="demo-menu-label" name="single_label" type="text" class="form-control form-control-sm" placeholder="{{ 'Título del menú'|trans }}" aria-label="{{ 'Título del menú'|trans }}">
+                        </div>
+                        <div class="mb-2">
+                            <label class="form-label">{{ 'Ícono'|trans }}</label>
+                            <div class="d-flex align-items-center gap-2">
+                                <select id="demo-menu-icon" name="single_icon" class="form-select form-select-sm js-select2" style="width:100%;"></select>
+                                <span class="icon-live-preview" id="demo-menu-icon-preview"><i class="bi bi-list"></i></span>
+                            </div>
+                        </div>
+                        <div class="row g-2 mb-2">
+                            <div class="col-6">
+                                <label class="form-label">{{ 'Tipo de elemento'|trans }}</label>
+                                <select id="demo-item-type" name="single_item_type" class="form-select form-select-sm js-select2">
+                                    <option value="principal">{{ 'Menú principal'|trans }}</option>
+                                    <option value="submenu" selected>{{ 'Submenú'|trans }}</option>
+                                    <option value="subopcion">{{ 'Subopción'|trans }}</option>
+                                </select>
+                            </div>
+                            <div class="col-6 menu-builder-hidden-fields">
+                                <label class="form-label">{{ 'Orden'|trans }}</label>
+                                <input type="number" name="single_sort_order" class="form-control form-control-sm" value="90">
+                            </div>
+                        </div>
+                        <div id="demo-parent-group" class="mb-2">
+                            <label id="demo-parent-main-label" class="form-label">{{ 'Elemento padre'|trans }}</label>
+                            <label id="demo-parent-principal-label" class="form-label small text-muted mb-1" style="display:none;">{{ '1) Menú principal'|trans }}</label>
+                            <select id="demo-parent-principal" class="form-select form-select-sm js-select2" style="display:none;"></select>
+                            <label id="demo-parent-submenu-label" class="form-label small text-muted mt-2 mb-1" style="display:none;">{{ '2) Submenú'|trans }}</label>
+                            <select id="demo-parent-key" name="single_parent_key" class="form-select form-select-sm js-select2"></select>
+                            <div id="demo-parent-help" class="small text-muted mt-1"></div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">{{ 'Posición'|trans }}</label>
+                            <select id="demo-position-index" name="single_position_index" class="form-select form-select-sm js-select2">
+                                <option value="">{{ 'Al final'|trans }}</option>
+                            </select>
+                            <div class="small text-muted mt-1">{{ 'Define el orden del nuevo ítem dentro del mismo nivel.'|trans }}</div>
+                        </div>
+                        <div class="mb-2 d-flex align-items-center justify-content-between border rounded p-2 menu-builder-hidden-fields">
+                            <label class="form-label mb-0">{{ 'Mostrar en sidebar'|trans }}</label>
+                            <input id="single-show-in-sidebar" name="single_show_in_sidebar" class="form-check-input" type="checkbox" checked>
+                        </div>
+                        <div class="mb-3 d-flex align-items-center justify-content-between border rounded p-2 menu-builder-hidden-fields">
+                            <label class="form-label mb-0">{{ 'Solo desarrollo'|trans }}</label>
+                            <input name="single_dev_only" class="form-check-input" type="checkbox">
+                        </div>
+                        <div class="mb-3 menu-builder-hidden-fields">
+                            <label class="form-label">{{ 'Estado del item'|trans }}</label>
+                            <select id="single-status" name="single_status" class="form-select form-select-sm js-select2">
+                                <option value="pendiente" selected>{{ 'Pendiente'|trans }}</option>
+                                <option value="hecho">{{ 'Hecho'|trans }}</option>
+                            </select>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label d-flex align-items-center gap-2">
+                                {{ 'Apariencia (Premium)'|trans }}
+                                <i class="bi bi-info-circle text-muted" title="Opcional. Puedes marcar un ítem como Premium y asignarle un badge (texto) y colores controlados (sin CSS libre)." aria-label="Info"></i>
+                            </label>
+                            <div class="row g-2 align-items-end">
+                                <div class="col-12 col-md-6">
+                                    <label class="form-label small text-muted mb-1">{{ 'Badge'|trans }}</label>
+                                    <input name="single_ui_badge" type="text" class="form-control form-control-sm" placeholder="Premium">
+                                    <div class="small text-muted mt-1">{{ 'Si lo dejas vacío, no se muestra.'|trans }}</div>
+                                </div>
+                                <div class="col-12 col-md-6">
+                                    <label class="form-label small text-muted mb-1">{{ 'Estilo'|trans }}</label>
+                                    <select id="single-ui-variant" class="form-select form-select-sm">
+                                        <option value="">{{ 'Normal'|trans }}</option>
+                                        <option value="premium">{{ 'Premium (preset)'|trans }}</option>
+                                        <option value="custom">{{ 'Personalizado'|trans }}</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div id="single-ui-custom-wrap" class="border rounded p-2 mt-2" style="display:none;">
+                                <div class="row g-2">
+                                    <div class="col-6 col-md-4">
+                                        <label class="form-label small text-muted mb-1">{{ 'Fondo'|trans }}</label>
+                                        <input name="single_ui_bg" type="color" class="form-control form-control-sm form-control-color" value="#FEF3C7">
+                                    </div>
+                                    <div class="col-6 col-md-4">
+                                        <label class="form-label small text-muted mb-1">{{ 'Texto'|trans }}</label>
+                                        <input name="single_ui_text" type="color" class="form-control form-control-sm form-control-color" value="#111827">
+                                    </div>
+                                    <div class="col-6 col-md-4">
+                                        <label class="form-label small text-muted mb-1">{{ 'Borde'|trans }}</label>
+                                        <input name="single_ui_border" type="color" class="form-control form-control-sm form-control-color" value="#F59E0B">
+                                    </div>
+                                    <div class="col-6 col-md-4">
+                                        <label class="form-label small text-muted mb-1">{{ 'Hover fondo'|trans }}</label>
+                                        <input name="single_ui_hover_bg" type="color" class="form-control form-control-sm form-control-color" value="#FDE68A">
+                                    </div>
+                                    <div class="col-6 col-md-4">
+                                        <label class="form-label small text-muted mb-1">{{ 'Hover texto'|trans }}</label>
+                                        <input name="single_ui_hover_text" type="color" class="form-control form-control-sm form-control-color" value="#111827">
+                                    </div>
+                                    <div class="col-12 col-md-4">
+                                        <label class="form-label small text-muted mb-1">{{ 'Mini-preview'|trans }}</label>
+                                        <div class="d-flex align-items-center gap-2 p-2 rounded menu-ui" id="single-ui-mini-preview" style="--menu-bg:transparent;--menu-text:inherit;--menu-border:transparent;--menu-hover-bg:var(--nav-hover);--menu-hover-text:#e5e7eb;">
+                                            <i class="bi bi-star"></i>
+                                            <span class="small">{{ 'Ejemplo'|trans }}</span>
+                                            <span class="menu-premium-badge" id="single-ui-mini-badge" style="display:none;">{{ 'Premium'|trans }}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <input type="hidden" name="single_ui_style" id="single-ui-style-json" value="">
+                        </div>
+                    </div>
+
+                    <div id="bundle-create-fields" class="menu-builder-bundle-block" style="display:none;">
+                        <div class="mb-2">
+                            <label class="form-label">{{ 'Estructura a crear'|trans }}</label>
+                            <select id="bundle-kind" name="bundle_kind" class="form-select form-select-sm js-select2">
+                                <option value="full" selected>{{ 'Principal + Submenú + Subopción'|trans }}</option>
+                                <option value="submenu">{{ 'Submenú + Subopción'|trans }}</option>
+                                <option value="subopcion">{{ 'Solo Subopción'|trans }}</option>
+                            </select>
+                        </div>
+                        <div id="bundle-parent-principal-wrap" class="mb-2" style="display:none;">
+                            <label class="form-label">{{ 'Menú principal padre'|trans }}</label>
+                            <select id="bundle-parent-principal" name="bundle_parent_principal" class="form-select form-select-sm js-select2">
+                                <option value="">{{ 'Selecciona menú principal...'|trans }}</option>
+                                {% for l1 in menu_tree %}<option value="{{ l1.id }}">{{ l1.label }}</option>{% endfor %}
+                            </select>
+                        </div>
+                        <div id="bundle-parent-principal-suboption-wrap" class="mb-2" style="display:none;">
+                            <label class="form-label">{{ '1) Menú principal padre'|trans }}</label>
+                            <select id="bundle-parent-principal-suboption" name="bundle_parent_principal_suboption" class="form-select form-select-sm js-select2">
+                                <option value="">{{ 'Selecciona menú principal...'|trans }}</option>
+                                {% for l1 in menu_tree %}<option value="{{ l1.id }}">{{ l1.label }}</option>{% endfor %}
+                            </select>
+                        </div>
+                        <div id="bundle-parent-submenu-wrap" class="mb-2" style="display:none;">
+                            <label class="form-label">{{ '2) Submenú padre'|trans }}</label>
+                            <select id="bundle-parent-submenu" name="bundle_parent_submenu" class="form-select form-select-sm js-select2"><option value="">{{ 'Selecciona submenú...'|trans }}</option></select>
+                        </div>
+                        <div id="bundle-principal-row" class="row g-2 mb-2">
+                            <div class="col-6"><label class="form-label">{{ 'Path menú principal'|trans }}</label><input name="bundle_principal_path" type="text" class="form-control form-control-sm"></div>
+                            <div class="col-6"><label class="form-label">{{ 'Label menú principal'|trans }}</label><input name="bundle_principal_label" type="text" class="form-control form-control-sm"></div>
+                        </div>
+                        <div id="bundle-submenu-row" class="row g-2 mb-2">
+                            <div class="col-6"><label class="form-label">{{ 'Path submenú'|trans }}</label><input name="bundle_submenu_path" type="text" class="form-control form-control-sm"></div>
+                            <div class="col-6"><label class="form-label">{{ 'Label submenú'|trans }}</label><input name="bundle_submenu_label" type="text" class="form-control form-control-sm"></div>
+                        </div>
+                        <div id="bundle-suboption-row" class="row g-2 mb-3">
+                            <div class="col-6"><label class="form-label">{{ 'Path subopción'|trans }}</label><input name="bundle_suboption_path" type="text" class="form-control form-control-sm"></div>
+                            <div class="col-6"><label class="form-label">{{ 'Label subopción'|trans }}</label><input name="bundle_suboption_label" type="text" class="form-control form-control-sm"></div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">{{ 'Orden base'|trans }}</label>
+                            <input name="bundle_base_sort_order" type="number" class="form-control form-control-sm" value="90">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">{{ 'Estado de la estructura'|trans }}</label>
+                            <select name="bundle_status" class="form-select form-select-sm js-select2">
+                                <option value="pendiente" selected>{{ 'Pendiente'|trans }}</option>
+                                <option value="hecho">{{ 'Hecho'|trans }}</option>
+                            </select>
+                        </div>
+                    </div>
+
+                        <hr>
+                        <div id="menu-level-meta" class="small text-muted mb-1"></div>
+                        <div id="menu-level-chip" class="badge bg-primary mb-2">{{ 'Nuevo item'|trans }}</div>
+                        <div id="menu-hierarchy-preview"></div>
+                    </form>
+                </div>
+                <div class="modal-card-footer">
+                    <button type="button" id="menu-builder-cancel-btn" class="btn btn-sm btn-outline-secondary">{{ 'Cancelar'|trans }}</button>
+                    <button type="submit" form="menu-builder-form" id="menu-builder-save-btn" class="btn btn-sm btn-primary">{{ 'Guardar'|trans }}</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="menu-appearance-backdrop" class="menu-builder-editor-backdrop" data-grova-modal-backdrop data-grova-portal="body"></div>
+    <div id="menu-appearance-col" class="menu-builder-editor-col" data-grova-modal-layer data-grova-portal="body">
+        <div class="menu-builder-editor-dialog" style="max-width:620px;">
+            <div class="content-card h-100 mb-0">
+                <div class="content-card-header d-flex justify-content-between align-items-center">
+                    <span>{{ 'Apariencia del ítem'|trans }}</span>
+                    <button type="button" id="menu-appearance-close" class="btn-close" aria-label="Cerrar"></button>
+                </div>
+                <div class="content-card-body">
+                    <div class="small text-muted mb-2">
+                        {{ 'Edita colores y preview antes de guardar.'|trans }}
+                    </div>
+                    <input type="hidden" id="menu-appearance-key" value="">
+                    <div class="mb-2">
+                        <label class="form-label">{{ 'Badge'|trans }}</label>
+                        <input id="menu-appearance-badge" type="text" class="form-control form-control-sm" placeholder="{{ 'Premium'|trans }}">
+                    </div>
+                    <div class="mb-2">
+                        <label class="form-label">{{ 'Estilo'|trans }}</label>
+                        <select id="menu-appearance-variant" class="form-select form-select-sm">
+                            <option value="">{{ 'Normal'|trans }}</option>
+                            <option value="premium">{{ 'Premium (preset)'|trans }}</option>
+                            <option value="custom">{{ 'Personalizado'|trans }}</option>
+                        </select>
+                    </div>
+                    <div id="menu-appearance-custom-wrap" class="menu-appearance-color-grid border rounded p-2 mb-3" style="display:none;">
+                        <div class="d-flex align-items-center justify-content-between mb-2">
+                            <label class="form-label small text-muted mb-0">{{ 'Derivación automática desde color base'|trans }}</label>
+                            <input id="menu-appearance-auto-derive" class="form-check-input" type="checkbox" checked>
+                        </div>
+                        <div class="row g-2">
+                            <div class="col-6 col-md-4">
+                                <label class="form-label small text-muted mb-1">{{ 'Color base'|trans }}</label>
+                                <input id="menu-appearance-base" type="color" class="form-control form-control-sm form-control-color" value="#8B5A00">
+                            </div>
+                            <div class="col-6 col-md-4">
+                                <label class="form-label small text-muted mb-1">{{ 'Fondo'|trans }}</label>
+                                <input id="menu-appearance-bg" type="color" class="form-control form-control-sm form-control-color" value="#FEF3C7">
+                            </div>
+                            <div class="col-6 col-md-4">
+                                <label class="form-label small text-muted mb-1">{{ 'Texto'|trans }}</label>
+                                <input id="menu-appearance-text" type="color" class="form-control form-control-sm form-control-color" value="#111827">
+                            </div>
+                            <div class="col-6 col-md-4">
+                                <label class="form-label small text-muted mb-1">{{ 'Borde'|trans }}</label>
+                                <input id="menu-appearance-border" type="color" class="form-control form-control-sm form-control-color" value="#F59E0B">
+                            </div>
+                            <div class="col-6 col-md-4">
+                                <label class="form-label small text-muted mb-1">{{ 'Hover fondo'|trans }}</label>
+                                <input id="menu-appearance-hover-bg" type="color" class="form-control form-control-sm form-control-color" value="#FDE68A">
+                            </div>
+                            <div class="col-6 col-md-4">
+                                <label class="form-label small text-muted mb-1">{{ 'Hover texto'|trans }}</label>
+                                <input id="menu-appearance-hover-text" type="color" class="form-control form-control-sm form-control-color" value="#111827">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="menu-appearance-preview-wrap">
+                        <div class="small text-muted mb-2">{{ 'Vista previa en sidebar'|trans }}</div>
+                        <div id="menu-appearance-preview-item" class="menu-appearance-preview-item menu-ui">
+                            <span id="menu-appearance-preview-icon" class="nav-icon"><i class="bi bi-list"></i></span>
+                            <span id="menu-appearance-preview-label" class="preview-label">{{ 'Item de ejemplo'|trans }}</span>
+                            <span id="menu-appearance-preview-badge" class="menu-premium-badge preview-badge" style="display:none;">{{ 'Premium'|trans }}</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-card-footer">
+                    <button type="button" id="menu-appearance-cancel" class="btn btn-sm btn-outline-secondary">{{ 'Cancelar'|trans }}</button>
+                    <button type="button" id="menu-appearance-save" class="btn btn-sm btn-primary">{{ 'Guardar apariencia'|trans }}</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-12 menu-builder-preview-col">
+        <div class="content-card">
+            <div class="content-card-header">{{ 'Listado de menú (operaciones)'|trans }}</div>
+            <div class="content-card-body">
+                <div class="small text-muted mb-2">{{ 'Usa Operación para editar o eliminar. Crear abre el panel Menu Builder.'|trans }}</div>
+                <div class="menu-tree-search">
+                    <div class="menu-tree-search-wrap" id="menu-tree-search-wrap">
+                        <i class="bi bi-search menu-tree-search-icon" aria-hidden="true"></i>
+                        <input type="search" id="menu-tree-search" class="form-control form-control-sm menu-tree-search-input" placeholder="{{ 'Buscar'|trans }}" aria-label="{{ 'Buscar en jerarquía actual'|trans }}" autocomplete="off">
+                        <button type="button" class="menu-tree-search-clear" id="menu-tree-search-clear" title="{{ 'Limpiar búsqueda'|trans }}" aria-label="{{ 'Limpiar búsqueda'|trans }}">
+                            <i class="bi bi-x-lg" aria-hidden="true"></i>
+                        </button>
+                    </div>
+                </div>
+                <div id="menu-tree-snapshot" class="sidebar-snapshot">
+                    <div class="snapshot-head">
+                        <span class="snapshot-head-title">
+                            <span class="sidebar-mini-logo">G</span>
+                            <span>{{ 'Jerarquía actual'|trans }}</span>
+                        </span>
+                        <span class="snapshot-head-spacer"></span>
+                        <span class="snapshot-tools">
+                            <div class="btn-group" role="group" aria-label="{{ 'Acciones de jerarquía'|trans }}">
+                                <button type="button" id="menu-tree-collapse-all" class="btn btn-sm btn-outline-secondary" title="{{ 'Acoplar todo'|trans }}" aria-label="{{ 'Acoplar todo'|trans }}">
+                                    <i class="bi bi-arrows-collapse"></i>
+                                </button>
+                                <button type="button" id="menu-tree-expand-all" class="btn btn-sm btn-outline-secondary" title="{{ 'Desacoplar todo'|trans }}" aria-label="{{ 'Desacoplar todo'|trans }}">
+                                    <i class="bi bi-arrows-expand"></i>
+                                </button>
+                            </div>
+                        </span>
+                        <button type="button" id="menu-builder-open-create-inline" class="snapshot-head-plus" title="{{ 'Crear nuevo'|trans }}" aria-label="{{ 'Crear nuevo'|trans }}"><i class="bi bi-plus-lg"></i></button>
+                    </div>
+                    <div id="menu-tree-save-row" class="snapshot-toolbar-row d-none">
+                        <span id="menu-tree-save-actions" class="snapshot-save-actions d-none">
+                            <button type="button" id="menu-tree-cancel-order" class="btn btn-sm btn-outline-secondary" title="{{ 'Cancelar'|trans }}">{{ 'Cancelar'|trans }}</button>
+                            <button type="button" id="menu-tree-save-order" class="btn btn-sm btn-success" title="{{ 'Guardar cambios'|trans }}">{{ 'Guardar cambios'|trans }}</button>
+                        </span>
+                    </div>
+                    <div class="snapshot-body">
+                        {% for l1 in menu_tree %}
+                            <div class="snapshot-row hier-principal">
+                                <span class="snapshot-item-icon" aria-hidden="true">{% include 'workspace/partials/_menu_icon.html.twig' with { icon: l1.icon|default('bi-list'), size: 12 } only %}</span>
+                                <span class="snapshot-row-label">{{ l1.label }}</span>
+                                <span class="snapshot-actions ms-auto">
+                                    <button type="button" class="btn btn-xs btn-outline-success btn-create-child js-menu-create-child" data-create-type="submenu" data-parent-key="{{ l1.id }}" title="{{ 'Agregar submenú'|trans }}" aria-label="{{ 'Agregar submenú'|trans }}">
+                                        <i class="bi bi-plus-lg"></i>
+                                    </button>
+                                    <button type="button" class="btn btn-xs btn-outline-info btn-icon-only js-copy-path" data-copy="{{ l1.id }}" title="{{ 'Copiar path'|trans }}" aria-label="{{ 'Copiar path'|trans }}">
+                                        <i class="bi bi-clipboard"></i>
+                                    </button>
+                                    <button type="button" class="btn btn-xs btn-outline-warning btn-icon-only js-menu-appearance" data-menukey="{{ l1.id }}" data-label="{{ l1.label }}" data-icon="{{ l1.icon|default('bi-list') }}" data-ui-badge="{{ l1.uiBadge|default('') }}" data-ui-style="{{ l1.uiStyle is iterable ? l1.uiStyle|json_encode : '' }}" title="{{ 'Apariencia'|trans }}">
+                                        <i class="bi bi-palette"></i>
+                                    </button>
+                                    <button type="button" class="btn btn-xs btn-outline-primary btn-icon-only js-menu-edit" data-menukey="{{ l1.id }}" data-label="{{ l1.label }}" data-icon="{{ l1.icon|default('bi-list') }}" data-status="{{ l1.status|default('hecho') }}" data-parent-key="" data-sort-order="0" data-show-in-sidebar="1" data-dev-only="0" data-ui-badge="{{ l1.uiBadge|default('') }}" data-ui-style="{{ l1.uiStyle is iterable ? l1.uiStyle|json_encode : '' }}" title="{{ 'Editar'|trans }}">
+                                        <i class="bi bi-pencil"></i>
+                                    </button>
+                                    <button type="button" class="btn btn-xs btn-outline-danger btn-icon-only btn-delete-action js-menu-delete" data-menukey="{{ l1.id }}" title="{{ 'Eliminar'|trans }}" aria-label="{{ 'Eliminar'|trans }}">
+                                        <i class="bi bi-trash-fill"></i>
+                                    </button>
+                                </span>
+                            </div>
+                            {% for l2 in l1.children|default([]) %}
+                                <div class="snapshot-row l2 hier-submenu">
+                                    <span class="snapshot-item-icon" aria-hidden="true">{% include 'workspace/partials/_menu_icon.html.twig' with { icon: l2.icon|default('bi-list'), size: 12 } only %}</span>
+                                    <span class="snapshot-row-label">{{ l2.label }}</span>
+                                    <span class="snapshot-actions ms-auto">
+                                        <button type="button" class="btn btn-xs btn-outline-success btn-create-child js-menu-create-child" data-create-type="subopcion" data-parent-key="{{ l2.id }}" data-principal-key="{{ l1.id }}" title="{{ 'Agregar subopción'|trans }}" aria-label="{{ 'Agregar subopción'|trans }}">
+                                            <i class="bi bi-plus-lg"></i>
+                                        </button>
+                                        <button type="button" class="btn btn-xs btn-outline-info btn-icon-only js-copy-path" data-copy="{{ l2.id }}" title="{{ 'Copiar path'|trans }}" aria-label="{{ 'Copiar path'|trans }}">
+                                            <i class="bi bi-clipboard"></i>
+                                        </button>
+                                        <button type="button" class="btn btn-xs btn-outline-warning btn-icon-only js-menu-appearance" data-menukey="{{ l2.id }}" data-label="{{ l2.label }}" data-icon="{{ l2.icon|default('bi-list') }}" data-ui-badge="{{ l2.uiBadge|default('') }}" data-ui-style="{{ l2.uiStyle is iterable ? l2.uiStyle|json_encode : '' }}" title="{{ 'Apariencia'|trans }}">
+                                            <i class="bi bi-palette"></i>
+                                        </button>
+                                        <button type="button" class="btn btn-xs btn-outline-primary btn-icon-only js-menu-edit" data-menukey="{{ l2.id }}" data-label="{{ l2.label }}" data-icon="{{ l2.icon|default('bi-list') }}" data-status="{{ l2.status|default('hecho') }}" data-parent-key="{{ l1.id }}" data-sort-order="0" data-show-in-sidebar="1" data-dev-only="0" data-ui-badge="{{ l2.uiBadge|default('') }}" data-ui-style="{{ l2.uiStyle is iterable ? l2.uiStyle|json_encode : '' }}" title="{{ 'Editar'|trans }}">
+                                            <i class="bi bi-pencil"></i>
+                                        </button>
+                                        <button type="button" class="btn btn-xs btn-outline-danger btn-icon-only btn-delete-action js-menu-delete" data-menukey="{{ l2.id }}" title="{{ 'Eliminar'|trans }}" aria-label="{{ 'Eliminar'|trans }}">
+                                            <i class="bi bi-trash-fill"></i>
+                                        </button>
+                                    </span>
+                                </div>
+                                {% for l3 in l2.children|default([]) %}
+                                    <div class="snapshot-row l3 hier-subopcion">
+                                        <span class="snapshot-item-icon" aria-hidden="true">{% include 'workspace/partials/_menu_icon.html.twig' with { icon: l3.icon|default('bi-list'), size: 12 } only %}</span>
+                                        <span class="snapshot-row-label">{{ l3.label }}</span>
+                                        <span class="snapshot-actions ms-auto">
+                                            <button type="button" class="btn btn-xs btn-outline-info btn-icon-only js-copy-path" data-copy="{{ l3.id }}" title="{{ 'Copiar path'|trans }}" aria-label="{{ 'Copiar path'|trans }}">
+                                                <i class="bi bi-clipboard"></i>
+                                            </button>
+                                            <button type="button" class="btn btn-xs btn-outline-warning btn-icon-only js-menu-appearance" data-menukey="{{ l3.id }}" data-label="{{ l3.label }}" data-icon="{{ l3.icon|default('bi-list') }}" data-ui-badge="{{ l3.uiBadge|default('') }}" data-ui-style="{{ l3.uiStyle is iterable ? l3.uiStyle|json_encode : '' }}" title="{{ 'Apariencia'|trans }}">
+                                                <i class="bi bi-palette"></i>
+                                            </button>
+                                            <button type="button" class="btn btn-xs btn-outline-primary btn-icon-only js-menu-edit" data-menukey="{{ l3.id }}" data-label="{{ l3.label }}" data-icon="{{ l3.icon|default('bi-list') }}" data-status="{{ l3.status|default('hecho') }}" data-parent-key="{{ l2.id }}" data-sort-order="0" data-show-in-sidebar="1" data-dev-only="0" data-ui-badge="{{ l3.uiBadge|default('') }}" data-ui-style="{{ l3.uiStyle is iterable ? l3.uiStyle|json_encode : '' }}" title="{{ 'Editar'|trans }}">
+                                                <i class="bi bi-pencil"></i>
+                                            </button>
+                                            <button type="button" class="btn btn-xs btn-outline-danger btn-icon-only btn-delete-action js-menu-delete" data-menukey="{{ l3.id }}" title="{{ 'Eliminar'|trans }}" aria-label="{{ 'Eliminar'|trans }}">
+                                                <i class="bi bi-trash-fill"></i>
+                                            </button>
+                                        </span>
+                                    </div>
+                                {% endfor %}
+                            {% endfor %}
+                        {% else %}
+                            <div class="small text-muted">{{ 'No hay elementos en el árbol de menú.'|trans }}</div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block app_page_scripts %}
+<script src="{{ asset('assets/js/menu-builder.js') }}"></script>
+<script>
+MenuBuilder.init({
+    saveUrl: "{{ path('grova_page_config_menu_builder', {_locale: app.request.locale}) }}",
+    importUrl: "{{ path('grova_page_config_menu_builder_import', {_locale: app.request.locale}) }}",
+    csrfToken: "{{ csrf_token('menu_governance_save') }}",
+    level1Items: [{% for l1 in menu_tree %}{ key: {{ l1.id|json_encode|raw }}, label: {{ l1.label|json_encode|raw }}, icon: {{ l1.icon|default('bi-list')|json_encode|raw }} }{{ not loop.last ? ',' : '' }}{% endfor %}],
+    level2Items: [{% for l1 in menu_tree %}{% for l2 in l1.children|default([]) %}{ key: {{ l2.id|json_encode|raw }}, label: {{ l2.label|json_encode|raw }}, parentKey: {{ l1.id|json_encode|raw }}, parentLabel: {{ l1.label|json_encode|raw }}, icon: {{ l2.icon|default('bi-list')|json_encode|raw }} }{{ (not loop.last or not loop.parent.loop.last) ? ',' : '' }}{% endfor %}{% endfor %}],
+    menuTree: {{ menu_tree|json_encode|raw }}
+});
+</script>
+{% endblock %}

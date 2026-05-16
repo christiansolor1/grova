@@ -1,0 +1,208 @@
+{% extends 'workspace/app_layout.html.twig' %}
+
+{% block main_attributes %} data-grova-filter-schema="ui-tables-wide"{% endblock %}
+
+{% block app_filters_row %}{% include 'workspace/partials/_filters_active_row.html.twig' %}{% endblock %}
+{% block app_filters_drawer %}{% include 'workspace/partials/_filters_drawer.html.twig' %}{% endblock %}
+
+{% block page_title %}{{ 'Tablas (filtros anchos)' | trans({}, 'ui') }}{% endblock %}
+{% block app_page_subtitle %}{{ 'Tabla de demo con panel de filtros más ancho y campos en dos columnas.' | trans({}, 'ui') }}{% endblock %}
+
+{% block page_styles %}
+<style>
+.ui-component { border: 1px solid #1e293b; border-radius: 10px; overflow: hidden; margin-bottom: 1.5rem; }
+.ui-component-preview { padding: 1.5rem; background: #0f172a; }
+.ui-component-code { background: #020617; border-top: 1px solid #1e293b; }
+.ui-component-code-header { display: flex; align-items: center; justify-content: space-between; padding: .5rem 1rem; border-bottom: 1px solid #1e293b; }
+.ui-component-code-label { font-size: 11px; color: #64748b; text-transform: uppercase; letter-spacing: .5px; }
+.ui-component-code pre { margin: 0; padding: 1rem; font-size: 12px; color: #94a3b8; overflow-x: auto; }
+.btn-copy-code { font-size: 11px; padding: 2px 10px; }
+body.light-mode .ui-component { border-color: #dbe3ee; }
+body.light-mode .ui-component-preview { background: #f8fafc; }
+body.light-mode .ui-component-code { background: #f1f5f9; border-color: #dbe3ee; }
+body.light-mode .ui-component-code-header { border-color: #dbe3ee; }
+body.light-mode .ui-component-code pre { color: #475569; }
+.grova-ui-wide-demo-table {
+    table-layout: auto;
+    width: 100%;
+    min-width: 1280px;
+}
+</style>
+{% endblock %}
+
+{% block app_main %}
+<div class="content-card">
+    <div class="content-card-header">{{ 'Tablas (filtros anchos)' | trans({}, 'ui') }}</div>
+    <div class="content-card-body">
+        <p class="text-muted mb-3" style="font-size:13px;">{{ 'tables_wide.intro'|trans({}, 'ui') }}</p>
+        <div class="alert alert-secondary mb-4 py-2" role="alert" style="font-size:13px;">
+            <i class="bi bi-info-circle me-2"></i>{{ 'tables_wide.filters_note'|trans({}, 'ui') }}
+        </div>
+
+        {# ── 1. Sin buttons ── #}
+        <div class="ui-component">
+            <div class="ui-component-preview">
+                <div class="content-card mb-0">
+                    <div class="content-card-header flex-column align-items-start">
+                        <div><span class="badge bg-secondary me-2">1</span>{{ 'tables_wide.mode_none_title'|trans({}, 'ui') }}</div>
+                        <small class="text-muted mt-1" style="font-size:12px;">{{ 'tables_wide.mode_none_desc'|trans({}, 'ui') }}</small>
+                    </div>
+                    <div class="content-card-body grova-dt-card-body">
+                        <div data-grova-dual-scroll>
+                            <table id="grova-dt-wide-none" class="table table-hover grova-ui-wide-demo-table mb-0" style="color:inherit;">
+                                {% include 'workspace/pages/ui/_ui_tables_wide_demo_thead.html.twig' %}
+                                {% include 'workspace/pages/ui/_ui_tables_wide_demo_tbody.html.twig' %}
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="ui-component-code">
+                <div class="ui-component-code-header">
+                    <span class="ui-component-code-label">JS — {{ 'tables_wide.mode_none_title'|trans({}, 'ui') }}</span>
+                    <button type="button" class="btn btn-outline-secondary btn-sm btn-copy-code" data-copy-target="code-dt-wide-none">Copiar</button>
+                </div>
+                <pre id="code-dt-wide-none">{% verbatim %}GrovaDataTable.init(el, {
+    language: { url: langUrl },
+    pageLength: 5,
+    // Sin `buttons` → ningún botón de exportación
+    layout: {
+        topStart: { pageLength: { menu: [5, 10, 25, -1] } },
+        topEnd: { search: { placeholder: 'Buscar…' } }
+    }
+});{% endverbatim %}</pre>
+            </div>
+        </div>
+
+        {# ── 2. full ── #}
+        <div class="ui-component">
+            <div class="ui-component-preview">
+                <div class="content-card mb-0">
+                    <div class="content-card-header flex-column align-items-start">
+                        <div><span class="badge bg-primary me-2">2</span>{{ 'tables_wide.mode_full_title'|trans({}, 'ui') }}</div>
+                        <small class="text-muted mt-1" style="font-size:12px;">{{ 'tables_wide.mode_full_desc'|trans({}, 'ui') }}</small>
+                    </div>
+                    <div class="content-card-body grova-dt-card-body">
+                        <div data-grova-dual-scroll>
+                            <table id="grova-dt-wide-full" class="table table-hover grova-ui-wide-demo-table mb-0" style="color:inherit;">
+                                {% include 'workspace/pages/ui/_ui_tables_wide_demo_thead.html.twig' %}
+                                {% include 'workspace/pages/ui/_ui_tables_wide_demo_tbody.html.twig' %}
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="ui-component-code">
+                <div class="ui-component-code-header">
+                    <span class="ui-component-code-label">JS — {{ 'tables_wide.mode_full_title'|trans({}, 'ui') }}</span>
+                    <button type="button" class="btn btn-outline-secondary btn-sm btn-copy-code" data-copy-target="code-dt-wide-full">Copiar</button>
+                </div>
+                <pre id="code-dt-wide-full">{% verbatim %}GrovaDataTable.init(el, {
+    language: { url: langUrl },
+    pageLength: 5,
+    buttons: 'full',
+    layout: {
+        topStart: { pageLength: { menu: [5, 10, 25, -1] } },
+        topEnd: { search: { placeholder: 'Buscar…' } }
+    }
+});{% endverbatim %}</pre>
+            </div>
+        </div>
+
+        {# ── 3. manual ── #}
+        <div class="ui-component">
+            <div class="ui-component-preview">
+                <div class="content-card mb-0">
+                    <div class="content-card-header flex-column align-items-start">
+                        <div><span class="badge bg-info text-dark me-2">3</span>{{ 'tables_wide.mode_manual_title'|trans({}, 'ui') }}</div>
+                        <small class="text-muted mt-1" style="font-size:12px;">{{ 'tables_wide.mode_manual_desc'|trans({}, 'ui') }}</small>
+                    </div>
+                    <div class="content-card-body grova-dt-card-body">
+                        <div data-grova-dual-scroll>
+                            <table id="grova-dt-wide-manual" class="table table-hover grova-ui-wide-demo-table mb-0" style="color:inherit;">
+                                {% include 'workspace/pages/ui/_ui_tables_wide_demo_thead.html.twig' %}
+                                {% include 'workspace/pages/ui/_ui_tables_wide_demo_tbody.html.twig' %}
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="ui-component-code">
+                <div class="ui-component-code-header">
+                    <span class="ui-component-code-label">JS — {{ 'tables_wide.mode_manual_title'|trans({}, 'ui') }}</span>
+                    <button type="button" class="btn btn-outline-secondary btn-sm btn-copy-code" data-copy-target="code-dt-wide-manual">Copiar</button>
+                </div>
+                <pre id="code-dt-wide-manual">{% verbatim %}GrovaDataTable.init(el, {
+    language: { url: langUrl },
+    pageLength: 5,
+    buttons: ['copy', 'excel', 'pdf', 'colvis'],
+    layout: {
+        topStart: { pageLength: { menu: [5, 10, 25, -1] } },
+        topEnd: { search: { placeholder: 'Buscar…' } }
+    }
+});{% endverbatim %}</pre>
+            </div>
+        </div>
+
+    </div>
+</div>
+{% endblock %}
+
+{% block app_page_scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    if (typeof DataTable === 'undefined') return;
+
+    var locale = {{ app.request.locale|json_encode|raw }};
+    var langUrl = locale === 'en'
+        ? 'https://cdn.datatables.net/plug-ins/2.1.8/i18n/en-GB.json'
+        : 'https://cdn.datatables.net/plug-ins/2.1.8/i18n/es-ES.json';
+    var searchPh = {{ (app.request.locale == 'en' ? 'Search…' : 'Buscar…')|json_encode|raw }};
+    var initDt = (window.GrovaDataTable && window.GrovaDataTable.init)
+        ? window.GrovaDataTable.init
+        : function (t, o) { return new DataTable(t, o); };
+
+    var baseLayout = {
+        topStart: { pageLength: { menu: [5, 10, 25, -1] } },
+        topEnd: { search: { placeholder: searchPh } }
+    };
+    var baseOpts = {
+        language: { url: langUrl },
+        pageLength: 5,
+        order: [[0, 'asc']],
+        layout: baseLayout
+    };
+
+    [
+        { id: 'grova-dt-wide-none', buttons: undefined },
+        { id: 'grova-dt-wide-full', buttons: 'full' },
+        { id: 'grova-dt-wide-manual', buttons: ['copy', 'excel', 'pdf', 'colvis'] }
+    ].forEach(function (cfg) {
+        var el = document.getElementById(cfg.id);
+        if (!el) return;
+        try {
+            var opts = Object.assign({}, baseOpts);
+            if (cfg.buttons !== undefined) {
+                opts.buttons = cfg.buttons;
+            }
+            initDt(el, opts);
+        } catch (e) {
+            console.error('DataTable ' + cfg.id + ':', e);
+        }
+    });
+});
+</script>
+<script>
+document.querySelectorAll('.btn-copy-code').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+        var target = document.getElementById(btn.getAttribute('data-copy-target'));
+        if (!target) return;
+        navigator.clipboard.writeText(target.textContent).then(function () {
+            var label = btn.textContent;
+            btn.textContent = {{ (app.request.locale == 'en' ? 'Copied!' : '¡Copiado!')|json_encode|raw }};
+            setTimeout(function () { btn.textContent = label; }, 1500);
+        });
+    });
+});
+</script>
+{% endblock %}

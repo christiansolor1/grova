@@ -1,0 +1,372 @@
+{% extends 'workspace/app_layout.html.twig' %}
+{% block page_title %}{{ obra.nombre }}{% endblock %}
+{% block app_page_subtitle %}Obra · {{ obra.clienteDisplay }} · {{ obra.estadoLabel }}{% endblock %}
+
+{% block page_styles %}
+<style>
+.obra-info-card {
+    background:#111827; border:1px solid #1e293b; border-radius:12px; padding:1.25rem;
+}
+body.light-mode .obra-info-card { background:#fff; border-color:#e2e8f0; }
+
+.gasto-row { border-bottom:1px solid #1e293b; padding:.6rem 0; display:flex; align-items:center; gap:.75rem; }
+body.light-mode .gasto-row { border-color:#e2e8f0; }
+.gasto-row:last-child { border-bottom:none; }
+
+.categ-badge {
+    font-size:10px; padding:2px 7px; border-radius:8px;
+    background:#1e293b; color:#94a3b8; white-space:nowrap;
+}
+body.light-mode .categ-badge { background:#f1f5f9; }
+
+.estado-pagado   { background:#16a34a22; color:#4ade80; }
+.estado-pendiente{ background:#f59e0b22; color:#fbbf24; }
+.estado-badge-sm { font-size:10px; padding:2px 7px; border-radius:8px; font-weight:600; }
+
+.presup-bar { height:8px; border-radius:4px; background:#1e293b; overflow:hidden; margin-top:.5rem; }
+.presup-fill { height:100%; background:#3b82f6; border-radius:4px; transition:width .5s; }
+
+.categ-dot { width:10px; height:10px; border-radius:50%; display:inline-block; flex-shrink:0; }
+</style>
+{% endblock %}
+
+{% block app_breadcrumb %}
+<nav class="grova-breadcrumb" aria-label="breadcrumb">
+    <a href="{{ path('grova_page_dashboard', {_locale: app.request.locale}) }}" class="breadcrumb-home">
+        <span class="breadcrumb-home-icon" aria-hidden="true"><i class="bi bi-house-door"></i></span>
+        <span>Inicio</span>
+    </a>
+    <span class="sep">/</span>
+    <a href="{{ path('grova_construccion_index', {_locale: app.request.locale}) }}" style="color:#64748b; text-decoration:none;">Construcción</a>
+    <span class="sep">/</span>
+    <span class="current">{{ obra.nombre }}</span>
+</nav>
+{% endblock %}
+
+{% block app_main %}
+
+{% set total_gastos = obra.totalGastos %}
+{% set presupuesto  = obra.presupuestoFloat %}
+
+{# ── Fila superior ── #}
+<div class="row g-3 mb-4">
+
+    {# Info card #}
+    <div class="col-lg-5">
+        <div class="obra-info-card">
+            <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:.5rem; flex-wrap:wrap;">
+                <div>
+                    <div style="font-size:18px; font-weight:800; color:#f1f5f9;">{{ obra.nombre }}</div>
+                    <div style="font-size:12px; color:#64748b; margin-top:3px;">
+                        <i class="bi bi-person me-1"></i>{{ obra.clienteDisplay }}
+                    </div>
+                </div>
+                <div>
+                    <span class="estado-badge estado-{{ obra.estado }}" style="font-size:11px; padding:3px 10px; border-radius:10px; font-weight:600; display:inline-block;">
+                        {{ obra.estadoLabel }}
+                    </span>
+                    <button class="btn btn-xs btn-outline-secondary ms-1" style="padding:2px 7px; font-size:11px;"
+                            data-bs-toggle="modal" data-bs-target="#modalEditObra">
+                        <i class="bi bi-pencil"></i>
+                    </button>
+                </div>
+            </div>
+
+            {% if obra.descripcion %}
+            <div style="font-size:13px; color:#94a3b8; margin-top:.75rem;">{{ obra.descripcion }}</div>
+            {% endif %}
+
+            <div class="grova-detail-list mt-3">
+                {% if obra.fechaInicio %}
+                <div class="grova-detail-row">
+                    <dt>Inicio</dt>
+                    <dd>{{ obra.fechaInicio|date('d/m/Y') }}</dd>
+                </div>
+                {% endif %}
+                {% if obra.fechaFin %}
+                <div class="grova-detail-row">
+                    <dt>Fin estimado</dt>
+                    <dd>{{ obra.fechaFin|date('d/m/Y') }}</dd>
+                </div>
+                {% endif %}
+                <div class="grova-detail-row">
+                    <dt>Presupuesto</dt>
+                    <dd>{% if presupuesto > 0 %}L {{ presupuesto|number_format(2) }}{% else %}<span style="color:#475569;">—</span>{% endif %}</dd>
+                </div>
+                <div class="grova-detail-row">
+                    <dt>Gastado</dt>
+                    <dd style="color:{% if presupuesto > 0 and total_gastos > presupuesto %}#f87171{% else %}#4ade80{% endif %};">
+                        L {{ total_gastos|number_format(2) }}
+                    </dd>
+                </div>
+                {% if presupuesto > 0 %}
+                <div class="grova-detail-row">
+                    <dt>Disponible</dt>
+                    <dd style="color:{% if obra.saldoDisponible < 0 %}#f87171{% else %}#94a3b8{% endif %};">
+                        L {{ obra.saldoDisponible|number_format(2) }}
+                    </dd>
+                </div>
+                {% endif %}
+            </div>
+
+            {% if presupuesto > 0 %}
+            <div class="presup-bar mt-2">
+                <div class="presup-fill"
+                     style="width:{{ obra.porcentajeEjecutado|round }}%;
+                            {% if obra.porcentajeEjecutado >= 90 %}background:#ef4444;{% elseif obra.porcentajeEjecutado >= 70 %}background:#f59e0b;{% endif %}">
+                </div>
+            </div>
+            <div style="font-size:11px; color:#64748b; margin-top:.3rem; text-align:right;">
+                {{ obra.porcentajeEjecutado|round(1) }}% ejecutado
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    {# Gastos por categoría #}
+    <div class="col-lg-7">
+        <div class="obra-info-card" style="height:100%;">
+            <div style="font-size:11px; font-weight:700; color:#64748b; text-transform:uppercase; letter-spacing:.07em; margin-bottom:.75rem;">
+                Gastos por categoría
+            </div>
+            {% set categ_colors = {
+                'material':    '#3b82f6',
+                'mano_obra':   '#a78bfa',
+                'maquinaria':  '#f59e0b',
+                'transporte':  '#06b6d4',
+                'herramienta': '#ec4899',
+                'permiso':     '#84cc16',
+                'servicio':    '#f97316',
+                'otro':        '#64748b',
+            } %}
+            {% if by_categ|length == 0 %}
+            <div style="font-size:13px; color:#64748b; text-align:center; padding:1.5rem 0;">Sin gastos registrados aún.</div>
+            {% else %}
+            {% for categ, monto in by_categ %}
+            {% set porcentaje = total_gastos > 0 ? ((monto / total_gastos) * 100)|round(1) : 0 %}
+            <div style="margin-bottom:.6rem;">
+                <div style="display:flex; justify-content:space-between; font-size:12px; margin-bottom:.2rem;">
+                    <span style="color:#94a3b8;">
+                        <span class="categ-dot" style="background:{{ categ_colors[categ] ?? '#64748b' }};"></span>
+                        {{ constant('App\\Module\\Construccion\\Entity\\ConstruccionGasto::CATEGORIAS')[categ] ?? categ }}
+                    </span>
+                    <span style="color:#f1f5f9; font-weight:600;">L {{ monto|number_format(0) }}
+                        <span style="color:#475569; font-weight:400;">({{ porcentaje }}%)</span>
+                    </span>
+                </div>
+                <div class="presup-bar" style="height:4px;">
+                    <div class="presup-fill" style="width:{{ porcentaje }}%; background:{{ categ_colors[categ] ?? '#64748b' }};"></div>
+                </div>
+            </div>
+            {% endfor %}
+            <div style="border-top:1px solid #1e293b; margin-top:.75rem; padding-top:.75rem; display:flex; justify-content:space-between;">
+                <span style="font-size:13px; color:#64748b; font-weight:600;">Total</span>
+                <span style="font-size:15px; color:#f1f5f9; font-weight:800;">L {{ total_gastos|number_format(2) }}</span>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+</div>
+
+{# ── Tabla de gastos ── #}
+<div class="content-card">
+    <div class="content-card-header">
+        Gastos
+        <span class="badge bg-primary ms-2">{{ gastos|length }}</span>
+        <button class="btn btn-sm btn-primary ms-auto" data-bs-toggle="modal" data-bs-target="#modalNuevoGasto">
+            <i class="bi bi-plus-lg me-1"></i>Agregar gasto
+        </button>
+    </div>
+    <div class="content-card-body" style="padding:0;">
+        {% if gastos|length == 0 %}
+        <div class="grova-empty-state grova-empty-state-compact">
+            <div class="grova-empty-icon"><i class="bi bi-receipt"></i></div>
+            <div class="grova-empty-title">Sin gastos</div>
+            <div class="grova-empty-desc">Agrega el primer gasto de esta obra.</div>
+        </div>
+        {% else %}
+        <div style="overflow-x:auto;">
+        <table class="table table-sm grova-table" style="margin:0;">
+            <thead>
+                <tr>
+                    <th>Fecha</th>
+                    <th>Descripción</th>
+                    <th>Categoría</th>
+                    <th>Proveedor</th>
+                    <th class="text-end">Monto</th>
+                    <th>Estado</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+            {% for g in gastos %}
+            <tr>
+                <td style="white-space:nowrap; color:#64748b; font-size:12px;">{{ g.fecha|date('d/m/Y') }}</td>
+                <td style="font-size:13px;">{{ g.descripcion }}</td>
+                <td><span class="categ-badge">{{ g.categoriaLabel }}</span></td>
+                <td style="font-size:12px; color:#64748b;">{{ g.proveedor ? g.proveedor.nombre : '—' }}</td>
+                <td class="text-end" style="font-weight:700; font-size:13px; white-space:nowrap;">L {{ g.monto|number_format(2) }}</td>
+                <td>
+                    <span class="estado-badge-sm estado-{{ g.estado }}">{{ g.estadoLabel }}</span>
+                </td>
+                <td style="white-space:nowrap;">
+                    {% if not g.isPagado %}
+                    <form method="post"
+                          action="{{ path('grova_construccion_gasto_pagar', {id: g.id, _locale: app.request.locale}) }}"
+                          style="display:inline;"
+                          onsubmit="return confirm('¿Marcar como pagado?')">
+                        <input type="hidden" name="_token" value="{{ csrf_token('construccion_gasto_pagar_' ~ g.id) }}">
+                        <button type="submit" class="btn btn-xs btn-outline-success" title="Marcar pagado" style="padding:1px 6px; font-size:11px;">
+                            <i class="bi bi-check2"></i>
+                        </button>
+                    </form>
+                    {% endif %}
+                    <form method="post"
+                          action="{{ path('grova_construccion_gasto_delete', {id: g.id, _locale: app.request.locale}) }}"
+                          style="display:inline;"
+                          onsubmit="return confirm('¿Eliminar este gasto?')">
+                        <input type="hidden" name="_token" value="{{ csrf_token('construccion_gasto_del_' ~ g.id) }}">
+                        <button type="submit" class="btn btn-xs btn-outline-danger" title="Eliminar" style="padding:1px 6px; font-size:11px;">
+                            <i class="bi bi-trash3"></i>
+                        </button>
+                    </form>
+                </td>
+            </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+{# ── Modal nuevo gasto ── #}
+<div class="modal fade" id="modalNuevoGasto" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="post" action="{{ path('grova_construccion_gasto_add', {id: obra.id, _locale: app.request.locale}) }}">
+                <input type="hidden" name="_token" value="{{ csrf_token('construccion_gasto_' ~ obra.id) }}">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="bi bi-receipt me-2"></i>Nuevo gasto</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body" style="display:flex; flex-direction:column; gap:.75rem;">
+                    <div class="row g-2">
+                        <div class="col-8">
+                            <label class="form-label form-label-sm">Descripción *</label>
+                            <input class="form-control form-control-sm" name="descripcion" required placeholder="Ej: Bloques de concreto">
+                        </div>
+                        <div class="col-4">
+                            <label class="form-label form-label-sm">Monto (L) *</label>
+                            <input class="form-control form-control-sm" type="number" step="0.01" name="monto" required placeholder="0.00">
+                        </div>
+                    </div>
+                    <div class="row g-2">
+                        <div class="col-6">
+                            <label class="form-label form-label-sm">Categoría</label>
+                            <select class="form-select form-select-sm" name="categoria">
+                                {% for key, label in constant('App\\Module\\Construccion\\Entity\\ConstruccionGasto::CATEGORIAS') %}
+                                <option value="{{ key }}">{{ label }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label form-label-sm">Proveedor</label>
+                            <select class="form-select form-select-sm" name="proveedor_id">
+                                <option value="">Sin proveedor</option>
+                                {% for p in proveedores %}
+                                <option value="{{ p.id }}">{{ p.nombre }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                    <div class="row g-2">
+                        <div class="col-6">
+                            <label class="form-label form-label-sm">Fecha</label>
+                            <input class="form-control form-control-sm" type="date" name="fecha" value="{{ 'now'|date('Y-m-d') }}" required>
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label form-label-sm">Estado</label>
+                            <select class="form-select form-select-sm" name="estado">
+                                <option value="pendiente">Pendiente</option>
+                                <option value="pagado">Pagado</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="form-label form-label-sm">Notas</label>
+                        <textarea class="form-control form-control-sm" name="notas" rows="2" placeholder="Detalles adicionales..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-sm btn-primary">Registrar gasto</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+{# ── Modal editar obra ── #}
+<div class="modal fade" id="modalEditObra" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="post" action="{{ path('grova_construccion_obra_edit', {id: obra.id, _locale: app.request.locale}) }}">
+                <input type="hidden" name="_token" value="{{ csrf_token('construccion_obra_edit_' ~ obra.id) }}">
+                <div class="modal-header">
+                    <h5 class="modal-title">Editar obra</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body" style="display:flex; flex-direction:column; gap:.75rem;">
+                    <div>
+                        <label class="form-label form-label-sm">Nombre *</label>
+                        <input class="form-control form-control-sm" name="nombre" value="{{ obra.nombre }}" required>
+                    </div>
+                    <div>
+                        <label class="form-label form-label-sm">Cliente / Dueño</label>
+                        <input class="form-control form-control-sm" name="cliente_nombre" value="{{ obra.clienteNombre ?? (obra.cliente ? obra.cliente.nombreCompleto : '') }}">
+                    </div>
+                    <div class="row g-2">
+                        <div class="col-6">
+                            <label class="form-label form-label-sm">Estado</label>
+                            <select class="form-select form-select-sm" name="estado">
+                                {% for key, label in constant('App\\Module\\Construccion\\Entity\\ConstruccionObra::ESTADOS') %}
+                                <option value="{{ key }}" {{ obra.estado == key ? 'selected' : '' }}>{{ label }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label form-label-sm">Presupuesto (L)</label>
+                            <input class="form-control form-control-sm" type="number" step="0.01" name="presupuesto" value="{{ obra.presupuesto }}">
+                        </div>
+                    </div>
+                    <div class="row g-2">
+                        <div class="col-6">
+                            <label class="form-label form-label-sm">Fecha inicio</label>
+                            <input class="form-control form-control-sm" type="date" name="fecha_inicio" value="{{ obra.fechaInicio ? obra.fechaInicio|date('Y-m-d') : '' }}">
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label form-label-sm">Fecha fin estimada</label>
+                            <input class="form-control form-control-sm" type="date" name="fecha_fin" value="{{ obra.fechaFin ? obra.fechaFin|date('Y-m-d') : '' }}">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="form-label form-label-sm">Descripción</label>
+                        <textarea class="form-control form-control-sm" name="descripcion" rows="2">{{ obra.descripcion }}</textarea>
+                    </div>
+                    <div>
+                        <label class="form-label form-label-sm">Notas internas</label>
+                        <textarea class="form-control form-control-sm" name="notas" rows="2">{{ obra.notas }}</textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-sm btn-primary">Guardar cambios</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

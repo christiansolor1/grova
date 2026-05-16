@@ -25,19 +25,28 @@ class Menu
     private string $label;
 
     #[ORM\Column(length: 50)]
-    private string $icon = 'list';
+    private string $icon = 'bi-list';
 
     #[ORM\Column]
     private int $sortOrder = 0;
 
     #[ORM\Column(options: ['default' => true])]
-    private bool $enabled = true;
+    private bool $showInSidebar = true;
 
     #[ORM\Column(options: ['default' => false])]
     private bool $devOnly = false;
 
     #[ORM\Column(length: 120, nullable: true)]
     private ?string $requiredRole = null;
+
+    #[ORM\Column(length: 20, options: ['default' => 'pendiente'])]
+    private string $status = 'pendiente';
+
+    #[ORM\Column(length: 32, nullable: true)]
+    private ?string $uiBadge = null;
+
+    #[ORM\Column(type: 'text', nullable: true)]
+    private ?string $uiStyle = null;
 
     public function getId(): ?int
     {
@@ -104,14 +113,14 @@ class Menu
         return $this;
     }
 
-    public function isEnabled(): bool
+    public function isShowInSidebar(): bool
     {
-        return $this->enabled;
+        return $this->showInSidebar;
     }
 
-    public function setEnabled(bool $enabled): self
+    public function setShowInSidebar(bool $showInSidebar): self
     {
-        $this->enabled = $enabled;
+        $this->showInSidebar = $showInSidebar;
 
         return $this;
     }
@@ -136,6 +145,42 @@ class Menu
     public function setRequiredRole(?string $requiredRole): self
     {
         $this->requiredRole = $requiredRole;
+
+        return $this;
+    }
+
+    public function getStatus(): string
+    {
+        return $this->status;
+    }
+
+    public function setStatus(string $status): self
+    {
+        $this->status = $status;
+
+        return $this;
+    }
+
+    public function getUiBadge(): ?string
+    {
+        return $this->uiBadge;
+    }
+
+    public function setUiBadge(?string $uiBadge): self
+    {
+        $this->uiBadge = $uiBadge;
+
+        return $this;
+    }
+
+    public function getUiStyle(): ?string
+    {
+        return $this->uiStyle;
+    }
+
+    public function setUiStyle(?string $uiStyle): self
+    {
+        $this->uiStyle = $uiStyle;
 
         return $this;
     }

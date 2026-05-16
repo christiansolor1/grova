@@ -1,0 +1,263 @@
+{% extends 'workspace/app_layout.html.twig' %}
+
+{% block page_title %}Toasts y notificaciones{% endblock %}
+{% block app_page_subtitle %}Feedback inline no bloqueante para operaciones CRUD. Copia la función utilitaria y úsala en cualquier vista.{% endblock %}
+
+{% block page_styles %}
+<style>
+.ui-component { border: 1px solid #1e293b; border-radius: 10px; overflow: hidden; margin-bottom: 1.5rem; }
+.ui-component-preview { padding: 1.5rem; background: #0f172a; display: flex; flex-wrap: wrap; gap: .75rem; align-items: flex-start; }
+.ui-component-code { background: #020617; border-top: 1px solid #1e293b; }
+.ui-component-code-header { display: flex; align-items: center; justify-content: space-between; padding: .5rem 1rem; border-bottom: 1px solid #1e293b; }
+.ui-component-code-label { font-size: 11px; color: #64748b; text-transform: uppercase; letter-spacing: .5px; }
+.ui-component-code pre { margin: 0; padding: 1rem; font-size: 12px; color: #94a3b8; overflow-x: auto; white-space: pre; }
+.btn-copy-code { font-size: 11px; padding: 2px 10px; }
+body.light-mode .ui-component { border-color: #dbe3ee; }
+body.light-mode .ui-component-preview { background: #f8fafc; }
+body.light-mode .ui-component-code { background: #f1f5f9; border-color: #dbe3ee; }
+body.light-mode .ui-component-code-header { border-color: #dbe3ee; }
+body.light-mode .ui-component-code pre { color: #475569; }
+</style>
+{% endblock %}
+
+{% block app_main %}
+
+{# ── Contenedor global de toasts (portal a body via JS) ── #}
+<div id="grova-toast-container" class="toast-container position-fixed top-0 end-0 p-3" style="z-index:9999;" aria-live="polite" aria-atomic="false"></div>
+
+<div class="content-card">
+    <div class="content-card-header">Toasts y notificaciones</div>
+    <div class="content-card-body">
+
+        {# ── Tipos básicos ── #}
+        <div class="ui-component">
+            <div class="ui-component-preview">
+                <button class="btn btn-sm btn-success" onclick="gToast('Registro guardado correctamente.', 'success')">
+                    <i class="bi bi-check-circle me-1"></i>Toast éxito
+                </button>
+                <button class="btn btn-sm btn-danger" onclick="gToast('No se pudo completar la operación.', 'error')">
+                    <i class="bi bi-x-circle me-1"></i>Toast error
+                </button>
+                <button class="btn btn-sm btn-warning" onclick="gToast('Revisa los datos antes de continuar.', 'warning')">
+                    <i class="bi bi-exclamation-triangle me-1"></i>Toast advertencia
+                </button>
+                <button class="btn btn-sm btn-info" onclick="gToast('El proceso fue iniciado en segundo plano.', 'info')">
+                    <i class="bi bi-info-circle me-1"></i>Toast info
+                </button>
+            </div>
+            <div class="ui-component-code">
+                <div class="ui-component-code-header">
+                    <span class="ui-component-code-label">JS — Uso mínimo</span>
+                    <button type="button" class="btn btn-outline-secondary btn-sm btn-copy-code" data-copy-target="code-toast-basic">Copiar</button>
+                </div>
+                <pre id="code-toast-basic">// Llamada básica — disponible globalmente via grova-toasts.js
+gToast('Registro guardado.', 'success');
+gToast('Error al eliminar.', 'error');
+gToast('Revisa los datos.', 'warning');
+gToast('Proceso en cola.', 'info');</pre>
+            </div>
+        </div>
+
+        {# ── Toast con acción ── #}
+        <div class="ui-component">
+            <div class="ui-component-preview">
+                <button class="btn btn-sm btn-primary" onclick="gToast('Registro eliminado.', 'warning', { action: { label: 'Deshacer', callback: function() { gToast('Eliminación revertida.', 'success'); } } })">
+                    Toast con acción (Deshacer)
+                </button>
+                <button class="btn btn-sm btn-outline-secondary" onclick="gToast('Exportación lista.', 'success', { action: { label: 'Descargar', callback: function() { gToast('Descarga iniciada.', 'info'); } } })">
+                    Toast con acción (Descargar)
+                </button>
+            </div>
+            <div class="ui-component-code">
+                <div class="ui-component-code-header">
+                    <span class="ui-component-code-label">JS — Toast con botón de acción</span>
+                    <button type="button" class="btn btn-outline-secondary btn-sm btn-copy-code" data-copy-target="code-toast-action">Copiar</button>
+                </div>
+                <pre id="code-toast-action">gToast('Registro eliminado.', 'warning', {
+    action: {
+        label: 'Deshacer',
+        callback: function () {
+            // lógica de reversión
+            gToast('Eliminación revertida.', 'success');
+        }
+    }
+});</pre>
+            </div>
+        </div>
+
+        {# ── Toast persistente ── #}
+        <div class="ui-component">
+            <div class="ui-component-preview">
+                <button class="btn btn-sm btn-outline-danger" onclick="gToast('Sesión expirada. Por favor vuelve a iniciar sesión.', 'error', { persistent: true })">
+                    Toast persistente (sin auto-close)
+                </button>
+            </div>
+            <div class="ui-component-code">
+                <div class="ui-component-code-header">
+                    <span class="ui-component-code-label">JS — Toast persistente</span>
+                    <button type="button" class="btn btn-outline-secondary btn-sm btn-copy-code" data-copy-target="code-toast-persistent">Copiar</button>
+                </div>
+                <pre id="code-toast-persistent">gToast('Sesión expirada.', 'error', { persistent: true });
+// persistent: true → no se cierra automáticamente, el usuario debe cerrarlo.</pre>
+            </div>
+        </div>
+
+        {# ── Stack de múltiples toasts ── #}
+        <div class="ui-component">
+            <div class="ui-component-preview">
+                <button class="btn btn-sm btn-outline-primary" onclick="
+                    gToast('Paso 1: datos validados.', 'info');
+                    setTimeout(function(){ gToast('Paso 2: archivo generado.', 'info'); }, 400);
+                    setTimeout(function(){ gToast('Paso 3: envío completado.', 'success'); }, 800);
+                ">
+                    Stack — 3 toasts seguidos
+                </button>
+            </div>
+            <div class="ui-component-code">
+                <div class="ui-component-code-header">
+                    <span class="ui-component-code-label">JS — Stack de toasts</span>
+                    <button type="button" class="btn btn-outline-secondary btn-sm btn-copy-code" data-copy-target="code-toast-stack">Copiar</button>
+                </div>
+                <pre id="code-toast-stack">// Los toasts se apilan automáticamente en la esquina superior derecha.
+gToast('Paso 1: datos validados.', 'info');
+setTimeout(() => gToast('Paso 2: archivo generado.', 'info'), 400);
+setTimeout(() => gToast('Paso 3: envío completado.', 'success'), 800);</pre>
+            </div>
+        </div>
+
+        {# ── Función utilitaria completa ── #}
+        <div class="ui-component">
+            <div class="ui-component-code" style="border-top:0;">
+                <div class="ui-component-code-header">
+                    <span class="ui-component-code-label">JS — Función gToast() completa (copiar en grova-toasts.js)</span>
+                    <button type="button" class="btn btn-outline-secondary btn-sm btn-copy-code" data-copy-target="code-toast-fn">Copiar</button>
+                </div>
+                <pre id="code-toast-fn">/**
+ * gToast(message, type, options)
+ * @param {string} message  - Texto del toast
+ * @param {string} type     - 'success' | 'error' | 'warning' | 'info'
+ * @param {object} options  - { persistent: bool, action: { label, callback }, delay: ms }
+ */
+function gToast(message, type, options) {
+    options = options || {};
+    var delay = options.persistent ? 0 : (options.delay || 4000);
+    var icons = { success: 'bi-check-circle-fill', error: 'bi-x-circle-fill', warning: 'bi-exclamation-triangle-fill', info: 'bi-info-circle-fill' };
+    var colors = { success: 'text-success', error: 'text-danger', warning: 'text-warning', info: 'text-info' };
+    var icon = icons[type] || icons.info;
+    var color = colors[type] || colors.info;
+
+    var actionHtml = '';
+    if (options.action && options.action.label) {
+        actionHtml = '&lt;button type="button" class="btn btn-link btn-sm p-0 ms-2 grova-toast-action" style="font-size:12px;"&gt;'
+            + options.action.label + '&lt;/button&gt;';
+    }
+
+    var el = document.createElement('div');
+    el.className = 'toast align-items-center border-0 show';
+    el.setAttribute('role', 'alert');
+    el.setAttribute('aria-live', 'assertive');
+    el.innerHTML =
+        '&lt;div class="d-flex"&gt;' +
+        '&lt;div class="toast-body d-flex align-items-center gap-2"&gt;' +
+        '&lt;i class="bi ' + icon + ' ' + color + '"&gt;&lt;/i&gt;' +
+        '&lt;span style="font-size:13px;"&gt;' + message + '&lt;/span&gt;' +
+        actionHtml +
+        '&lt;/div&gt;' +
+        '&lt;button type="button" class="btn-close me-2 m-auto" data-bs-dismiss="toast" aria-label="Cerrar"&gt;&lt;/button&gt;' +
+        '&lt;/div&gt;';
+
+    if (options.action && options.action.callback) {
+        el.querySelector('.grova-toast-action').addEventListener('click', function () {
+            options.action.callback();
+            bootstrap.Toast.getOrCreateInstance(el).hide();
+        });
+    }
+
+    var container = document.getElementById('grova-toast-container');
+    if (!container) {
+        container = document.createElement('div');
+        container.id = 'grova-toast-container';
+        container.className = 'toast-container position-fixed top-0 end-0 p-3';
+        container.style.zIndex = '9999';
+        document.body.appendChild(container);
+    }
+    container.appendChild(el);
+
+    var bsToast = new bootstrap.Toast(el, { autohide: !options.persistent, delay: delay });
+    bsToast.show();
+    el.addEventListener('hidden.bs.toast', function () { el.remove(); });
+}</pre>
+            </div>
+        </div>
+
+    </div>
+</div>
+{% endblock %}
+
+{% block app_page_scripts %}
+<script>
+/* ── gToast — función utilitaria de toasts ── */
+function gToast(message, type, options) {
+    options = options || {};
+    var delay = options.persistent ? 0 : (options.delay || 4000);
+    var icons  = { success: 'bi-check-circle-fill', error: 'bi-x-circle-fill', warning: 'bi-exclamation-triangle-fill', info: 'bi-info-circle-fill' };
+    var colors = { success: 'text-success', error: 'text-danger', warning: 'text-warning', info: 'text-info' };
+    var icon  = icons[type]  || icons.info;
+    var color = colors[type] || colors.info;
+
+    var actionHtml = '';
+    if (options.action && options.action.label) {
+        actionHtml = '<button type="button" class="btn btn-link btn-sm p-0 ms-2 grova-toast-action" style="font-size:12px;">'
+            + options.action.label + '</button>';
+    }
+
+    var el = document.createElement('div');
+    el.className = 'toast align-items-center border-0 show';
+    el.setAttribute('role', 'alert');
+    el.setAttribute('aria-live', 'assertive');
+    el.innerHTML =
+        '<div class="d-flex">' +
+        '<div class="toast-body d-flex align-items-center gap-2">' +
+        '<i class="bi ' + icon + ' ' + color + '"></i>' +
+        '<span style="font-size:13px;">' + message + '</span>' +
+        actionHtml +
+        '</div>' +
+        '<button type="button" class="btn-close me-2 m-auto" data-bs-dismiss="toast" aria-label="Cerrar"></button>' +
+        '</div>';
+
+    if (options.action && options.action.callback) {
+        el.querySelector('.grova-toast-action').addEventListener('click', function () {
+            options.action.callback();
+            bootstrap.Toast.getOrCreateInstance(el).hide();
+        });
+    }
+
+    var container = document.getElementById('grova-toast-container');
+    if (!container) {
+        container = document.createElement('div');
+        container.id = 'grova-toast-container';
+        container.className = 'toast-container position-fixed top-0 end-0 p-3';
+        container.style.zIndex = '9999';
+        document.body.appendChild(container);
+    }
+    container.appendChild(el);
+
+    var bsToast = new bootstrap.Toast(el, { autohide: !options.persistent, delay: delay });
+    bsToast.show();
+    el.addEventListener('hidden.bs.toast', function () { el.remove(); });
+}
+
+/* ── Copiar código ── */
+document.querySelectorAll('.btn-copy-code').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+        var target = document.getElementById(btn.getAttribute('data-copy-target'));
+        if (!target) return;
+        navigator.clipboard.writeText(target.textContent.trim()).then(function () {
+            var old = btn.textContent;
+            btn.textContent = 'Copiado';
+            setTimeout(function () { btn.textContent = old; }, 1200);
+        });
+    });
+});
+</script>
+{% endblock %}

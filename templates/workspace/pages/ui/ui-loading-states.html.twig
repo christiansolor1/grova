@@ -1,0 +1,988 @@
+{% extends 'workspace/app_layout.html.twig' %}
+
+{% block page_title %}Cargas y esperas{% endblock %}
+{% block app_page_subtitle %}Catálogo de patrones de espera: CRUD, formularios, alertas, toasts Bootstrap, SweetAlert2, modales, offcanvas, tablas DataTables y overlays. Reutiliza el snippet que encaje en cada pantalla.{% endblock %}
+
+{% block page_styles %}
+<style>
+.ui-component { border: 1px solid #1e293b; border-radius: 10px; overflow: hidden; margin-bottom: 1.5rem; }
+.ui-component-preview { padding: 1.5rem; background: #0f172a; }
+.ui-component-code { background: #020617; border-top: 1px solid #1e293b; }
+.ui-component-code-header { display: flex; align-items: center; justify-content: space-between; padding: .5rem 1rem; border-bottom: 1px solid #1e293b; }
+.ui-component-code-label { font-size: 11px; color: #64748b; text-transform: uppercase; letter-spacing: .5px; }
+.ui-component-code pre { margin: 0; padding: 1rem; font-size: 12px; color: #94a3b8; overflow-x: auto; white-space: pre-wrap; }
+.btn-copy-code { font-size: 11px; padding: 2px 10px; }
+body.light-mode .ui-component { border-color: #dbe3ee; }
+body.light-mode .ui-component-preview { background: #f8fafc; }
+body.light-mode .ui-component-code { background: #f1f5f9; border-color: #dbe3ee; }
+body.light-mode .ui-component-code-header { border-color: #dbe3ee; }
+body.light-mode .ui-component-code pre { color: #475569; }
+
+.ui-load-toc { font-size: 13px; columns: 2; gap: 1.5rem; max-width: 48rem; }
+@media (max-width: 640px) { .ui-load-toc { columns: 1; } }
+.ui-load-toc a { color: #38bdf8; text-decoration: none; }
+.ui-load-toc a:hover { text-decoration: underline; }
+body.light-mode .ui-load-toc a { color: #0369a1; }
+
+.ui-load-overlay-wrap { position: relative; min-height: 140px; border-radius: 8px; border: 1px dashed #334155; padding: 1rem; }
+body.light-mode .ui-load-overlay-wrap { border-color: #cbd5e1; }
+.ui-load-overlay {
+  display: none;
+  position: absolute;
+  inset: 0;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: .5rem;
+  background: rgba(15, 23, 42, 0.72);
+  border-radius: 8px;
+  z-index: 2;
+}
+body.light-mode .ui-load-overlay { background: rgba(248, 250, 252, 0.88); }
+.ui-load-overlay.is-active { display: flex; }
+.ui-load-overlay .text { font-size: 12px; color: #e2e8f0; }
+body.light-mode .ui-load-overlay .text { color: #475569; }
+
+.ui-fullpage-load {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 1080;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: .75rem;
+  background: rgba(2, 6, 23, 0.78);
+  backdrop-filter: blur(2px);
+}
+body.light-mode .ui-fullpage-load { background: rgba(248, 250, 252, 0.92); }
+.ui-fullpage-load.is-active { display: flex; }
+.ui-fullpage-load .text { font-size: 14px; color: #e2e8f0; }
+body.light-mode .ui-fullpage-load .text { color: #334155; }
+
+#modal-loading-demo .modal-body--loading { min-height: 120px; display: flex; align-items: center; justify-content: center; }
+
+.ui-skeleton-card { border-radius: 8px; border: 1px solid #334155; padding: 1rem; max-width: 320px; }
+body.light-mode .ui-skeleton-card { border-color: #e2e8f0; }
+
+#offcanvas-loading-demo .offcanvas-body--loading { min-height: 160px; display: flex; align-items: center; justify-content: center; }
+
+.swal-load-grid { display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; }
+#swal-dev-result { font-size: 12px; color: #94a3b8; margin-top: .75rem; min-height: 1.25rem; }
+body.light-mode #swal-dev-result { color: #64748b; }
+</style>
+{% endblock %}
+
+{% block app_main %}
+{# Contenedor de toasts (mismo patrón que ui-toasts) #}
+<div id="grova-toast-container" class="toast-container position-fixed top-0 end-0 p-3" style="z-index:9999;" aria-live="polite" aria-atomic="false"></div>
+
+<div class="content-card">
+    <div class="content-card-header">Cargas y esperas</div>
+    <div class="content-card-body">
+
+        <p class="text-muted small mb-2" style="max-width:52rem;">
+            Deshabilita el control que dispara la acción, muestra <code>spinner-border spinner-border-sm</code> o un overlay, y restaura el estado en <code>fetch().finally()</code> o al terminar el submit.
+            Para más variantes de Swal genéricas, la página
+            <a href="{{ path('grova_page_ui_alerts_swal', {_locale: app.request.locale}) }}">Alertas SweetAlert2</a>
+            y para toasts detallados,
+            <a href="{{ path('grova_page_ui_toasts', {_locale: app.request.locale}) }}">Toasts</a>.
+        </p>
+        <nav class="ui-load-toc mb-4 text-muted" aria-label="Índice de secciones">
+            <ul class="mb-0 ps-3">
+                <li><a href="#sec-crud">Botones CRUD ocupados</a></li>
+                <li><a href="#sec-form">Formulario enviando</a></li>
+                <li><a href="#sec-spinners">Spinners</a></li>
+                <li><a href="#sec-inline-alert">Alerta inline con estado</a></li>
+                <li><a href="#sec-progress">Barra de progreso</a></li>
+                <li><a href="#sec-skeleton">Placeholders / skeleton</a></li>
+                <li><a href="#sec-overlay">Overlay en tarjeta</a></li>
+                <li><a href="#sec-fullpage">Overlay pantalla completa</a></li>
+                <li><a href="#sec-modal">Modal con carga</a></li>
+                <li><a href="#sec-offcanvas">Offcanvas con carga</a></li>
+                <li><a href="#sec-toast">Toasts Bootstrap (<code>gToast</code>)</a></li>
+                <li><a href="#sec-alerts-bs">Alertas Bootstrap estáticas</a></li>
+                <li><a href="#sec-swal">SweetAlert2 — carga y bloqueo</a></li>
+                <li><a href="#sec-datatables">DataTables <code>processing</code></a></li>
+                <li><a href="#sec-datatables-fetch">DataTable: carga de datos (simula API)</a></li>
+            </ul>
+        </nav>
+
+        {# ── CRUD: botones con estado “ocupado” ── #}
+        <section id="sec-crud" class="ui-component">
+            <div class="ui-component-preview">
+                <div class="d-flex flex-wrap gap-2 align-items-center">
+                    <button type="button" class="btn btn-primary btn-sm js-ui-busy-btn" data-label="Crear">
+                        <i class="bi bi-plus-lg me-1"></i>Crear
+                    </button>
+                    <button type="button" class="btn btn-success btn-sm js-ui-busy-btn" data-label="Guardar">
+                        <i class="bi bi-check2 me-1"></i>Guardar
+                    </button>
+                    <button type="button" class="btn btn-outline-primary btn-sm js-ui-busy-btn" data-label="Actualizar">
+                        <i class="bi bi-arrow-repeat me-1"></i>Actualizar
+                    </button>
+                    <button type="button" class="btn btn-outline-danger btn-sm js-ui-busy-btn" data-label="Eliminar">
+                        <i class="bi bi-trash me-1"></i>Eliminar
+                    </button>
+                </div>
+                <p class="small text-muted mt-3 mb-0">Simula ~1,2&nbsp;s de red; el botón muestra spinner y queda deshabilitado.</p>
+            </div>
+            <div class="ui-component-code">
+                <div class="ui-component-code-header">
+                    <span class="ui-component-code-label">JS — Botón ocupado (CRUD)</span>
+                    <button type="button" class="btn btn-outline-secondary btn-sm btn-copy-code" data-copy-target="code-busy-btn">Copiar</button>
+                </div>
+                <pre id="code-busy-btn">btn.disabled = true;
+btn.innerHTML = '&lt;span class="spinner-border spinner-border-sm me-1"&gt;&lt;/span&gt;Guardando…';
+// … await fetch …
+btn.disabled = false;
+btn.innerHTML = originalHtml;</pre>
+            </div>
+        </section>
+
+        {# ── Formulario: fieldset + submit ── #}
+        <section id="sec-form" class="ui-component">
+            <div class="ui-component-preview">
+                <form id="demo-form-busy" class="small" style="max-width:22rem;">
+                    <fieldset id="demo-form-busy-fieldset" class="border-0 p-0 m-0">
+                        <div class="mb-2">
+                            <label class="form-label mb-0">Nota</label>
+                            <input type="text" class="form-control form-control-sm" name="demo_note" value="Texto de prueba" autocomplete="off">
+                        </div>
+                    </fieldset>
+                    <button type="submit" class="btn btn-primary btn-sm" id="demo-form-busy-submit">
+                        <i class="bi bi-send me-1"></i>Enviar formulario
+                    </button>
+                </form>
+                <p class="small text-muted mt-3 mb-0">Patrón típico: <code>fieldset.disabled = true</code> y spinner en el submit mientras dura el POST.</p>
+            </div>
+            <div class="ui-component-code">
+                <div class="ui-component-code-header">
+                    <span class="ui-component-code-label">JS — Formulario bloqueado</span>
+                    <button type="button" class="btn btn-outline-secondary btn-sm btn-copy-code" data-copy-target="code-form-busy">Copiar</button>
+                </div>
+                <pre id="code-form-busy">form.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  fieldset.disabled = true;
+  submitBtn.disabled = true;
+  submitBtn.innerHTML = '&lt;span class="spinner-border spinner-border-sm me-1"&gt;&lt;/span&gt;Enviando…';
+  try { await fetch(url, { method: 'POST', body: new FormData(form) }); }
+  finally {
+    fieldset.disabled = false;
+    submitBtn.disabled = false;
+    submitBtn.innerHTML = originalHtml;
+  }
+});</pre>
+            </div>
+        </section>
+
+        {# ── Spinners Bootstrap ── #}
+        <section id="sec-spinners" class="ui-component">
+            <div class="ui-component-preview d-flex flex-wrap align-items-center gap-4">
+                <div class="text-center">
+                    <div class="spinner-border text-primary" role="status"><span class="visually-hidden">Cargando…</span></div>
+                    <div class="small text-muted mt-1">border</div>
+                </div>
+                <div class="text-center">
+                    <div class="spinner-border spinner-border-sm text-secondary" role="status"></div>
+                    <div class="small text-muted mt-1">sm</div>
+                </div>
+                <div class="text-center">
+                    <div class="spinner-grow text-info" role="status"></div>
+                    <div class="small text-muted mt-1">grow</div>
+                </div>
+                <div>
+                    <button type="button" class="btn btn-outline-light btn-sm" id="btn-link-busy-demo">
+                        <span class="spinner-border spinner-border-sm me-1 d-none" id="btn-link-busy-spin" role="status"></span>
+                        <span id="btn-link-busy-label">Enlace estilo botón</span>
+                    </button>
+                    <div class="small text-muted mt-2 mb-0">Spinner dentro de un <code>btn-outline-*</code> sin cambiar el tamaño del botón.</div>
+                </div>
+            </div>
+            <div class="ui-component-code">
+                <div class="ui-component-code-header">
+                    <span class="ui-component-code-label">HTML — Spinners</span>
+                    <button type="button" class="btn btn-outline-secondary btn-sm btn-copy-code" data-copy-target="code-spinners">Copiar</button>
+                </div>
+                <pre id="code-spinners">&lt;span class="spinner-border spinner-border-sm text-primary" role="status"&gt;&lt;/span&gt;
+&lt;span class="visually-hidden"&gt;Cargando…&lt;/span&gt;</pre>
+            </div>
+        </section>
+
+        {# ── Alerta inline que cambia con el flujo ── #}
+        <section id="sec-inline-alert" class="ui-component">
+            <div class="ui-component-preview">
+                <div id="inline-alert-slot" class="mb-2" style="min-height:3rem;"></div>
+                <button type="button" class="btn btn-outline-primary btn-sm" id="btn-inline-alert-demo">Simular guardado (2&nbsp;s)</button>
+                <p class="small text-muted mt-2 mb-0">Sustituye el contenido del contenedor: aviso con spinner → éxito (o error).</p>
+            </div>
+            <div class="ui-component-code">
+                <div class="ui-component-code-header">
+                    <span class="ui-component-code-label">HTML — Alerta + spinner</span>
+                    <button type="button" class="btn btn-outline-secondary btn-sm btn-copy-code" data-copy-target="code-inline-alert">Copiar</button>
+                </div>
+                <pre id="code-inline-alert">&lt;div class="alert alert-info py-2 mb-0 d-flex align-items-center gap-2" role="status"&gt;
+  &lt;span class="spinner-border spinner-border-sm"&gt;&lt;/span&gt;
+  &lt;span&gt;Guardando cambios…&lt;/span&gt;
+&lt;/div&gt;</pre>
+            </div>
+        </section>
+
+        {# ── Barra de progreso (indeterminada / animada) ── #}
+        <section id="sec-progress" class="ui-component">
+            <div class="ui-component-preview">
+                <div class="mb-2" id="progress-wrap" style="display:none; max-width:22rem;">
+                    <div class="small text-muted mb-1">Generando informe…</div>
+                    <div class="progress" role="progressbar" style="height: 8px;">
+                        <div class="progress-bar progress-bar-striped progress-bar-animated bg-primary" style="width: 100%;"></div>
+                    </div>
+                </div>
+                <button type="button" class="btn btn-outline-secondary btn-sm" id="btn-progress-demo">Mostrar barra 2&nbsp;s</button>
+            </div>
+            <div class="ui-component-code">
+                <div class="ui-component-code-header">
+                    <span class="ui-component-code-label">HTML — Progreso indeterminado</span>
+                    <button type="button" class="btn btn-outline-secondary btn-sm btn-copy-code" data-copy-target="code-progress">Copiar</button>
+                </div>
+                <pre id="code-progress">&lt;div class="progress" style="height:8px;"&gt;
+  &lt;div class="progress-bar progress-bar-striped progress-bar-animated bg-primary" style="width:100%"&gt;&lt;/div&gt;
+&lt;/div&gt;</pre>
+            </div>
+        </section>
+
+        {# ── Skeleton / placeholders ── #}
+        <section id="sec-skeleton" class="ui-component">
+            <div class="ui-component-preview">
+                <div class="placeholder-glow ui-skeleton-card">
+                    <div class="d-flex gap-2 mb-3">
+                        <span class="placeholder col-2 rounded-circle" style="width:40px;height:40px;"></span>
+                        <div class="flex-grow-1">
+                            <span class="placeholder col-7 mb-2"></span>
+                            <span class="placeholder col-4"></span>
+                        </div>
+                    </div>
+                    <span class="placeholder col-12 mb-2"></span>
+                    <span class="placeholder col-10 mb-2"></span>
+                    <span class="placeholder col-8"></span>
+                </div>
+                <button type="button" class="btn btn-outline-secondary btn-sm ms-2 align-self-start" id="btn-skeleton-toggle">Alternar contenido real</button>
+                <div id="skeleton-real-content" class="d-none small mt-2 text-muted" style="max-width:22rem;">Contenido cargado: sustituye el bloque <code>placeholder-glow</code> por datos reales.</div>
+            </div>
+            <div class="ui-component-code">
+                <div class="ui-component-code-header">
+                    <span class="ui-component-code-label">HTML — Bootstrap placeholder</span>
+                    <button type="button" class="btn btn-outline-secondary btn-sm btn-copy-code" data-copy-target="code-skeleton">Copiar</button>
+                </div>
+                <pre id="code-skeleton">&lt;div class="placeholder-glow"&gt;
+  &lt;span class="placeholder col-12"&gt;&lt;/span&gt;
+  &lt;span class="placeholder col-8"&gt;&lt;/span&gt;
+&lt;/div&gt;</pre>
+            </div>
+        </section>
+
+        {# ── Overlay en tarjeta ── #}
+        <section id="sec-overlay" class="ui-component">
+            <div class="ui-component-preview">
+                <div class="ui-load-overlay-wrap" id="ui-overlay-card">
+                    <div class="ui-load-overlay" id="ui-overlay-layer" aria-hidden="true">
+                        <div class="spinner-border text-light" role="status"></div>
+                        <span class="text">Cargando datos…</span>
+                    </div>
+                    <p class="mb-2 fw-semibold">Contenido de la tarjeta</p>
+                    <p class="small text-muted mb-3">El overlay cubre solo esta zona (paneles, resúmenes, gráficos).</p>
+                    <button type="button" class="btn btn-outline-secondary btn-sm" id="btn-ui-overlay-demo">Simular carga (1,5&nbsp;s)</button>
+                </div>
+            </div>
+            <div class="ui-component-code">
+                <div class="ui-component-code-header">
+                    <span class="ui-component-code-label">HTML + JS — Overlay local</span>
+                    <button type="button" class="btn btn-outline-secondary btn-sm btn-copy-code" data-copy-target="code-overlay">Copiar</button>
+                </div>
+                <pre id="code-overlay">&lt;div class="position-relative"&gt;
+  &lt;div class="mi-overlay" style="display:none; position:absolute; inset:0; …"&gt;…spinner…&lt;/div&gt;
+  …contenido…
+&lt;/div&gt;</pre>
+            </div>
+        </section>
+
+        {# ── Overlay pantalla completa ── #}
+        <section id="sec-fullpage" class="ui-component">
+            <div class="ui-component-preview">
+                <button type="button" class="btn btn-outline-warning btn-sm" id="btn-fullpage-load">Simular bloqueo de pantalla (1,2&nbsp;s)</button>
+                <p class="small text-muted mt-2 mb-0">Útil antes de un redirect o una operación larga; usa <code>z-index</code> por encima del contenido y por debajo de modales si aplica.</p>
+            </div>
+            <div class="ui-component-code">
+                <div class="ui-component-code-header">
+                    <span class="ui-component-code-label">CSS — Overlay fijo</span>
+                    <button type="button" class="btn btn-outline-secondary btn-sm btn-copy-code" data-copy-target="code-fullpage">Copiar</button>
+                </div>
+                <pre id="code-fullpage">.overlay {
+  position: fixed; inset: 0; z-index: 1080;
+  display: flex; align-items: center; justify-content: center;
+  background: rgba(2,6,23,.78);
+}</pre>
+            </div>
+        </section>
+
+        {# ── Modal con contenido que “llega” después ── #}
+        <section id="sec-modal" class="ui-component">
+            <div class="ui-component-preview">
+                <button type="button" class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#modal-loading-demo">
+                    Abrir modal (carga simulada)
+                </button>
+            </div>
+            <div class="ui-component-code">
+                <div class="ui-component-code-header">
+                    <span class="ui-component-code-label">Bootstrap — eventos shown.bs.modal</span>
+                    <button type="button" class="btn btn-outline-secondary btn-sm btn-copy-code" data-copy-target="code-modal-load">Copiar</button>
+                </div>
+                <pre id="code-modal-load">modalEl.addEventListener('shown.bs.modal', () => {
+  body.innerHTML = '&lt;div class="spinner-border"&gt;…&lt;/div&gt;';
+  fetch('/api/…').then(() => { body.innerHTML = formHtml; });
+});</pre>
+            </div>
+        </section>
+
+        {# ── Offcanvas ── #}
+        <section id="sec-offcanvas" class="ui-component">
+            <div class="ui-component-preview">
+                <button type="button" class="btn btn-outline-info btn-sm" data-bs-toggle="offcanvas" data-bs-target="#offcanvas-loading-demo">
+                    Abrir panel lateral (carga simulada)
+                </button>
+            </div>
+            <div class="ui-component-code">
+                <div class="ui-component-code-header">
+                    <span class="ui-component-code-label">Bootstrap — show.bs.offcanvas</span>
+                    <button type="button" class="btn btn-outline-secondary btn-sm btn-copy-code" data-copy-target="code-offcanvas">Copiar</button>
+                </div>
+                <pre id="code-offcanvas">offcanvasEl.addEventListener('show.bs.offcanvas', () => {
+  body.classList.add('offcanvas-body--loading');
+  body.innerHTML = '&lt;div class="spinner-border"&gt;&lt;/div&gt;';
+});
+offcanvasEl.addEventListener('shown.bs.offcanvas', () => {
+  setTimeout(() => { body.innerHTML = formularioHtml; }, 600);
+});</pre>
+            </div>
+        </section>
+
+        {# ── Toasts Bootstrap (gToast) ── #}
+        <section id="sec-toast" class="ui-component">
+            <div class="ui-component-preview d-flex flex-wrap gap-2 align-items-center">
+                <button type="button" class="btn btn-sm btn-outline-info" id="btn-toast-flow">Flujo: info → éxito (simula CRUD)</button>
+                <button type="button" class="btn btn-sm btn-outline-secondary" id="btn-toast-loading-msg">Toast con HTML (spinner en texto)</button>
+                <button type="button" class="btn btn-sm btn-outline-warning" id="btn-toast-warn-persist">Advertencia persistente (error de red)</button>
+            </div>
+            <div class="ui-component-code">
+                <div class="ui-component-code-header">
+                    <span class="ui-component-code-label">JS — gToast (Bootstrap Toast)</span>
+                    <button type="button" class="btn btn-outline-secondary btn-sm btn-copy-code" data-copy-target="code-toast-flow">Copiar</button>
+                </div>
+                <pre id="code-toast-flow">gToast('Sincronizando con el servidor…', 'info');
+// … await fetch …
+gToast('Cambios guardados.', 'success');</pre>
+            </div>
+        </section>
+
+        {# ── Alertas Bootstrap (bloque superior de página) ── #}
+        <section id="sec-alerts-bs" class="ui-component">
+            <div class="ui-component-preview d-flex flex-column gap-2">
+                <div class="alert alert-warning py-2 mb-0 d-flex align-items-center gap-2" role="status">
+                    <span class="spinner-border spinner-border-sm text-warning" role="status"></span>
+                    <span>La operación está en curso; no cierres esta pestaña.</span>
+                </div>
+                <div class="alert alert-secondary py-2 mb-0" role="status">
+                    <i class="bi bi-hourglass-split me-2"></i>Cola de trabajos: posición <strong>3</strong> — tiempo estimado 2&nbsp;min.
+                </div>
+            </div>
+            <div class="ui-component-code">
+                <div class="ui-component-code-header">
+                    <span class="ui-component-code-label">Twig / HTML — Alertas de espera</span>
+                    <button type="button" class="btn btn-outline-secondary btn-sm btn-copy-code" data-copy-target="code-alerts-wait">Copiar</button>
+                </div>
+                <pre id="code-alerts-wait">{% verbatim %}<div class="alert alert-warning py-2 d-flex align-items-center gap-2" role="status">
+  <span class="spinner-border spinner-border-sm text-warning"></span>
+  <span>Procesando…</span>
+</div>{% endverbatim %}</pre>
+            </div>
+        </section>
+
+        {# ── SweetAlert2: varias cargas ── #}
+        <section id="sec-swal" class="ui-component">
+            <div class="ui-component-preview">
+                <p class="small text-muted mb-2">Atajos locales (misma API global <code>Swal</code> que el resto del workspace):</p>
+                <div class="swal-load-grid mb-3">
+                    <button type="button" class="btn btn-outline-secondary btn-sm" id="btn-swal-loading">showLoading simple</button>
+                    <button type="button" class="btn btn-outline-secondary btn-sm" id="btn-swal-loading-html">HTML + bloqueo</button>
+                    <button type="button" class="btn btn-outline-secondary btn-sm" id="btn-swal-update-steps">Título en pasos (<code>Swal.update</code>)</button>
+                    <button type="button" class="btn btn-outline-secondary btn-sm" id="btn-swal-preconfirm">Confirmar con <code>preConfirm</code> async</button>
+                </div>
+                <p class="small text-muted mb-2">Demos compartidos con <code>workspace-swal-demos.js</code> (loader bloqueante, timer con loading, confirmación async con <code>showLoaderOnConfirm</code>, toast Swal con barra):</p>
+                <div class="swal-load-grid">
+                    <button type="button" class="btn btn-sm btn-outline-primary swal-load-demo-btn" data-swal-demo="loader">Loader bloqueante</button>
+                    <button type="button" class="btn btn-sm btn-outline-primary swal-load-demo-btn" data-swal-demo="timer">Timer + loading en título</button>
+                    <button type="button" class="btn btn-sm btn-outline-primary swal-load-demo-btn" data-swal-demo="async">Async + loader en confirmar</button>
+                    <button type="button" class="btn btn-sm btn-outline-primary swal-load-demo-btn" data-swal-demo="toast">Toast éxito (post-acción)</button>
+                </div>
+                <div id="swal-dev-result" class="swal-result" aria-live="polite">Pulsa un demo compartido para ver el resultado aquí.</div>
+            </div>
+            <div class="ui-component-code">
+                <div class="ui-component-code-header">
+                    <span class="ui-component-code-label">SweetAlert2 — bloqueo</span>
+                    <button type="button" class="btn btn-outline-secondary btn-sm btn-copy-code" data-copy-target="code-swal">Copiar</button>
+                </div>
+                <pre id="code-swal">Swal.fire({
+  title: 'Procesando…',
+  allowOutsideClick: false,
+  showConfirmButton: false,
+  didOpen: () => Swal.showLoading()
+});
+await fetch(…);
+Swal.close();
+
+// Confirmación con loader en el botón Aceptar:
+Swal.fire({
+  showLoaderOnConfirm: true,
+  preConfirm: async () => { await fetch(…); return data; }
+});</pre>
+            </div>
+        </section>
+
+        {# ── DataTables: processing ── #}
+        <section id="sec-datatables" class="ui-component">
+            <div class="ui-component-preview">
+                <div class="d-flex flex-wrap gap-2 mb-2 align-items-center">
+                    <button type="button" class="btn btn-outline-primary btn-sm" id="btn-dt-processing">Recalcular tabla (1,5&nbsp;s)</button>
+                    <span class="small text-muted">Indicador nativo (<code>processing: true</code>) + <code>dt.processing(true/false)</code>.</span>
+                </div>
+                <div class="table-responsive rounded border border-secondary border-opacity-25" style="max-width:100%;">
+                    <table id="dt-loading-demo" class="table table-sm table-hover w-100 mb-0" style="color:inherit;">
+                        <thead>
+                            <tr><th>Id</th><th>Concepto</th><th>Importe</th></tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="ui-component-code">
+                <div class="ui-component-code-header">
+                    <span class="ui-component-code-label">DataTables 2 — processing</span>
+                    <button type="button" class="btn btn-outline-secondary btn-sm btn-copy-code" data-copy-target="code-dt">Copiar</button>
+                </div>
+                <pre id="code-dt">new DataTable('#mi-tabla', {
+  processing: true,
+  data: filas,
+  columns: [{ data: 'id' }, …],
+});
+DataTable.get('#mi-tabla').processing(true); // o la instancia devuelta por new DataTable(…)</pre>
+            </div>
+        </section>
+
+        {# ── DataTables: carga inicial / recarga tras fetch (patrón real) ── #}
+        <section id="sec-datatables-fetch" class="ui-component">
+            <div class="ui-component-preview">
+                <p class="small text-muted mb-2" style="max-width:46rem;">
+                    Tabla vacía al inicio. Al pulsar <strong>Cargar datos</strong> se activa <code>processing</code>,
+                    se simula <code>await fetch('/api/…')</code> y luego se rellenan filas con <code>clear()</code> + <code>rows.add()</code> + <code>draw()</code>
+                    (mismo flujo que tras filtrar o cambiar de página en cliente).
+                </p>
+                <div class="d-flex flex-wrap gap-2 mb-2 align-items-center">
+                    <button type="button" class="btn btn-success btn-sm" id="btn-dt-fetch-load">Cargar datos (simula API ~1,6&nbsp;s)</button>
+                    <button type="button" class="btn btn-outline-secondary btn-sm" id="btn-dt-fetch-reload">Recargar (mantiene indicador)</button>
+                    <button type="button" class="btn btn-outline-danger btn-sm" id="btn-dt-fetch-clear">Vaciar tabla</button>
+                </div>
+                <div class="table-responsive rounded border border-secondary border-opacity-25" style="max-width:100%;">
+                    <table id="dt-fetch-demo" class="table table-sm table-hover w-100 mb-0" style="color:inherit;">
+                        <thead>
+                            <tr><th>Cliente</th><th>Estado</th><th>Última sync</th></tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="ui-component-code">
+                <div class="ui-component-code-header">
+                    <span class="ui-component-code-label">JS — Cargar / recargar filas tras <code>fetch</code></span>
+                    <button type="button" class="btn btn-outline-secondary btn-sm btn-copy-code" data-copy-target="code-dt-fetch">Copiar</button>
+                </div>
+                <pre id="code-dt-fetch">const dt = new DataTable('#mi-tabla', {
+  processing: true,
+  data: [],
+  columns: [
+    { data: 'cliente', title: 'Cliente' },
+    { data: 'estado', title: 'Estado' },
+    { data: 'sync', title: 'Última sync' },
+  ],
+});
+
+async function cargarDesdeApi() {
+  dt.processing(true);
+  try {
+    const res = await fetch('/api/listado');
+    const filas = await res.json();
+    dt.clear().rows.add(filas).draw();
+  } finally {
+    dt.processing(false);
+  }
+}</pre>
+            </div>
+        </section>
+
+    </div>
+</div>
+
+{# Overlay pantalla completa (fuera de la tarjeta para cubrir chrome) #}
+<div class="ui-fullpage-load" id="ui-fullpage-overlay" aria-hidden="true">
+    <div class="spinner-border text-light" role="status"></div>
+    <span class="text">Procesando solicitud…</span>
+</div>
+
+{# Modal demo carga #}
+<div class="modal fade" id="modal-loading-demo" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header py-2">
+                <h5 class="modal-title">Detalle</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body modal-body--loading" id="modal-loading-demo-body">
+                <div class="spinner-border text-primary" role="status"></div>
+            </div>
+            <div class="modal-footer py-2 d-none" id="modal-loading-demo-footer">
+                <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cerrar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{# Offcanvas demo #}
+<div class="offcanvas offcanvas-end text-bg-dark" tabindex="-1" id="offcanvas-loading-demo" data-bs-theme="dark" style="--bs-offcanvas-width: min(360px, 92vw);">
+    <div class="offcanvas-header border-bottom border-secondary border-opacity-25 py-2">
+        <h5 class="offcanvas-title mb-0">Filtros avanzados</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas"></button>
+    </div>
+    <div class="offcanvas-body offcanvas-body--loading" id="offcanvas-loading-demo-body">
+        <div class="spinner-border text-light" role="status"></div>
+    </div>
+</div>
+{% endblock %}
+
+{% block app_page_scripts %}
+<script src="{{ asset('js/workspace-swal-demos.js') }}"></script>
+<script>
+/* gToast — mismo comportamiento que ui-toasts (Bootstrap Toast) */
+function gToast(message, type, options) {
+    options = options || {};
+    var delay = options.persistent ? 0 : (options.delay || 4000);
+    var icons  = { success: 'bi-check-circle-fill', error: 'bi-x-circle-fill', warning: 'bi-exclamation-triangle-fill', info: 'bi-info-circle-fill' };
+    var colors = { success: 'text-success', error: 'text-danger', warning: 'text-warning', info: 'text-info' };
+    var icon  = icons[type]  || icons.info;
+    var color = colors[type] || colors.info;
+    var actionHtml = '';
+    if (options.action && options.action.label) {
+        actionHtml = '<button type="button" class="btn btn-link btn-sm p-0 ms-2 grova-toast-action" style="font-size:12px;">'
+            + options.action.label + '</button>';
+    }
+    var el = document.createElement('div');
+    el.className = 'toast align-items-center border-0 show';
+    el.setAttribute('role', 'alert');
+    el.setAttribute('aria-live', 'assertive');
+    el.innerHTML =
+        '<div class="d-flex">' +
+        '<div class="toast-body d-flex align-items-center gap-2">' +
+        '<i class="bi ' + icon + ' ' + color + '"></i>' +
+        '<span style="font-size:13px;">' + message + '</span>' +
+        actionHtml +
+        '</div>' +
+        '<button type="button" class="btn-close me-2 m-auto" data-bs-dismiss="toast" aria-label="Cerrar"></button>' +
+        '</div>';
+    if (options.action && options.action.callback) {
+        el.querySelector('.grova-toast-action').addEventListener('click', function () {
+            options.action.callback();
+            bootstrap.Toast.getOrCreateInstance(el).hide();
+        });
+    }
+    var container = document.getElementById('grova-toast-container');
+    if (!container) {
+        container = document.createElement('div');
+        container.id = 'grova-toast-container';
+        container.className = 'toast-container position-fixed top-0 end-0 p-3';
+        container.style.zIndex = '9999';
+        document.body.appendChild(container);
+    }
+    container.appendChild(el);
+    var bsToast = new bootstrap.Toast(el, { autohide: !options.persistent, delay: delay });
+    bsToast.show();
+    el.addEventListener('hidden.bs.toast', function () { el.remove(); });
+}
+
+document.querySelectorAll('.btn-copy-code').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+        var target = document.getElementById(btn.getAttribute('data-copy-target'));
+        if (!target) return;
+        navigator.clipboard.writeText(target.textContent.trim()).then(function () {
+            var old = btn.textContent;
+            btn.textContent = 'Copiado';
+            setTimeout(function () { btn.textContent = old; }, 1200);
+        });
+    });
+});
+
+(function () {
+    var busyMs = 1200;
+    document.querySelectorAll('.js-ui-busy-btn').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            if (btn.disabled) return;
+            var label = btn.getAttribute('data-label') || 'Acción';
+            var original = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1" role="status"></span>' + label + '…';
+            setTimeout(function () {
+                btn.disabled = false;
+                btn.innerHTML = original;
+            }, busyMs);
+        });
+    });
+
+    var form = document.getElementById('demo-form-busy');
+    var fieldset = document.getElementById('demo-form-busy-fieldset');
+    var submitBtn = document.getElementById('demo-form-busy-submit');
+    if (form && fieldset && submitBtn) {
+        var submitOriginal = submitBtn.innerHTML;
+        form.addEventListener('submit', function (e) {
+            e.preventDefault();
+            fieldset.disabled = true;
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1" role="status"></span>Enviando…';
+            setTimeout(function () {
+                fieldset.disabled = false;
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = submitOriginal;
+                if (typeof gToast === 'function') {
+                    gToast('Formulario recibido (demo).', 'success');
+                }
+            }, 1400);
+        });
+    }
+
+    var linkSpin = document.getElementById('btn-link-busy-spin');
+    var linkLabel = document.getElementById('btn-link-busy-label');
+    var linkBtn = document.getElementById('btn-link-busy-demo');
+    if (linkBtn && linkSpin && linkLabel) {
+        var linkOrig = linkLabel.textContent;
+        linkBtn.addEventListener('click', function () {
+            if (linkBtn.getAttribute('aria-busy') === 'true') return;
+            linkBtn.setAttribute('aria-busy', 'true');
+            linkBtn.disabled = true;
+            linkSpin.classList.remove('d-none');
+            linkLabel.textContent = 'Cargando…';
+            setTimeout(function () {
+                linkSpin.classList.add('d-none');
+                linkLabel.textContent = linkOrig;
+                linkBtn.disabled = false;
+                linkBtn.removeAttribute('aria-busy');
+            }, 1100);
+        });
+    }
+
+    var alertSlot = document.getElementById('inline-alert-slot');
+    document.getElementById('btn-inline-alert-demo')?.addEventListener('click', function () {
+        if (!alertSlot) return;
+        alertSlot.innerHTML = '<div class="alert alert-info py-2 mb-0 d-flex align-items-center gap-2" role="status">' +
+            '<span class="spinner-border spinner-border-sm" role="status"></span>' +
+            '<span>Guardando cambios…</span></div>';
+        setTimeout(function () {
+            alertSlot.innerHTML = '<div class="alert alert-success py-2 mb-0" role="status"><i class="bi bi-check-circle me-2"></i>Listo.</div>';
+        }, 2000);
+    });
+
+    document.getElementById('btn-progress-demo')?.addEventListener('click', function () {
+        var w = document.getElementById('progress-wrap');
+        if (!w) return;
+        w.style.display = 'block';
+        setTimeout(function () { w.style.display = 'none'; }, 2000);
+    });
+
+    var skBtn = document.getElementById('btn-skeleton-toggle');
+    var skCard = document.querySelector('.ui-skeleton-card');
+    var skReal = document.getElementById('skeleton-real-content');
+    if (skBtn && skCard && skReal) {
+        skBtn.addEventListener('click', function () {
+            var showing = !skCard.classList.contains('d-none');
+            if (showing) {
+                skCard.classList.add('d-none');
+                skReal.classList.remove('d-none');
+                skBtn.textContent = 'Mostrar skeleton';
+            } else {
+                skCard.classList.remove('d-none');
+                skReal.classList.add('d-none');
+                skBtn.textContent = 'Alternar contenido real';
+            }
+        });
+    }
+
+    var overlay = document.getElementById('ui-overlay-layer');
+    var btnOv = document.getElementById('btn-ui-overlay-demo');
+    if (overlay && btnOv) {
+        btnOv.addEventListener('click', function () {
+            overlay.classList.add('is-active');
+            overlay.setAttribute('aria-hidden', 'false');
+            setTimeout(function () {
+                overlay.classList.remove('is-active');
+                overlay.setAttribute('aria-hidden', 'true');
+            }, 1500);
+        });
+    }
+
+    var fullEl = document.getElementById('ui-fullpage-overlay');
+    document.getElementById('btn-fullpage-load')?.addEventListener('click', function () {
+        if (!fullEl) return;
+        fullEl.classList.add('is-active');
+        fullEl.setAttribute('aria-hidden', 'false');
+        setTimeout(function () {
+            fullEl.classList.remove('is-active');
+            fullEl.setAttribute('aria-hidden', 'true');
+        }, 1200);
+    });
+
+    var modalEl = document.getElementById('modal-loading-demo');
+    var modalBody = document.getElementById('modal-loading-demo-body');
+    var modalFooter = document.getElementById('modal-loading-demo-footer');
+    if (modalEl && modalBody) {
+        modalEl.addEventListener('show.bs.modal', function () {
+            modalBody.classList.add('modal-body--loading');
+            modalBody.classList.remove('py-3');
+            modalBody.innerHTML = '<div class="spinner-border text-primary" role="status"></div>';
+            if (modalFooter) modalFooter.classList.add('d-none');
+        });
+        modalEl.addEventListener('shown.bs.modal', function () {
+            setTimeout(function () {
+                modalBody.classList.remove('modal-body--loading');
+                modalBody.classList.add('py-3');
+                modalBody.innerHTML = '<p class="mb-0 small">Aquí iría el detalle cargado por <code>fetch</code> o el fragmento Twig.</p>';
+                if (modalFooter) modalFooter.classList.remove('d-none');
+            }, 900);
+        });
+    }
+
+    var ocEl = document.getElementById('offcanvas-loading-demo');
+    var ocBody = document.getElementById('offcanvas-loading-demo-body');
+    if (ocEl && ocBody) {
+        ocEl.addEventListener('show.bs.offcanvas', function () {
+            ocBody.classList.add('offcanvas-body--loading');
+            ocBody.innerHTML = '<div class="spinner-border text-light" role="status"></div>';
+        });
+        ocEl.addEventListener('shown.bs.offcanvas', function () {
+            setTimeout(function () {
+                ocBody.classList.remove('offcanvas-body--loading');
+                ocBody.innerHTML = '<p class="small mb-2">Contenido del panel cargado.</p>' +
+                    '<div class="mb-2"><label class="form-label small mb-0">Desde</label><input type="date" class="form-control form-control-sm"></div>' +
+                    '<div class="mb-2"><label class="form-label small mb-0">Hasta</label><input type="date" class="form-control form-control-sm"></div>' +
+                    '<button type="button" class="btn btn-primary btn-sm" data-bs-dismiss="offcanvas">Aplicar</button>';
+            }, 700);
+        });
+    }
+
+    document.getElementById('btn-toast-flow')?.addEventListener('click', function () {
+        gToast('Guardando en el servidor…', 'info', { delay: 2500 });
+        setTimeout(function () {
+            gToast('Operación completada.', 'success');
+        }, 1600);
+    });
+    document.getElementById('btn-toast-loading-msg')?.addEventListener('click', function () {
+        gToast('<span class="spinner-border spinner-border-sm me-1 align-middle" role="status"></span>Importando filas…', 'info', { delay: 3500 });
+    });
+    document.getElementById('btn-toast-warn-persist')?.addEventListener('click', function () {
+        gToast('Sin conexión. Los cambios no se enviaron.', 'warning', { persistent: true });
+    });
+
+    document.querySelectorAll('.swal-load-demo-btn').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            var t = btn.getAttribute('data-swal-demo');
+            if (typeof runSwalDemo === 'function') {
+                runSwalDemo(t);
+            }
+        });
+    });
+
+    document.getElementById('btn-swal-loading')?.addEventListener('click', async function () {
+        if (typeof window.Swal === 'undefined' || typeof window.Swal.fire !== 'function') return;
+        window.Swal.fire({
+            title: 'Guardando…',
+            allowOutsideClick: false,
+            showConfirmButton: false,
+            didOpen: function () { window.Swal.showLoading(); }
+        });
+        await new Promise(function (r) { setTimeout(r, 1400); });
+        window.Swal.close();
+    });
+
+    document.getElementById('btn-swal-loading-html')?.addEventListener('click', async function () {
+        if (typeof window.Swal === 'undefined') return;
+        window.Swal.fire({
+            title: 'Exportando',
+            html: 'Generando archivo…<br><small class="text-muted">No cierres esta ventana.</small>',
+            allowOutsideClick: false,
+            allowEscapeKey: false,
+            showConfirmButton: false,
+            didOpen: function () { window.Swal.showLoading(); }
+        });
+        await new Promise(function (r) { setTimeout(r, 1600); });
+        window.Swal.close();
+    });
+
+    document.getElementById('btn-swal-update-steps')?.addEventListener('click', async function () {
+        if (typeof window.Swal === 'undefined') return;
+        window.Swal.fire({
+            title: 'Paso 1 de 3',
+            allowOutsideClick: false,
+            showConfirmButton: false,
+            didOpen: function () { window.Swal.showLoading(); }
+        });
+        await new Promise(function (r) { setTimeout(r, 500); });
+        window.Swal.update({ title: 'Paso 2 de 3 — validando' });
+        await new Promise(function (r) { setTimeout(r, 500); });
+        window.Swal.update({ title: 'Paso 3 — finalizando' });
+        await new Promise(function (r) { setTimeout(r, 500); });
+        window.Swal.hideLoading();
+        window.Swal.update({
+            title: 'Hecho',
+            html: 'Puedes cerrar o continuar.',
+            showConfirmButton: true,
+            confirmButtonText: 'Entendido'
+        });
+    });
+
+    document.getElementById('btn-swal-preconfirm')?.addEventListener('click', async function () {
+        if (typeof window.Swal === 'undefined') return;
+        var res = await window.Swal.fire({
+            title: '¿Eliminar ítem?',
+            text: 'Se llama al API y el botón muestra loader.',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonText: 'Sí, eliminar',
+            cancelButtonText: 'Cancelar',
+            showLoaderOnConfirm: true,
+            preConfirm: function () {
+                return new Promise(function (resolve) {
+                    setTimeout(function () { resolve({ ok: true }); }, 1200);
+                });
+            },
+            allowOutsideClick: function () { return !window.Swal.isLoading(); }
+        });
+        if (res.isConfirmed && typeof gToast === 'function') {
+            gToast('Eliminado (demo).', 'success');
+        }
+    });
+
+    var dtEl = document.getElementById('dt-loading-demo');
+    var dtFetchEl = document.getElementById('dt-fetch-demo');
+    var locale = {{ app.request.locale|json_encode|raw }};
+    var dtLang = locale === 'en'
+        ? 'https://cdn.datatables.net/plug-ins/2.1.8/i18n/en-GB.json'
+        : 'https://cdn.datatables.net/plug-ins/2.1.8/i18n/es-ES.json';
+
+    if (dtEl && typeof DataTable !== 'undefined') {
+        var rows = [
+            { id: 1, concepto: 'Suscripción', importe: '19,99' },
+            { id: 2, concepto: 'Dominio', importe: '12,00' },
+            { id: 3, concepto: 'API IA', importe: '48,50' }
+        ];
+        var dt;
+        try {
+            dt = new DataTable(dtEl, {
+                processing: true,
+                data: rows,
+                columns: [
+                    { data: 'id', title: 'Id' },
+                    { data: 'concepto', title: 'Concepto' },
+                    { data: 'importe', title: 'Importe' }
+                ],
+                ordering: true,
+                paging: false,
+                searching: false,
+                info: false,
+                language: { url: dtLang }
+            });
+        } catch (e) {
+            console.error(e);
+            dt = null;
+        }
+        document.getElementById('btn-dt-processing')?.addEventListener('click', function () {
+            if (!dt || typeof dt.processing !== 'function') return;
+            dt.processing(true);
+            setTimeout(function () {
+                dt.processing(false);
+                dt.draw();
+            }, 1500);
+        });
+    }
+
+    if (dtFetchEl && typeof DataTable !== 'undefined') {
+        var dtFetch;
+        var dtFetchBusy = false;
+        var dtFetchSeq = 0;
+        try {
+            dtFetch = new DataTable(dtFetchEl, {
+                processing: true,
+                data: [],
+                columns: [
+                    { data: 'cliente', title: 'Cliente' },
+                    { data: 'estado', title: 'Estado' },
+                    { data: 'sync', title: 'Última sync' }
+                ],
+                ordering: true,
+                paging: false,
+                searching: false,
+                info: false,
+                language: { url: dtLang }
+            });
+        } catch (e2) {
+            console.error(e2);
+            dtFetch = null;
+        }
+        if (dtFetch && typeof dtFetch.processing === 'function') {
+            dtFetch.processing(false);
+        }
+        function simulateFetchFilas() {
+            return new Promise(function (resolve) {
+                setTimeout(function () {
+                    dtFetchSeq += 1;
+                    var stamp = new Date().toISOString().slice(0, 16).replace('T', ' ');
+                    resolve([
+                        { cliente: 'Acme SL', estado: 'Activo', sync: stamp + ' · req #' + dtFetchSeq },
+                        { cliente: 'Nova Labs', estado: 'Activo', sync: stamp },
+                        { cliente: 'Grova Hosting', estado: 'Suspendido', sync: '—' },
+                        { cliente: 'Taller Jordi', estado: 'Activo', sync: stamp }
+                    ]);
+                }, 1600);
+            });
+        }
+        async function ejecutarCargaFetch() {
+            if (!dtFetch || dtFetchBusy) return;
+            dtFetchBusy = true;
+            dtFetch.processing(true);
+            try {
+                var filas = await simulateFetchFilas();
+                dtFetch.clear().rows.add(filas).draw();
+            } catch (err) {
+                console.error(err);
+                if (typeof gToast === 'function') {
+                    gToast('Error al cargar (demo).', 'error');
+                }
+            } finally {
+                if (dtFetch && typeof dtFetch.processing === 'function') {
+                    dtFetch.processing(false);
+                }
+                dtFetchBusy = false;
+            }
+        }
+        document.getElementById('btn-dt-fetch-load')?.addEventListener('click', ejecutarCargaFetch);
+        document.getElementById('btn-dt-fetch-reload')?.addEventListener('click', ejecutarCargaFetch);
+        document.getElementById('btn-dt-fetch-clear')?.addEventListener('click', function () {
+            if (!dtFetch || dtFetchBusy) return;
+            dtFetch.clear().draw();
+        });
+    }
+})();
+</script>
+{% endblock %}

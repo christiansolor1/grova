@@ -1,0 +1,215 @@
+# ══ MÓDULO: Páginas UI (componentes de referencia) ════════════════════════════
+# Dominio: ui
+# Uso en twig: {{ 'clave' | trans({}, 'ui') }}
+
+# ── ui-alerts-swal ────────────────────────────────────────────────────────────
+'Alertas SweetAlert2': 'Alertas SweetAlert2'
+'Ejemplos reutilizables (misma lógica que la demo en dashboard).': 'Ejemplos reutilizables (misma lógica que la demo en dashboard).'
+'SweetAlert2 — plantilla de referencia': 'SweetAlert2 — plantilla de referencia'
+'Básicos y confirmación': 'Básicos y confirmación'
+'Éxito simple': 'Éxito simple'
+'Información': 'Información'
+'Advertencia': 'Advertencia'
+'Error': 'Error'
+'Pregunta': 'Pregunta'
+'HTML custom': 'HTML custom'
+'Aceptar / Cancelar': 'Aceptar / Cancelar'
+'Confirmar eliminación': 'Confirmar eliminación'
+'Inputs (modal)': 'Inputs (modal)'
+'Ingresar texto': 'Ingresar texto'
+'Ingresar email validado': 'Ingresar email validado'
+'Input número': 'Input número'
+'Input password': 'Input password'
+'Input textarea': 'Input textarea'
+'Input select': 'Input select'
+'Input radio': 'Input radio'
+'Input checkbox': 'Input checkbox'
+'Input range': 'Input range'
+'Input file': 'Input file'
+'Flujos y programación': 'Flujos y programación'
+'Mixin reutilizable': 'Mixin reutilizable'
+'Aceptar / Negar / Cancelar': 'Aceptar / Negar / Cancelar'
+'Queue / Steps': 'Queue / Steps'
+'Confirmación async': 'Confirmación async'
+'Toasts, timer y apariencia': 'Toasts, timer y apariencia'
+'Toast notificación': 'Toast notificación'
+'Toast con acciones': 'Toast con acciones'
+'Auto close con timer': 'Auto close con timer'
+'Loader bloqueante': 'Loader bloqueante'
+'Posiciones': 'Posiciones'
+'Clases personalizadas': 'Clases personalizadas'
+'Imagen custom': 'Imagen custom'
+'Selecciona un ejemplo para probarlo.': 'Selecciona un ejemplo para probarlo.'
+
+alerts_swal:
+    section_multi: 'Selección múltiple (filtros)'
+    demo_select_multi_native: 'Select múltiple nativo'
+    demo_select2_multi: 'Select2 múltiple'
+    demo_select_multi_tags: 'Select múltiple etiquetas'
+    menu_select_multi_native: 'Swal · Select múltiple nativo'
+    menu_select_multi_native_sub: 'Regiones con select nativo multiple en modal.'
+    menu_select2_multi: 'Swal · Select2 múltiple'
+    menu_select2_multi_sub: 'Módulos con Select2 multiple y chips en modal.'
+    menu_select_multi_tags: 'Swal · Select múltiple etiquetas'
+    menu_select_multi_tags_sub: 'Etiquetas con select nativo multiple en modal.'
+    launch_hint: 'La alerta se abre al cargar. Usa el botón para repetir la demo.'
+    launch_retry: 'Volver a abrir alerta'
+    launch_catalog: 'Ir al catálogo Swal'
+    launch_waiting: 'Abriendo alerta…'
+
+# ── ui-buttons ────────────────────────────────────────────────────────────────
+'Botones': 'Botones'
+'Catálogo de botones base (demo).': 'Catálogo de botones base (demo).'
+'Catálogo de botones base.': 'Catálogo de botones base.'
+'Primary': 'Primary'
+'Secondary': 'Secondary'
+'Success': 'Success'
+'Danger': 'Danger'
+'Outline': 'Outline'
+'Con icono': 'Con icono'
+
+# ── ui-icons-catalog ──────────────────────────────────────────────────────────
+'Iconos BI/FA': 'Iconos BI/FA'
+'Referencia rápida para copiar clases de Bootstrap Icons y Font Awesome.': 'Referencia rápida para copiar clases de Bootstrap Icons y Font Awesome.'
+'Catálogo de íconos': 'Catálogo de íconos'
+'Todas las librerías': 'Todas las librerías'
+'Solo Bootstrap Icons': 'Solo Bootstrap Icons'
+'Solo Font Awesome': 'Solo Font Awesome'
+'Ver todos': 'Ver todos'
+'Cargando catálogos...': 'Cargando catálogos...'
+
+# ── ui-inputs ─────────────────────────────────────────────────────────────────
+'Inputs y formularios': 'Inputs y formularios'
+'Ejemplos de campos de formulario.': 'Ejemplos de campos de formulario.'
+'Ejemplos de inputs para formularios.': 'Ejemplos de inputs para formularios.'
+'Texto': 'Texto'
+'Nombre': 'Nombre'
+'Email': 'Email'
+'Select': 'Select'
+'Opción 1': 'Opción 1'
+'Opción 2': 'Opción 2'
+'Textarea': 'Textarea'
+'Descripción': 'Descripción'
+'Select2 — simple': 'Select2 — simple'
+'Select2 — múltiple': 'Select2 — múltiple'
+'Select2 — con búsqueda': 'Select2 — con búsqueda'
+
+# ── ui-status ─────────────────────────────────────────────────────────────────
+'Badges y estados': 'Badges y estados'
+'Estados visuales con badges.': 'Estados visuales con badges.'
+'Pendiente': 'Pendiente'
+
+# ── ui-tables ─────────────────────────────────────────────────────────────────
+'Tablas y DataTables': 'Tablas y DataTables'
+'Tabla de ejemplo con DataTables (botones de exportación).': 'Tabla de ejemplo con DataTables (botones de exportación).'
+'Referencia de tablas para usar con DataTables.': 'Referencia de tablas para usar con DataTables.'
+'Admin': 'Admin'
+'Activo': 'Activo'
+'Editor': 'Editor'
+'Viewer': 'Viewer'
+'Inactivo': 'Inactivo'
+
+# ── ui-modals ─────────────────────────────────────────────────────────────────
+'Modales': 'Modales'
+'Modales para formularios, confirmaciones y detalles.': 'Modales para formularios, confirmaciones y detalles.'
+'Modal formulario': 'Modal formulario'
+'Modal confirmación': 'Modal confirmación'
+'Modal detalle': 'Modal detalle'
+'Modal grande': 'Modal grande'
+'Abrir modal': 'Abrir modal'
+'Nuevo registro': 'Nuevo registro'
+'Detalle del registro': 'Detalle del registro'
+'Cancelar': 'Cancelar'
+'Guardar': 'Guardar'
+'Cerrar': 'Cerrar'
+'Eliminar': 'Eliminar'
+'¿Estás seguro? Esta acción no se puede deshacer.': '¿Estás seguro? Esta acción no se puede deshacer.'
+
+# ── ui-panels ─────────────────────────────────────────────────────────────────
+'Paneles y layouts': 'Paneles y layouts'
+'Paneles, drawers, sidebars y layouts para sistemas transaccionales.': 'Paneles, drawers, sidebars y layouts para sistemas transaccionales.'
+'Abrir drawer lateral': 'Abrir drawer lateral'
+'Drawer lateral': 'Drawer lateral'
+'Layout maestro-detalle': 'Layout maestro-detalle'
+'Aplicar': 'Aplicar'
+'Filtros / Detalle': 'Filtros / Detalle'
+
+# ── ui-cards ──────────────────────────────────────────────────────────────────
+'Cards y contenedores': 'Cards y contenedores'
+'Cards, listas, timelines y contenedores para sistemas transaccionales.': 'Cards, listas, timelines y contenedores para sistemas transaccionales.'
+'Card básica': 'Card básica'
+'Card con acción': 'Card con acción'
+'Card con footer': 'Card con footer'
+'Elementos': 'Elementos'
+'Agregar': 'Agregar'
+'Timeline / historial': 'Timeline / historial'
+'Acordeón': 'Acordeón'
+
+# ── ui-error-pages ────────────────────────────────────────────────────────────
+'Páginas de error': 'Páginas de error'
+'Errores HTTP más comunes: 403, 404, 500, 503.': 'Errores HTTP más comunes: 403, 404, 500, 503.'
+
+# ── ui-toasts ─────────────────────────────────────────────────────────────────
+'Toasts y notificaciones': 'Toasts y notificaciones'
+'Feedback inline no bloqueante para operaciones CRUD.': 'Feedback inline no bloqueante para operaciones CRUD.'
+
+# ── ui-empty-states ───────────────────────────────────────────────────────────
+'Empty states': 'Empty states'
+'Pantallas vacías para listas sin datos, búsquedas sin resultados y errores.': 'Pantallas vacías para listas sin datos, búsquedas sin resultados y errores.'
+
+# ── ui-page-headers ───────────────────────────────────────────────────────────
+'Page headers': 'Page headers'
+'Encabezados de página con título, subtítulo, breadcrumb y acciones.': 'Encabezados de página con título, subtítulo, breadcrumb y acciones.'
+
+# ── ui-auth ───────────────────────────────────────────────────────────────────
+'Auth': 'Auth'
+'Patrones de autenticación: login, recuperación de contraseña, 2FA y banners de sesión.': 'Patrones de autenticación: login, recuperación de contraseña, 2FA y banners de sesión.'
+
+# ── ui-user-profile ───────────────────────────────────────────────────────────
+'Perfil de usuario': 'Perfil de usuario'
+'Patrones para editar perfil, cambiar contraseña y gestionar avatar.': 'Patrones para editar perfil, cambiar contraseña y gestionar avatar.'
+
+# ── ui-permissions ────────────────────────────────────────────────────────────
+'Permisos y roles': 'Permisos y roles'
+'Matriz de permisos, asignación de roles, chips y paneles de acceso denegado.': 'Matriz de permisos, asignación de roles, chips y paneles de acceso denegado.'
+
+# ── ui-data-display ───────────────────────────────────────────────────────────
+'Visualización de datos': 'Visualización de datos'
+'Fichas de detalle, KPIs, pares clave-valor, auditoría y campos de solo lectura.': 'Fichas de detalle, KPIs, pares clave-valor, auditoría y campos de solo lectura.'
+
+# ── ui-settings ───────────────────────────────────────────────────────────────
+'Configuración': 'Configuración'
+'Patrones de páginas de ajustes: empresa, cuenta, plan activo y toggles.': 'Patrones de páginas de ajustes: empresa, cuenta, plan activo y toggles.'
+
+# ── ui-admin ──────────────────────────────────────────────────────────────────
+'Admin / Super-admin': 'Admin / Super-admin'
+'Patrones para gestión de tenants, planes, MRR e impersonation.': 'Patrones para gestión de tenants, planes, MRR e impersonation.'
+
+# ── ui-api-reference ──────────────────────────────────────────────────────────
+'API Reference': 'API Reference'
+'Patrones para documentar endpoints REST, JWT, request/response y códigos de estado.': 'Patrones para documentar endpoints REST, JWT, request/response y códigos de estado.'
+
+# ── ui-tables-wide ────────────────────────────────────────────────────────────
+'Tablas (filtros anchos)': 'Tablas (filtros anchos)'
+'Tabla de demo con panel de filtros más ancho y campos en dos columnas.': 'Tabla de demo con panel de filtros más ancho y campos en dos columnas.'
+'Tablas (panel de filtros ancho)': 'Tablas (panel de filtros ancho)'
+'Vista de referencia para casos con filtros variables y layout de 2 campos por fila.': 'Vista de referencia para casos con filtros variables y layout de 2 campos por fila.'
+tables_wide:
+    intro: 'Tres modos de botones DataTables con GrovaDataTable.init: sin buttons, full y manual. Tablas anchas con doble scroll horizontal.'
+    filters_note: 'Panel de filtros con esquema ui-tables-wide (campos en dos columnas). Los filtros son demo; las tablas muestran la barra de exportación según el modo.'
+    mode_none_title: 'Sin buttons (ninguno)'
+    mode_none_desc: 'No declares buttons. Solo búsqueda, paginación y selector de filas.'
+    mode_full_title: "buttons: 'full' (todos)"
+    mode_full_desc: 'copy, csv, excel, pdf, print y colvis.'
+    mode_manual_title: 'buttons manual (array)'
+    mode_manual_desc: 'Solo los que indiques, p. ej. copy, excel, pdf, colvis.'
+    col:
+        company: Empresa
+        city: Ciudad
+        phone: Teléfono
+        last_access: Último acceso
+        notes: Notas internas
+    status:
+        active: Activo
+        pending: Pendiente
+        inactive: Inactivo

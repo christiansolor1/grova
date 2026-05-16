@@ -1,0 +1,202 @@
+{% extends 'workspace/app_layout.html.twig' %}
+{% block page_title %}Configuración{% endblock %}
+{% block app_page_subtitle %}Patrones de páginas de ajustes: empresa, cuenta, plan activo y toggles.{% endblock %}
+
+{% block page_styles %}
+<style>
+.ui-component{border:1px solid #1e293b;border-radius:10px;overflow:hidden;margin-bottom:1.5rem;}
+.ui-component-preview{padding:1.5rem;background:#0f172a;}
+.ui-component-code{background:#020617;border-top:1px solid #1e293b;}
+.ui-component-code-header{display:flex;align-items:center;justify-content:space-between;padding:.5rem 1rem;border-bottom:1px solid #1e293b;}
+.ui-component-code-label{font-size:11px;color:#64748b;text-transform:uppercase;letter-spacing:.5px;}
+.ui-component-code pre{margin:0;padding:1rem;font-size:12px;color:#94a3b8;overflow-x:auto;white-space:pre;}
+.btn-copy-code{font-size:11px;padding:2px 10px;}
+body.light-mode .ui-component{border-color:#dbe3ee;}
+body.light-mode .ui-component-preview{background:#f8fafc;}
+body.light-mode .ui-component-code{background:#f1f5f9;border-color:#dbe3ee;}
+body.light-mode .ui-component-code-header{border-color:#dbe3ee;}
+body.light-mode .ui-component-code pre{color:#475569;}
+.settings-section-title{font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.08em;padding-bottom:.5rem;border-bottom:1px solid #1e293b;margin-bottom:1rem;}
+body.light-mode .settings-section-title{border-color:#e2e8f0;}
+</style>
+{% endblock %}
+
+{% block app_main %}
+<div class="content-card">
+    <div class="content-card-header">Configuración</div>
+    <div class="content-card-body">
+
+        {# ── Settings empresa ── #}
+        <div class="ui-component">
+            <div class="ui-component-preview">
+                <div style="max-width:480px;width:100%;">
+                    <div class="settings-section-title">Datos de la empresa</div>
+                    <div class="row g-3">
+                        <div class="col-12">
+                            <label class="form-label">Nombre de la empresa</label>
+                            <input type="text" class="form-control form-control-sm" value="Bufete Alcides">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">RUC / NIT</label>
+                            <input type="text" class="form-control form-control-sm" placeholder="J1234567890">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">País</label>
+                            <select class="grova-select2 form-select form-select-sm">
+                                <option selected>Nicaragua</option>
+                                <option>Costa Rica</option>
+                                <option>Colombia</option>
+                            </select>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label">Correo de contacto</label>
+                            <input type="email" class="form-control form-control-sm" value="contacto@bufete.com">
+                        </div>
+                        <div class="col-12 d-flex justify-content-end">
+                            <button class="btn btn-primary btn-sm">Guardar</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="ui-component-code">
+                <div class="ui-component-code-header">
+                    <span class="ui-component-code-label">Twig — Sección empresa</span>
+                    <button type="button" class="btn btn-outline-secondary btn-sm btn-copy-code" data-copy-target="code-company">Copiar</button>
+                </div>
+                <pre id="code-company">{% verbatim %}<div class="settings-section-title">Datos de la empresa</div>
+<form method="post" action="{{ path('grova_settings_company_save') }}">
+    <div class="row g-3">
+        <div class="col-12">
+            <label class="form-label">Nombre de la empresa</label>
+            <input type="text" name="nombre" class="form-control form-control-sm"
+                   value="{{ tenant.nombre }}" required>
+        </div>
+        <div class="col-md-6">
+            <label class="form-label">RUC / NIT</label>
+            <input type="text" name="ruc" class="form-control form-control-sm"
+                   value="{{ tenant.ruc }}">
+        </div>
+        <div class="col-12 d-flex justify-content-end">
+            <button type="submit" class="btn btn-primary btn-sm">Guardar</button>
+        </div>
+    </div>
+</form>{% endverbatim %}</pre>
+            </div>
+        </div>
+
+        {# ── Plan activo ── #}
+        <div class="ui-component">
+            <div class="ui-component-preview">
+                <div style="max-width:480px;width:100%;">
+                    <div class="settings-section-title">Plan activo</div>
+                    <div style="background:#111827;border:1px solid #1e3a5f;border-radius:10px;padding:1rem;display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap;">
+                        <div>
+                            <div style="font-size:16px;font-weight:700;color:#60a5fa;">Pro</div>
+                            <div style="font-size:12px;color:#64748b;">$49/mes · Vence 01/06/2026</div>
+                            <div style="margin-top:.5rem;display:flex;flex-wrap:wrap;gap:.35rem;">
+                                <span class="badge bg-success bg-opacity-20 text-success" style="font-size:11px;">Facturación</span>
+                                <span class="badge bg-success bg-opacity-20 text-success" style="font-size:11px;">Legal</span>
+                                <span class="badge bg-success bg-opacity-20 text-success" style="font-size:11px;">Inventario</span>
+                                <span class="badge bg-secondary bg-opacity-20 text-secondary" style="font-size:11px;">+3 más</span>
+                            </div>
+                        </div>
+                        <button class="btn btn-outline-primary btn-sm">Cambiar plan</button>
+                    </div>
+                </div>
+            </div>
+            <div class="ui-component-code">
+                <div class="ui-component-code-header">
+                    <span class="ui-component-code-label">Twig — Plan activo</span>
+                    <button type="button" class="btn btn-outline-secondary btn-sm btn-copy-code" data-copy-target="code-plan">Copiar</button>
+                </div>
+                <pre id="code-plan">{% verbatim %}<div class="settings-section-title">Plan activo</div>
+<div class="grova-plan-card">
+    <div>
+        <div style="font-size:16px;font-weight:700;color:#60a5fa;">{{ suscripcion.plan.nombre }}</div>
+        <div style="font-size:12px;color:#64748b;">
+            ${{ suscripcion.plan.precio }}/mes · Vence {{ suscripcion.fechaVencimiento|date('d/m/Y') }}
+        </div>
+        <div style="margin-top:.5rem;display:flex;flex-wrap:wrap;gap:.35rem;">
+            {% for modulo in suscripcion.plan.modulos|slice(0, 3) %}
+                <span class="badge bg-success bg-opacity-20 text-success" style="font-size:11px;">
+                    {{ modulo }}
+                </span>
+            {% endfor %}
+            {% if suscripcion.plan.modulos|length > 3 %}
+                <span class="badge bg-secondary bg-opacity-20 text-secondary" style="font-size:11px;">
+                    +{{ suscripcion.plan.modulos|length - 3 }} más
+                </span>
+            {% endif %}
+        </div>
+    </div>
+    <a href="{{ path('grova_billing_plans') }}" class="btn btn-outline-primary btn-sm">Cambiar plan</a>
+</div>{% endverbatim %}</pre>
+            </div>
+        </div>
+
+        {# ── Toggles de módulos ── #}
+        <div class="ui-component">
+            <div class="ui-component-preview">
+                <div style="max-width:420px;width:100%;display:flex;flex-direction:column;gap:.75rem;">
+                    <div class="settings-section-title">Módulos activos</div>
+                    {% for item in [
+                        {label:'Facturación y cobros', desc:'Emisión de facturas electrónicas', on:true},
+                        {label:'Inventario',           desc:'Control de stock y productos',     on:true},
+                        {label:'Recursos Humanos',     desc:'Empleados, nómina y asistencia',   on:false},
+                        {label:'Agenda y citas',       desc:'Calendario y gestión de citas',    on:true},
+                    ] %}
+                    <div style="display:flex;align-items:center;justify-content:space-between;gap:1rem;padding:.75rem;background:#111827;border-radius:8px;border:1px solid #1e293b;">
+                        <div>
+                            <div style="font-size:13px;font-weight:500;color:#e2e8f0;">{{ item.label }}</div>
+                            <div style="font-size:11px;color:#64748b;">{{ item.desc }}</div>
+                        </div>
+                        <div class="form-check form-switch mb-0">
+                            <input class="form-check-input" type="checkbox" role="switch" {{ item.on ? 'checked' : '' }} style="cursor:pointer;">
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            <div class="ui-component-code">
+                <div class="ui-component-code-header">
+                    <span class="ui-component-code-label">Twig — Toggles de módulos</span>
+                    <button type="button" class="btn btn-outline-secondary btn-sm btn-copy-code" data-copy-target="code-toggles">Copiar</button>
+                </div>
+                <pre id="code-toggles">{% verbatim %}{% for modulo in modulos_disponibles %}
+<div style="display:flex;align-items:center;justify-content:space-between;gap:1rem;padding:.75rem;background:#111827;border-radius:8px;border:1px solid #1e293b;">
+    <div>
+        <div style="font-size:13px;font-weight:500;">{{ modulo.nombre }}</div>
+        <div style="font-size:11px;color:#64748b;">{{ modulo.descripcion }}</div>
+    </div>
+    <form method="post" action="{{ path('grova_module_toggle', {key: modulo.key}) }}">
+        <div class="form-check form-switch mb-0">
+            <input class="form-check-input" type="checkbox" role="switch"
+                   name="activo" value="1"
+                   {{ modulo.activo ? 'checked' : '' }}
+                   onchange="this.form.submit()"
+                   style="cursor:pointer;">
+        </div>
+    </form>
+</div>
+{% endfor %}{% endverbatim %}</pre>
+            </div>
+        </div>
+
+    </div>
+</div>
+{% endblock %}
+
+{% block app_page_scripts %}
+<script>
+document.querySelectorAll('.btn-copy-code').forEach(function(btn){
+    btn.addEventListener('click',function(){
+        var t=document.getElementById(btn.getAttribute('data-copy-target'));
+        if(!t)return;
+        navigator.clipboard.writeText(t.textContent.trim()).then(function(){
+            var o=btn.textContent;btn.textContent='Copiado';
+            setTimeout(function(){btn.textContent=o;},1200);
+        });
+    });
+});
+</script>
+{% endblock %}

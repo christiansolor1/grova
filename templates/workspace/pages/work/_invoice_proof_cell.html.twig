@@ -1,0 +1,53 @@
+{# Contenido interno de #work-inv-proof-cell-{id} (fragmento para include y respuestas AJAX). #}
+{% set inv_can_toggle_paid = invoice.anio == vigente_year %}
+{% if not invoice.pagadaAt %}
+    <span class="text-muted small" title="{{ 'work.payment_proof_col_pending_invoice'|trans({}, 'work') }}">—</span>
+{% elseif inv_can_toggle_paid %}
+    {% if invoice.paymentProofStoredFilename %}
+        <div class="inv-proof-actions">
+            <a href="{{ path('grova_work_invoice_payment_proof', {id: invoice.id, _locale: locale}) }}"
+               target="_blank" rel="noopener noreferrer"
+               class="btn btn-outline-secondary btn-sm btn-inv-proof"
+               title="{{ 'work.payment_proof_download'|trans({}, 'work') }}">
+                <i class="bi bi-download"></i>
+            </a>
+            <form method="post"
+                  action="{{ path('grova_work_invoice_payment_proof_delete', {id: invoice.id, _locale: locale}) }}"
+                  class="d-inline js-work-proof-delete mb-0"
+                  data-invoice-id="{{ invoice.id }}"
+                  data-confirm-title="{{ 'work.payment_proof_delete_confirm_title'|trans({}, 'work') }}"
+                  data-confirm-text="{{ 'work.payment_proof_delete_confirm_text'|trans({}, 'work') }}">
+                <input type="hidden" name="invoice_year" value="{{ invoice_year }}">
+                <input type="hidden" name="_token" value="{{ csrf_token('work_invoice_payment_proof_delete_' ~ invoice.id) }}">
+                <button type="submit"
+                        class="btn btn-outline-danger btn-sm btn-inv-proof border-0"
+                        title="{{ 'work.payment_proof_delete'|trans({}, 'work') }}">
+                    <i class="bi bi-trash3"></i>
+                </button>
+            </form>
+        </div>
+    {% else %}
+        <button type="button"
+                class="btn btn-outline-primary btn-sm btn-inv-proof js-work-proof-upload-open"
+                data-bs-toggle="modal"
+                data-bs-target="#modal-work-payment-proof"
+                data-invoice-id="{{ invoice.id }}"
+                data-proof-action="{{ path('grova_work_invoice_payment_proof', {id: invoice.id, _locale: locale}) }}"
+                data-proof-token="{{ csrf_token('work_invoice_payment_proof_' ~ invoice.id) }}"
+                data-proof-period-text="{{ 'work.modal_payment_proof_period_label'|trans({'%period%': work_month_year(invoice.anio, invoice.mes)}, 'work')|e('html_attr') }}"
+                title="{{ 'work.payment_proof_upload'|trans({}, 'work') }}">
+            <i class="bi bi-cloud-upload"></i>
+        </button>
+    {% endif %}
+{% else %}
+    {% if invoice.paymentProofStoredFilename %}
+        <a href="{{ path('grova_work_invoice_payment_proof', {id: invoice.id, _locale: locale}) }}"
+           target="_blank" rel="noopener noreferrer"
+           class="btn btn-outline-secondary btn-sm btn-inv-proof"
+           title="{{ 'work.payment_proof_download'|trans({}, 'work') }}">
+            <i class="bi bi-download"></i>
+        </a>
+    {% else %}
+        <span class="text-muted small">—</span>
+    {% endif %}
+{% endif %}

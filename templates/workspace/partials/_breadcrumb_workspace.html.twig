@@ -1,0 +1,33 @@
+{# Migas + «subir un nivel»: datos desde App\Service\WorkspaceBreadcrumbBuilder (workspace_breadcrumb). #}
+{% set bc = workspace_breadcrumb(menu_tree|default([]), active_menu_key|default(''), home_route|default('grova_page_dashboard')) %}
+
+<nav class="grova-breadcrumb" aria-label="breadcrumb">
+    {% if bc.showBack %}
+        <a href="{{ bc.backHref }}" class="grova-breadcrumb-back" title="{{ 'breadcrumb.back_level'|trans }}" aria-label="{{ 'breadcrumb.back_level'|trans }}">
+            <i class="bi bi-arrow-left" aria-hidden="true"></i>
+        </a>
+    {% endif %}
+    <a href="{{ bc.homeHref }}" class="breadcrumb-home">
+        <span class="breadcrumb-home-icon" aria-hidden="true"><i class="bi bi-house-door"></i></span>
+        <span>{{ 'breadcrumb.home' | trans }}</span>
+    </a>
+    {% if bc.pathNodes is empty %}
+        <span class="sep">/</span>
+        <span class="current">{{ breadcrumb_tail }}</span>
+    {% else %}
+        {% for seg in bc.pathNodes %}
+            <span class="sep">/</span>
+            {% if loop.last and bc.onLeaf %}
+                <span class="current">{{ seg.label }}</span>
+            {% elseif seg.href %}
+                <a href="{{ seg.href }}">{{ seg.label }}</a>
+            {% else %}
+                <span>{{ seg.label }}</span>
+            {% endif %}
+        {% endfor %}
+        {% if not bc.onLeaf %}
+            <span class="sep">/</span>
+            <span class="current">{{ breadcrumb_tail }}</span>
+        {% endif %}
+    {% endif %}
+</nav>

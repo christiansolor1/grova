@@ -1,0 +1,162 @@
+{% extends 'base.html.twig' %}
+{% block title %}Sección bloqueada · {{ section_label }}{% endblock %}
+
+{% block stylesheets %}
+<style>
+body { background:#0b1020; min-height:100vh; display:flex; align-items:center; justify-content:center; padding:16px; }
+.lock-card { width:100%; max-width:380px; background:#111827; border:1px solid #1f2937; border-radius:16px; padding:2rem 1.75rem; }
+.lock-icon { width:64px; height:64px; background:#1e293b; border-radius:50%; display:flex; align-items:center; justify-content:center; margin:0 auto 1.25rem; font-size:26px; color:#6366f1; }
+.lock-title { font-size:1.3rem; font-weight:700; color:#f1f5f9; text-align:center; margin-bottom:.35rem; }
+.lock-sub { font-size:.875rem; color:#64748b; text-align:center; margin-bottom:1.75rem; }
+.pin-input { background:#0f172a; border:1px solid #334155; color:#f1f5f9; border-radius:10px; font-size:1.5rem; letter-spacing:.4em; text-align:center; padding:.65rem; width:100%; }
+.pin-input:focus { outline:none; border-color:#6366f1; box-shadow:0 0 0 3px rgba(99,102,241,.2); }
+.btn-biometric { width:100%; padding:.85rem; background:#1e293b; border:1px solid #334155; color:#f1f5f9; border-radius:10px; font-size:.95rem; font-weight:600; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:.6rem; transition:background .2s,border-color .2s; }
+.btn-biometric:hover { background:#263548; border-color:#6366f1; }
+.btn-biometric.success { background:#16a34a22; border-color:#16a34a; color:#4ade80; }
+.btn-biometric.error   { background:#dc262622; border-color:#dc2626; color:#fca5a5; }
+.btn-submit { width:100%; padding:.8rem; background:#6366f1; border:none; color:#fff; border-radius:10px; font-size:.95rem; font-weight:600; cursor:pointer; transition:background .2s; }
+.btn-submit:hover { background:#4f46e5; }
+.divider { display:flex; align-items:center; gap:.75rem; margin:1rem 0; color:#334155; font-size:.78rem; }
+.divider::before, .divider::after { content:''; flex:1; height:1px; background:#1f2937; }
+.flash-error { background:rgba(239,68,68,.1); border:1px solid rgba(239,68,68,.3); color:#fca5a5; border-radius:8px; font-size:.82rem; padding:.5rem .75rem; margin-bottom:1rem; }
+</style>
+{% endblock %}
+
+{% block body %}
+<div class="lock-card">
+
+    <div class="lock-icon"><i class="bi bi-shield-lock-fill"></i></div>
+    <div class="lock-title">{{ section_label }} bloqueado</div>
+    <div class="lock-sub">Autentícate para continuar</div>
+
+    {% for msg in app.flashes('danger') %}
+    <div class="flash-error"><i class="bi bi-exclamation-triangle me-1"></i>{{ msg }}</div>
+    {% endfor %}
+
+    {# ── Biométrico ── #}
+    {% if has_webauthn %}
+    <button class="btn-biometric mb-2" id="btn-biometric" type="button">
+        <i class="bi bi-fingerprint" style="font-size:22px;color:#6366f1;"></i>
+        <span id="bio-label">Usar huella / Face ID</span>
+    </button>
+    {% if has_pin %}<div class="divider">o usa tu PIN</div>{% endif %}
+    {% endif %}
+
+    {# ── PIN ── #}
+    {% if has_pin %}
+    <form method="post" action="{{ path('grova_lock_pin_verify', {_locale: app.request.locale, section: section}) }}" id="pin-form">
+        <input type="hidden" name="_token" value="{{ csrf_token('lock_pin_' ~ section) }}">
+        <input type="hidden" name="redirect" value="{{ redirect }}">
+        <input type="tel" class="pin-input mb-3" name="pin" id="pin-input"
+               maxlength="8" placeholder="••••" autocomplete="off" inputmode="numeric" autofocus>
+        <button type="submit" class="btn-submit">Desbloquear</button>
+    </form>
+    {% endif %}
+
+    {% if not has_pin and not has_webauthn %}
+    <div style="text-align:center;color:#64748b;font-size:.85rem;padding:1rem 0;">
+        No tienes autenticación configurada.<br>
+        <a href="{{ path('grova_profile', {_locale: app.request.locale}) }}" style="color:#6366f1;">Configurar en Perfil →</a>
+    </div>
+    {% endif %}
+
+    <div style="margin-top:1.25rem;text-align:center;">
+        <a href="{{ path('workspace', {_locale: app.request.locale}) }}" style="font-size:.78rem;color:#475569;text-decoration:none;">← Volver al inicio</a>
+    </div>
+</div>
+{% endblock %}
+
+{% block javascripts %}
+{% if has_webauthn %}
+<script>
+const section   = {{ section | json_encode | raw }};
+const redirect  = {{ redirect | json_encode | raw }};
+const locale    = '{{ app.request.locale }}';
+const btn       = document.getElementById('btn-biometric');
+const bioLabel  = document.getElementById('bio-label');
+
+function b64url(buf) {
+    return btoa(String.fromCharCode(...new Uint8Array(buf)))
+        .replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+}
+function fromB64(s) {
+    s = s.replace(/-/g,'+').replace(/_/g,'/');
+    while (s.length % 4) s += '=';
+    return Uint8Array.from(atob(s), c => c.charCodeAt(0));
+}
+
+async function runBiometric() {
+    btn.disabled = true;
+    bioLabel.textContent = 'Iniciando…';
+
+    try {
+        // 1. Obtener challenge
+        const res  = await fetch(`/${locale}/lock/webauthn/challenge/${section}`);
+        const args = await res.json();
+        if (args.error) throw new Error(args.error);
+
+        args.publicKey.challenge = fromB64(args.publicKey.challenge);
+        if (args.publicKey.allowCredentials) {
+            args.publicKey.allowCredentials = args.publicKey.allowCredentials.map(c => ({
+                ...c, id: fromB64(c.id)
+            }));
+        }
+
+        // 2. Llamar al autenticador
+        const credential = await navigator.credentials.get({ publicKey: args.publicKey });
+
+        // 3. Enviar al servidor
+        const payload = {
+            id:                b64url(credential.rawId),
+            clientDataJSON:    b64url(credential.response.clientDataJSON),
+            authenticatorData: b64url(credential.response.authenticatorData),
+            signature:         b64url(credential.response.signature),
+        };
+
+        const verRes = await fetch(`/${locale}/lock/webauthn/verify/${section}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload),
+        });
+        const verData = await verRes.json();
+
+        if (verData.ok) {
+            btn.classList.add('success');
+            bioLabel.textContent = '¡Verificado!';
+            setTimeout(() => { window.location.href = redirect || `/${locale}/workspace`; }, 300);
+        } else {
+            throw new Error(verData.error || 'Verificación fallida');
+        }
+    } catch (e) {
+        btn.classList.add('error');
+        bioLabel.textContent = e.name === 'NotAllowedError' ? 'Cancelado' : (e.message || 'Error biométrico');
+        btn.disabled = false;
+        setTimeout(() => {
+            btn.classList.remove('error');
+            bioLabel.textContent = 'Reintentar huella / Face ID';
+        }, 3000);
+        // Si hay PIN disponible, enfocar el campo para que pueda escribir directamente
+        document.getElementById('pin-input')?.focus();
+    }
+}
+
+btn.addEventListener('click', runBiometric);
+
+{% if auto_prompt %}
+window.addEventListener('load', () => setTimeout(runBiometric, 400));
+{% endif %}
+</script>
+{% endif %}
+
+{# Auto-submit al completar PIN de 4+ dígitos #}
+{% if has_pin %}
+<script>
+document.getElementById('pin-input').addEventListener('input', function() {
+    if (this.value.length >= 4) {
+        // pequeño delay para dar feedback visual
+        setTimeout(() => document.getElementById('pin-form').requestSubmit(), 100);
+    }
+});
+</script>
+{% endif %}
+{% endblock %}

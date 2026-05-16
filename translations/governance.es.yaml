@@ -1,0 +1,81 @@
+# ══ MÓDULO: Menu Governance ═══════════════════════════════════════════════════
+# Dominio: governance
+# Uso en twig: {{ 'clave' | trans({}, 'governance') }}
+
+# ── Página ────────────────────────────────────────────────────────────────────
+'Gestión de menú': 'Gestión de menú'
+'Gobierno de jerarquía y visibilidad del menú (UI de referencia, sin CRUD).': 'Gobierno de jerarquía y visibilidad del menú (UI de referencia, sin CRUD).'
+
+# ── Toolbar ───────────────────────────────────────────────────────────────────
+'Gestiona el árbol del menú con flujo de listado y formulario.': 'Gestiona el árbol del menú con flujo de listado y formulario.'
+'Nuevo ítem': 'Nuevo ítem'
+'Volver al listado': 'Volver al listado'
+
+# ── Tabla ─────────────────────────────────────────────────────────────────────
+'Editar': 'Editar'
+'Nivel': 'Nivel'
+'Tipo': 'Tipo'
+'Color': 'Color'
+'Menu key': 'Menu key'
+'Label': 'Label'
+'Sidebar': 'Sidebar'
+'Estado': 'Estado'
+'Visible': 'Visible'
+'Oculto': 'Oculto'
+'L1': 'L1'
+'L2': 'L2'
+'L3': 'L3'
+'Menú principal': 'Menú principal'
+'Submenú': 'Submenú'
+'Subopción': 'Subopción'
+
+# ── Editor ────────────────────────────────────────────────────────────────────
+'Editor de ítems': 'Editor de ítems'
+'Configura jerarquía, estado e ícono antes de guardar.': 'Configura jerarquía, estado e ícono antes de guardar.'
+'¿Qué quieres crear?': '¿Qué quieres crear?'
+'Solo 1 ítem de menú': 'Solo 1 ítem de menú'
+'Menú completo (principal + submenú + subopción)': 'Menú completo (principal + submenú + subopción)'
+'Path': 'Path'
+'Identificador técnico único (URL/route key).': 'Identificador técnico único (URL/route key).'
+'Label menú': 'Label menú'
+'Nombre que verá el usuario en el sidebar.': 'Nombre que verá el usuario en el sidebar.'
+'Ícono (Bootstrap Icons o Font Awesome)': 'Ícono (Bootstrap Icons o Font Awesome)'
+'Tipo de elemento': 'Tipo de elemento'
+'Orden': 'Orden'
+'Elemento padre': 'Elemento padre'
+'1) Menú principal': '1) Menú principal'
+'2) Submenú': '2) Submenú'
+'Mostrar en sidebar': 'Mostrar en sidebar'
+'Solo desarrollo': 'Solo desarrollo'
+'Estado del item': 'Estado del item'
+'Pendiente (en construcción)': 'Pendiente (en construcción)'
+'Hecho (listo)': 'Hecho (listo)'
+'Vista previa en sidebar': 'Vista previa en sidebar'
+'Nuevo item: Submenú': 'Nuevo item: Submenú'
+'Este modo crea una estructura completa partiendo desde el nivel que elijas.': 'Este modo crea una estructura completa partiendo desde el nivel que elijas.'
+
+# ── Editor — estructura ───────────────────────────────────────────────────────
+'Estructura a crear': 'Estructura a crear'
+'Principal + Submenú + Subopción': 'Principal + Submenú + Subopción'
+'Submenú + Subopción (bajo principal existente)': 'Submenú + Subopción (bajo principal existente)'
+'Solo Subopción (bajo submenú existente)': 'Solo Subopción (bajo submenú existente)'
+'Menú principal padre': 'Menú principal padre'
+'Selecciona menú principal...': 'Selecciona menú principal...'
+'1) Menú principal padre': '1) Menú principal padre'
+'2) Submenú padre': '2) Submenú padre'
+'Selecciona submenú...': 'Selecciona submenú...'
+'Path menú principal': 'Path menú principal'
+'Label menú principal': 'Label menú principal'
+'Path submenú': 'Path submenú'
+'Label submenú': 'Label submenú'
+'Path subopción': 'Path subopción'
+'Label subopción': 'Label subopción'
+'Orden base': 'Orden base'
+'Estado de la estructura': 'Estado de la estructura'
+'Vista previa en sidebar (modo estructura)': 'Vista previa en sidebar (modo estructura)'
+'Estructura': 'Estructura'
+'Cancelar': 'Cancelar'
+'Guardar': 'Guardar'
+
+# ── Reglas ────────────────────────────────────────────────────────────────────
+'Reglas recomendadas': 'Reglas recomendadas'

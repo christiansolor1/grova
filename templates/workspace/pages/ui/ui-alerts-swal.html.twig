@@ -1,12 +1,87 @@
 {% extends 'workspace/app_layout.html.twig' %}
 
+{% block page_title %}{{ 'Alertas SweetAlert2' | trans }}{% endblock %}
+{% block app_page_subtitle %}{{ 'Ejemplos reutilizables (misma lógica que la demo en dashboard).' | trans }}{% endblock %}
+
 {% block app_main %}
 <div class="content-card">
-    <div class="content-card-header">Alertas (SweetAlert)</div>
+    <div class="content-card-header">SweetAlert2 — plantilla de referencia</div>
     <div class="content-card-body">
-        <p class="text-muted mb-0">
-            Referencia de diálogos/alertas. Módulo <code>ui-alerts-swal</code> en la demo legacy.
+        <p class="mb-3" style="font-size:13px;color:#64748b;">
+            Misma lógica que la demo monolítica del <code>dashboard</code>: tipos de alerta, inputs, colas, toasts y opciones avanzadas. Cada botón dispara <code>runSwalDemo(...)</code> definido en <code>public/js/workspace-swal-demos.js</code>.
         </p>
+        <h6 class="text-uppercase small text-secondary mb-2 mt-1">{{ 'Básicos y confirmación' | trans }}</h6>
+        <div class="swal-grid mb-4">
+            <button type="button" class="btn btn-sm btn-outline-primary swal-demo-btn" data-swal-demo="success">{{ 'Éxito simple' | trans }}</button>
+            <button type="button" class="btn btn-sm btn-outline-info swal-demo-btn" data-swal-demo="info">{{ 'Información' | trans }}</button>
+            <button type="button" class="btn btn-sm btn-outline-warning swal-demo-btn" data-swal-demo="warning">{{ 'Advertencia' | trans }}</button>
+            <button type="button" class="btn btn-sm btn-outline-danger swal-demo-btn" data-swal-demo="error">{{ 'Error' | trans }}</button>
+            <button type="button" class="btn btn-sm btn-outline-dark swal-demo-btn" data-swal-demo="question">{{ 'Pregunta' | trans }}</button>
+            <button type="button" class="btn btn-sm btn-outline-secondary swal-demo-btn" data-swal-demo="html">{{ 'HTML custom' | trans }}</button>
+            <button type="button" class="btn btn-sm btn-primary swal-demo-btn" data-swal-demo="confirm">{{ 'Aceptar / Cancelar' | trans }}</button>
+            <button type="button" class="btn btn-sm btn-danger swal-demo-btn" data-swal-demo="confirmDelete">{{ 'Confirmar eliminación' | trans }}</button>
+        </div>
+        <h6 class="text-uppercase small text-secondary mb-2">{{ 'Inputs (modal)' | trans }}</h6>
+        <div class="swal-grid mb-4">
+            <button type="button" class="btn btn-sm btn-secondary swal-demo-btn" data-swal-demo="input">Ingresar texto</button>
+            <button type="button" class="btn btn-sm btn-secondary swal-demo-btn" data-swal-demo="email">Ingresar email validado</button>
+            <button type="button" class="btn btn-sm btn-secondary swal-demo-btn" data-swal-demo="number">Input número</button>
+            <button type="button" class="btn btn-sm btn-secondary swal-demo-btn" data-swal-demo="password">Input password</button>
+            <button type="button" class="btn btn-sm btn-secondary swal-demo-btn" data-swal-demo="textarea">Input textarea</button>
+            <button type="button" class="btn btn-sm btn-secondary swal-demo-btn" data-swal-demo="select">Input select</button>
+            <button type="button" class="btn btn-sm btn-secondary swal-demo-btn" data-swal-demo="radio">Input radio</button>
+            <button type="button" class="btn btn-sm btn-secondary swal-demo-btn" data-swal-demo="checkbox">Input checkbox</button>
+            <button type="button" class="btn btn-sm btn-secondary swal-demo-btn" data-swal-demo="range">Input range</button>
+            <button type="button" class="btn btn-sm btn-outline-secondary swal-demo-btn" data-swal-demo="file">Input file</button>
+            <button type="button" class="btn btn-sm btn-outline-primary swal-demo-btn" data-swal-demo="select2">Select2 en Swal</button>
+        </div>
+        <h6 class="text-uppercase small text-secondary mb-2">{{ 'alerts_swal.section_multi'|trans({}, 'ui') }}</h6>
+        <div class="swal-grid mb-4">
+            <button type="button" class="btn btn-sm btn-outline-primary swal-demo-btn" data-swal-demo="selectMultiNative">{{ 'alerts_swal.demo_select_multi_native'|trans({}, 'ui') }}</button>
+            <button type="button" class="btn btn-sm btn-outline-primary swal-demo-btn" data-swal-demo="select2Multi">{{ 'alerts_swal.demo_select2_multi'|trans({}, 'ui') }}</button>
+            <button type="button" class="btn btn-sm btn-outline-secondary swal-demo-btn" data-swal-demo="selectMultiTags">{{ 'alerts_swal.demo_select_multi_tags'|trans({}, 'ui') }}</button>
+        </div>
+        <h6 class="text-uppercase small text-secondary mb-2">{{ 'Flujos y programación' | trans }}</h6>
+        <div class="swal-grid mb-4">
+            <button type="button" class="btn btn-sm btn-outline-primary swal-demo-btn" data-swal-demo="mixin">Mixin reutilizable</button>
+            <button type="button" class="btn btn-sm btn-dark swal-demo-btn" data-swal-demo="threeActions">Aceptar / Negar / Cancelar</button>
+            <button type="button" class="btn btn-sm btn-dark swal-demo-btn" data-swal-demo="queue">Queue / Steps</button>
+            <button type="button" class="btn btn-sm btn-success swal-demo-btn" data-swal-demo="async">Confirmación async</button>
+        </div>
+        <h6 class="text-uppercase small text-secondary mb-2">{{ 'Toasts, timer y apariencia' | trans }}</h6>
+        <div class="swal-grid mb-2">
+            <button type="button" class="btn btn-sm btn-outline-success swal-demo-btn" data-swal-demo="toast">{{ 'Toast notificación' | trans }}</button>
+            <button type="button" class="btn btn-sm btn-outline-success swal-demo-btn" data-swal-demo="toastActions">Toast con acciones</button>
+            <button type="button" class="btn btn-sm btn-outline-warning swal-demo-btn" data-swal-demo="timer">{{ 'Auto close con timer' | trans }}</button>
+            <button type="button" class="btn btn-sm btn-outline-warning swal-demo-btn" data-swal-demo="loader">{{ 'Loader bloqueante' | trans }}</button>
+            <button type="button" class="btn btn-sm btn-outline-info swal-demo-btn" data-swal-demo="position">{{ 'Posiciones' | trans }}</button>
+            <button type="button" class="btn btn-sm btn-outline-info swal-demo-btn" data-swal-demo="customClass">Clases personalizadas</button>
+            <button type="button" class="btn btn-sm btn-outline-dark swal-demo-btn" data-swal-demo="image">{{ 'Imagen custom' | trans }}</button>
+        </div>
+        <div id="swal-dev-result" class="swal-result mt-3">Selecciona un ejemplo para probarlo.</div>
     </div>
 </div>
+{% endblock %}
+
+{% block app_page_scripts %}
+<script src="{{ asset('js/workspace-swal-demos.js') }}"></script>
+<script>
+(function () {
+    function bind() {
+        document.querySelectorAll('.swal-demo-btn').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                var t = btn.getAttribute('data-swal-demo');
+                if (typeof runSwalDemo === 'function') {
+                    runSwalDemo(t);
+                }
+            });
+        });
+    }
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', bind);
+    } else {
+        bind();
+    }
+})();
+</script>
 {% endblock %}

@@ -1,0 +1,145 @@
+{% extends 'workspace/app_layout.html.twig' %}
+{% block page_title %}Contactos{% endblock %}
+{% block app_page_subtitle %}Clientes, proveedores y otros contactos{% endblock %}
+
+{% block page_styles %}
+<style>
+.tipo-badge { font-size:10px; padding:2px 8px; border-radius:10px; font-weight:600; text-transform:uppercase; }
+.tipo-cliente    { background:#1d4ed822; color:#60a5fa; }
+.tipo-proveedor  { background:#71717a22; color:#a1a1aa; }
+.tipo-empleado   { background:#16a34a22; color:#4ade80; }
+.tipo-paciente   { background:#7c3aed22; color:#a78bfa; }
+.tipo-otro       { background:#1e293b;   color:#64748b; }
+.contact-avatar  { width:36px; height:36px; border-radius:50%; background:#1e3a5f; color:#60a5fa; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:13px; flex-shrink:0; }
+body.light-mode .contact-avatar { background:#dbeafe; color:#1d4ed8; }
+</style>
+{% endblock %}
+
+{% block app_main %}
+
+{# ── Filtros ── #}
+<div class="content-card mb-3">
+    <div class="content-card-body">
+        <form method="get" class="d-flex gap-2 flex-wrap align-items-center">
+            <input type="text" class="form-control form-control-sm" name="q" value="{{ q }}" placeholder="Buscar por nombre, empresa, email..." style="max-width:280px;">
+            <select class="form-select form-select-sm" name="tipo" style="max-width:160px;">
+                <option value="">Todos los tipos</option>
+                {% for key, label in {'cliente':'Cliente','proveedor':'Proveedor','empleado':'Empleado','paciente':'Paciente','otro':'Otro'} %}
+                <option value="{{ key }}" {{ tipo_filter == key ? 'selected' : '' }}>{{ label }}</option>
+                {% endfor %}
+            </select>
+            <button type="submit" class="btn btn-sm btn-secondary">Filtrar</button>
+            <a href="{{ path('grova_contacts_index', {_locale: app.request.locale}) }}" class="btn btn-sm btn-outline-secondary">Limpiar</a>
+            <button type="button" class="btn btn-sm btn-primary ms-auto" data-bs-toggle="modal" data-bs-target="#modal-nuevo">
+                <i class="bi bi-plus-lg me-1"></i>Nuevo contacto
+            </button>
+        </form>
+    </div>
+</div>
+
+{# ── Tabla ── #}
+<div class="content-card">
+    <div class="content-card-body p-0">
+        {% if contacts|length > 0 %}
+        <div class="table-responsive">
+            <table class="table table-hover mb-0" style="color:inherit;">
+                <thead>
+                    <tr>
+                        <th style="width:40px;"></th>
+                        <th>Nombre</th>
+                        <th>Tipo</th>
+                        <th>Empresa</th>
+                        <th>Email</th>
+                        <th>Teléfono</th>
+                        <th style="width:80px;"></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for contact in contacts %}
+                    <tr>
+                        <td>
+                            <div class="contact-avatar">{{ contact.initials }}</div>
+                        </td>
+                        <td style="font-weight:600;">{{ contact.nombreCompleto }}</td>
+                        <td><span class="tipo-badge tipo-{{ contact.tipo }}">{{ contact.tipo }}</span></td>
+                        <td style="font-size:12px;color:#64748b;">{{ contact.empresa ?? '—' }}</td>
+                        <td style="font-size:12px;">{{ contact.email ?? '—' }}</td>
+                        <td style="font-size:12px;">{{ contact.telefono ?? '—' }}</td>
+                        <td>
+                            <div class="d-flex gap-1">
+                                <button type="button" class="btn btn-outline-secondary btn-sm" style="font-size:11px;padding:2px 7px;"
+                                        data-bs-toggle="modal" data-bs-target="#modal-edit-{{ contact.id }}">
+                                    <i class="bi bi-pencil"></i>
+                                </button>
+                                <form method="post" action="{{ path('grova_contacts_delete', {id: contact.id, _locale: app.request.locale}) }}"
+                                      onsubmit="return confirm('¿Archivar este contacto?')">
+                                    <input type="hidden" name="_token" value="{{ csrf_token('contact_delete_' ~ contact.id) }}">
+                                    <button type="submit" class="btn btn-outline-danger btn-sm" style="font-size:11px;padding:2px 7px;">
+                                        <i class="bi bi-archive"></i>
+                                    </button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="grova-empty-state">
+            <div class="grova-empty-icon"><i class="bi bi-people"></i></div>
+            <div class="grova-empty-title">Sin contactos</div>
+            <div class="grova-empty-desc">Agrega tu primer contacto.</div>
+            <div class="grova-empty-actions">
+                <button type="button" class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#modal-nuevo">
+                    <i class="bi bi-plus-lg me-1"></i>Nuevo contacto
+                </button>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+{# ── Modales de edición ── #}
+{% for contact in contacts %}
+<div class="modal fade" id="modal-edit-{{ contact.id }}" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content">
+            <form method="post" action="{{ path('grova_contacts_edit', {id: contact.id, _locale: app.request.locale}) }}">
+                <input type="hidden" name="_token" value="{{ csrf_token('contact_edit_' ~ contact.id) }}">
+                <div class="modal-header">
+                    <h5 class="modal-title">Editar — {{ contact.nombreCompleto }}</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">{% include 'workspace/pages/contacts/_form.html.twig' with {contact: contact} %}</div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary btn-sm">Guardar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endfor %}
+
+{# ── Modal: Nuevo contacto ── #}
+<div class="modal fade" id="modal-nuevo" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content">
+            <form method="post" action="{{ path('grova_contacts_create', {_locale: app.request.locale}) }}">
+                <input type="hidden" name="_token" value="{{ csrf_token('contact_create') }}">
+                <div class="modal-header">
+                    <h5 class="modal-title">Nuevo contacto</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">{% include 'workspace/pages/contacts/_form.html.twig' with {contact: null} %}</div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary btn-sm">Crear contacto</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

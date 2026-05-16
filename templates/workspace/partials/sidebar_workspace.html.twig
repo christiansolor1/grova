@@ -2,10 +2,31 @@
     <div class="sidebar-header">
         <div class="sidebar-logo">G</div>
         <span class="sidebar-title">{{ 'app.name' | trans }}</span>
+        <button type="button" id="sidebar-toggle" data-title-expand="{{ 'nav.expand'|trans|e('html_attr') }}" data-title-collapse="{{ 'nav.collapse'|trans|e('html_attr') }}" aria-label="{{ 'nav.collapse'|trans|e('html_attr') }}" title="{{ 'nav.collapse'|trans|e('html_attr') }}">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M4 6h16M4 12h16M4 18h16"/>
+            </svg>
+        </button>
+    </div>
+
+    <div class="sidebar-search">
+        <div class="input-wrap" id="nav-search-workspace-wrap">
+            <span class="search-icon">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 21l-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0z"/></svg>
+            </span>
+            <input type="search" id="nav-search-workspace" placeholder="{{ 'nav.search_placeholder' | trans }}" autocomplete="off">
+            <button type="button" class="sidebar-search-clear" id="nav-search-workspace-clear" title="{{ 'nav.search_clear'|trans }}" aria-label="{{ 'nav.search_clear'|trans }}">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6L6 18M6 6l12 12"/></svg>
+            </button>
+        </div>
     </div>
 
     <nav id="sidebar-nav" class="ws-server-nav">
-        {% include 'workspace/partials/_nav_tree.html.twig' with { items: menu_tree, active_menu_key: active_menu_key } only %}
+        {% include 'workspace/partials/_nav_tree.html.twig' with {
+            items: menu_tree,
+            active_menu_key: active_menu_key|default(''),
+            active_menu_path: menu_path_keys(menu_tree|default([]), active_menu_key|default(''))
+        } only %}
     </nav>
 
     <div class="sidebar-bottom">

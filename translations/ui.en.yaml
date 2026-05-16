@@ -1,0 +1,214 @@
+# ══ MODULE: UI pages (reference components) ═══════════════════════════════════
+# Domain: ui
+
+# ── ui-alerts-swal ────────────────────────────────────────────────────────────
+'Alertas SweetAlert2': 'SweetAlert2 Alerts'
+'Ejemplos reutilizables (misma lógica que la demo en dashboard).': 'Reusable examples (same logic as the dashboard demo).'
+'SweetAlert2 — plantilla de referencia': 'SweetAlert2 — reference template'
+'Básicos y confirmación': 'Basic & confirmation'
+'Éxito simple': 'Simple success'
+'Información': 'Information'
+'Advertencia': 'Warning'
+'Error': 'Error'
+'Pregunta': 'Question'
+'HTML custom': 'Custom HTML'
+'Aceptar / Cancelar': 'Accept / Cancel'
+'Confirmar eliminación': 'Confirm deletion'
+'Inputs (modal)': 'Inputs (modal)'
+'Ingresar texto': 'Enter text'
+'Ingresar email validado': 'Enter validated email'
+'Input número': 'Number input'
+'Input password': 'Password input'
+'Input textarea': 'Textarea input'
+'Input select': 'Select input'
+'Input radio': 'Radio input'
+'Input checkbox': 'Checkbox input'
+'Input range': 'Range input'
+'Input file': 'File input'
+'Flujos y programación': 'Flows & scheduling'
+'Mixin reutilizable': 'Reusable mixin'
+'Aceptar / Negar / Cancelar': 'Accept / Deny / Cancel'
+'Queue / Steps': 'Queue / Steps'
+'Confirmación async': 'Async confirmation'
+'Toasts, timer y apariencia': 'Toasts, timer & appearance'
+'Toast notificación': 'Toast notification'
+'Toast con acciones': 'Toast with actions'
+'Auto close con timer': 'Auto close with timer'
+'Loader bloqueante': 'Blocking loader'
+'Posiciones': 'Positions'
+'Clases personalizadas': 'Custom classes'
+'Imagen custom': 'Custom image'
+'Selecciona un ejemplo para probarlo.': 'Select an example to try it.'
+
+alerts_swal:
+    section_multi: 'Multiple selection (filters)'
+    demo_select_multi_native: 'Native multi select'
+    demo_select2_multi: 'Select2 multiple'
+    demo_select_multi_tags: 'Multi select tags'
+    menu_select_multi_native: 'Swal · Native multi select'
+    menu_select_multi_native_sub: 'Regions with native multiple select in a modal.'
+    menu_select2_multi: 'Swal · Select2 multiple'
+    menu_select2_multi_sub: 'Modules with Select2 multiple and chips in a modal.'
+    menu_select_multi_tags: 'Swal · Multi select tags'
+    menu_select_multi_tags_sub: 'Tags with native multiple select in a modal.'
+    launch_hint: 'The alert opens on load. Use the button to run the demo again.'
+    launch_retry: 'Open alert again'
+    launch_catalog: 'Go to Swal catalog'
+    launch_waiting: 'Opening alert…'
+
+# ── ui-buttons ────────────────────────────────────────────────────────────────
+'Botones': 'Buttons'
+'Catálogo de botones base (demo).': 'Base buttons catalog (demo).'
+'Catálogo de botones base.': 'Base buttons catalog.'
+'Primary': 'Primary'
+'Secondary': 'Secondary'
+'Success': 'Success'
+'Danger': 'Danger'
+'Outline': 'Outline'
+'Con icono': 'With icon'
+
+# ── ui-icons-catalog ──────────────────────────────────────────────────────────
+'Iconos BI/FA': 'BI/FA Icons'
+'Referencia rápida para copiar clases de Bootstrap Icons y Font Awesome.': 'Quick reference to copy Bootstrap Icons and Font Awesome classes.'
+'Catálogo de íconos': 'Icons catalog'
+'Todas las librerías': 'All libraries'
+'Solo Bootstrap Icons': 'Bootstrap Icons only'
+'Solo Font Awesome': 'Font Awesome only'
+'Ver todos': 'Show all'
+'Cargando catálogos...': 'Loading catalogs...'
+
+# ── ui-inputs ─────────────────────────────────────────────────────────────────
+'Inputs y formularios': 'Inputs & forms'
+'Ejemplos de campos de formulario.': 'Form field examples.'
+'Ejemplos de inputs para formularios.': 'Input examples for forms.'
+'Texto': 'Text'
+'Nombre': 'Name'
+'Email': 'Email'
+'Select': 'Select'
+'Opción 1': 'Option 1'
+'Opción 2': 'Option 2'
+'Textarea': 'Textarea'
+'Descripción': 'Description'
+'Select2 — simple': 'Select2 — simple'
+'Select2 — múltiple': 'Select2 — multiple'
+'Select2 — con búsqueda': 'Select2 — with search'
+
+# ── ui-status ─────────────────────────────────────────────────────────────────
+'Badges y estados': 'Badges & statuses'
+'Estados visuales con badges.': 'Visual statuses with badges.'
+'Pendiente': 'Pending'
+
+# ── ui-tables ─────────────────────────────────────────────────────────────────
+'Tablas y DataTables': 'Tables & DataTables'
+'Tabla de ejemplo con DataTables (botones de exportación).': 'Example table with DataTables (export buttons).'
+'Referencia de tablas para usar con DataTables.': 'Table reference for use with DataTables.'
+'Admin': 'Admin'
+'Activo': 'Active'
+'Editor': 'Editor'
+'Viewer': 'Viewer'
+'Inactivo': 'Inactive'
+
+# ── ui-modals ─────────────────────────────────────────────────────────────────
+'Modales': 'Modals'
+'Modales para formularios, confirmaciones y detalles.': 'Modals for forms, confirmations and details.'
+'Modal formulario': 'Form modal'
+'Modal confirmación': 'Confirmation modal'
+'Modal detalle': 'Detail modal'
+'Modal grande': 'Large modal'
+'Abrir modal': 'Open modal'
+'Nuevo registro': 'New record'
+'Detalle del registro': 'Record detail'
+'Cancelar': 'Cancel'
+'Guardar': 'Save'
+'Cerrar': 'Close'
+'Eliminar': 'Delete'
+'¿Estás seguro? Esta acción no se puede deshacer.': 'Are you sure? This action cannot be undone.'
+
+# ── ui-panels ─────────────────────────────────────────────────────────────────
+'Paneles y layouts': 'Panels & layouts'
+'Paneles, drawers, sidebars y layouts para sistemas transaccionales.': 'Panels, drawers, sidebars and layouts for transactional systems.'
+'Abrir drawer lateral': 'Open side drawer'
+'Drawer lateral': 'Side drawer'
+'Layout maestro-detalle': 'Master-detail layout'
+'Aplicar': 'Apply'
+'Filtros / Detalle': 'Filters / Detail'
+
+# ── ui-cards ──────────────────────────────────────────────────────────────────
+'Cards y contenedores': 'Cards & containers'
+'Cards, listas, timelines y contenedores para sistemas transaccionales.': 'Cards, lists, timelines and containers for transactional systems.'
+'Card básica': 'Basic card'
+'Card con acción': 'Card with action'
+'Card con footer': 'Card with footer'
+'Elementos': 'Elements'
+'Agregar': 'Add'
+'Timeline / historial': 'Timeline / history'
+'Acordeón': 'Accordion'
+
+# ── ui-error-pages ────────────────────────────────────────────────────────────
+'Páginas de error': 'Error pages'
+'Errores HTTP más comunes: 403, 404, 500, 503.': 'Most common HTTP errors: 403, 404, 500, 503.'
+
+# ── ui-toasts ─────────────────────────────────────────────────────────────────
+'Toasts y notificaciones': 'Toasts & notifications'
+'Feedback inline no bloqueante para operaciones CRUD.': 'Non-blocking inline feedback for CRUD operations.'
+
+# ── ui-empty-states ───────────────────────────────────────────────────────────
+'Empty states': 'Empty states'
+'Pantallas vacías para listas sin datos, búsquedas sin resultados y errores.': 'Empty screens for lists with no data, empty search results and errors.'
+
+# ── ui-page-headers ───────────────────────────────────────────────────────────
+'Page headers': 'Page headers'
+'Encabezados de página con título, subtítulo, breadcrumb y acciones.': 'Page headings with title, subtitle, breadcrumb and actions.'
+
+# ── ui-auth ───────────────────────────────────────────────────────────────────
+'Auth': 'Auth'
+'Patrones de autenticación: login, recuperación de contraseña, 2FA y banners de sesión.': 'Authentication patterns: login, password recovery, 2FA and session banners.'
+
+# ── ui-user-profile ───────────────────────────────────────────────────────────
+'Perfil de usuario': 'User profile'
+'Patrones para editar perfil, cambiar contraseña y gestionar avatar.': 'Patterns for editing profile, changing password and managing avatar.'
+
+# ── ui-permissions ────────────────────────────────────────────────────────────
+'Permisos y roles': 'Permissions & roles'
+'Matriz de permisos, asignación de roles, chips y paneles de acceso denegado.': 'Permission matrix, role assignment, chips and access denied panels.'
+
+# ── ui-data-display ───────────────────────────────────────────────────────────
+'Visualización de datos': 'Data display'
+'Fichas de detalle, KPIs, pares clave-valor, auditoría y campos de solo lectura.': 'Detail cards, KPIs, key-value pairs, audit logs and read-only fields.'
+
+# ── ui-settings ───────────────────────────────────────────────────────────────
+'Configuración': 'Settings'
+'Patrones de páginas de ajustes: empresa, cuenta, plan activo y toggles.': 'Settings page patterns: company, account, active plan and toggles.'
+
+# ── ui-admin ──────────────────────────────────────────────────────────────────
+'Admin / Super-admin': 'Admin / Super-admin'
+'Patrones para gestión de tenants, planes, MRR e impersonation.': 'Patterns for managing tenants, plans, MRR and impersonation.'
+
+# ── ui-api-reference ──────────────────────────────────────────────────────────
+'API Reference': 'API Reference'
+'Patrones para documentar endpoints REST, JWT, request/response y códigos de estado.': 'Patterns for documenting REST endpoints, JWT, request/response and status codes.'
+
+# ── ui-tables-wide ────────────────────────────────────────────────────────────
+'Tablas (filtros anchos)': 'Tables (wide filters)'
+'Tabla de demo con panel de filtros más ancho y campos en dos columnas.': 'Demo table with wider filter panel and two-column field layout.'
+'Tablas (panel de filtros ancho)': 'Tables (wide filter panel)'
+'Vista de referencia para casos con filtros variables y layout de 2 campos por fila.': 'Reference view for cases with variable filters and 2-field-per-row layout.'
+tables_wide:
+    intro: 'Three DataTables button modes with GrovaDataTable.init: no buttons, full, and manual. Wide tables with dual horizontal scroll.'
+    filters_note: 'Filter panel uses the ui-tables-wide schema (two-column fields). Filters are demo-only; tables show the export bar per mode.'
+    mode_none_title: 'No buttons (none)'
+    mode_none_desc: 'Do not set buttons. Search, paging and page length only.'
+    mode_full_title: "buttons: 'full' (all)"
+    mode_full_desc: 'copy, csv, excel, pdf, print and colvis.'
+    mode_manual_title: 'Manual buttons (array)'
+    mode_manual_desc: 'Only what you list, e.g. copy, excel, pdf, colvis.'
+    col:
+        company: Company
+        city: City
+        phone: Phone
+        last_access: Last access
+        notes: Internal notes
+    status:
+        active: Active
+        pending: Pending
+        inactive: Inactive

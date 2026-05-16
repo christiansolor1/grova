@@ -1,14 +1,163 @@
 # yaml-language-server: $schema=../vendor/symfony/routing/Loader/schema/routing.schema.json
 
-# This file is the entry point to configure the routes of your app.
-# Methods with the #[Route] attribute are automatically imported.
-# See also https://symfony.com/doc/current/routing.html
+# ── API — sin prefijo de locale ───────────────────────────────────────────────
+api_controllers:
+    resource: '../src/Controller/Api/'
+    type: attribute
 
-# To list all registered routes, run the following command:
-#   bin/console debug:router
+# ── Web /{_locale}/ ─────────────────────────────────────────────────────────
+web_login:
+    resource: '../src/Controller/LoginController.php'
+    type: attribute
+    prefix: /{_locale}
+    name_prefix: ''
+    requirements:
+        _locale: es|en
+    defaults:
+        _locale: es
 
-controllers:
-    resource: routing.controllers
-api_login:
-    path: /api/auth/login
-    methods: [POST]
+web_workspace:
+    resource: '../src/Controller/WorkspaceController.php'
+    type: attribute
+    prefix: /{_locale}
+    name_prefix: ''
+    requirements:
+        _locale: es|en
+    defaults:
+        _locale: es
+
+web_workspace_pages:
+    resource: '../src/Controller/WorkspacePagesController.php'
+    type: attribute
+    prefix: /{_locale}
+    name_prefix: ''
+    requirements:
+        _locale: es|en
+    defaults:
+        _locale: es
+
+web_menu_builder:
+    resource: '../src/Controller/MenuBuilderController.php'
+    type: attribute
+    prefix: /{_locale}
+    name_prefix: ''
+    requirements:
+        _locale: es|en
+    defaults:
+        _locale: es
+
+web_ui_components:
+    resource: '../src/Controller/UiComponentsController.php'
+    type: attribute
+    prefix: /{_locale}
+    name_prefix: ''
+    requirements:
+        _locale: es|en
+    defaults:
+        _locale: es
+
+web_profile:
+    resource: '../src/Controller/ProfileController.php'
+    type: attribute
+    prefix: /{_locale}
+    name_prefix: ''
+    requirements:
+        _locale: es|en
+    defaults:
+        _locale: es
+
+web_users:
+    resource: '../src/Controller/UserController.php'
+    type: attribute
+    prefix: /{_locale}
+    name_prefix: ''
+    requirements:
+        _locale: es|en
+    defaults:
+        _locale: es
+
+web_wallet:
+    resource: '../src/Controller/WalletController.php'
+    type: attribute
+    prefix: /{_locale}
+    name_prefix: ''
+    requirements:
+        _locale: es|en
+    defaults:
+        _locale: es
+
+web_work:
+    resource: '../src/Controller/WorkController.php'
+    type: attribute
+    prefix: /{_locale}
+    name_prefix: ''
+    requirements:
+        _locale: es|en
+    defaults:
+        _locale: es
+
+web_contacts:
+    resource: '../src/Controller/ContactController.php'
+    type: attribute
+    prefix: /{_locale}
+    name_prefix: ''
+    requirements:
+        _locale: es|en
+    defaults:
+        _locale: es
+
+web_legal:
+    resource: '../src/Controller/LegalController.php'
+    type: attribute
+    prefix: /{_locale}
+    name_prefix: ''
+    requirements:
+        _locale: es|en
+    defaults:
+        _locale: es
+
+web_fishing:
+    resource: '../src/Controller/FishingController.php'
+    type: attribute
+    prefix: /{_locale}
+    name_prefix: ''
+    requirements:
+        _locale: es|en
+    defaults:
+        _locale: es
+
+web_construccion:
+    resource: '../src/Controller/ConstruccionController.php'
+    type: attribute
+    prefix: /{_locale}
+    name_prefix: ''
+    requirements:
+        _locale: es|en
+    defaults:
+        _locale: es
+
+# ── Raíz → redirige a /es/login ───────────────────────────────────────────────
+root:
+    path: /
+    controller: App\Controller\LoginController::home
+    methods: [GET]
+
+web_notifications:
+    resource: '../src/Controller/NotificationController.php'
+    type: attribute
+    prefix: /{_locale}
+    name_prefix: ''
+    requirements:
+        _locale: es|en
+    defaults:
+        _locale: es
+
+web_lock:
+    resource: '../src/Controller/LockController.php'
+    type: attribute
+    prefix: /{_locale}
+    name_prefix: ''
+    requirements:
+        _locale: es|en
+    defaults:
+        _locale: es

@@ -6,6 +6,7 @@ namespace App\Service;
 
 use App\Entity\Menu;
 use App\Repository\MenuRepository;
+use App\Service\TenantContext;
 use App\Workspace\WorkspaceLeafRoutes;
 use Symfony\Bundle\SecurityBundle\Security;
 use Symfony\Component\HttpFoundation\RequestStack;
@@ -21,16 +22,28 @@ final class MenuTreeBuilder
     /** Clave de menú que corresponde a la ruta “inicio” del panel (sin segmento de sección). */
     public const HOME_MENU_KEY = 'dashboard';
 
+    /**
+     * Claves de menú que corresponden a módulos — se muestran solo si el tenant los tiene activos.
+     * Las claves que NO están aquí (dashboard, users-*, ui-*, etc.) siempre se muestran.
+     */
+    private const MODULE_KEYS = [
+        'wallet', 'work', 'agenda', 'habitos', 'pesca',
+        'legal', 'contactos', 'construccion',
+        'pos', 'restaurante', 'clinica', 'financiera',
+        'inventario', 'rrhh', 'facturacion',
+    ];
+
     public function __construct(
         private readonly MenuRepository $menuRepository,
         private readonly UrlGeneratorInterface $urlGenerator,
         private readonly Security $security,
         private readonly RequestStack $requestStack,
+        private readonly TenantContext $tenantContext,
     ) {
     }
 
     /**
-     * @return list<array{id: string, label: string, icon: string, href: string|null, children: list<array<string, mixed>>}>
+     * @return list<array{id: string, label: string, icon: string, status: string, href: string|null, uiBadge: string|null, uiStyle: array<string, string>|null, children: list<array<string, mixed>>}>
      */
     /**
      * @param bool $includeDevOnlyItems p. ej. true si el usuario tiene ROLE_DEVELOPER (ítems con {@see Menu::isDevOnly}).
@@ -73,6 +86,99 @@ final class MenuTreeBuilder
     }
 
     /**
+     * Devuelve la cadena de keys desde la raíz hasta $targetKey (inclusive), o [] si no existe.
+     * Sirve para resaltar en el sidebar el camino a la vista actual.
+     *
+     * @param list<array<string, mixed>> $tree
+     *
+     * @return list<string>
+     */
+    public function getPathToMenuKey(array $tree, string $targetKey): array
+    {
+        $path = [];
+        if ($this->pathContainsKey($tree, $targetKey, $path)) {
+            return $path;
+        }
+
+        return [];
+    }
+
+    /**
+     * Nodos del menú desde la raíz hasta la clave activa (label + href del árbol ya resuelto).
+     *
+     * @param list<array<string, mixed>> $tree
+     *
+     * @return list<array{key: string, label: string, href: string|null}>
+     */
+    public function getMenuPathNodes(array $tree, string $activeMenuKey): array
+    {
+        if ($activeMenuKey === '') {
+            return [];
+        }
+
+        $keys = $this->getPathToMenuKey($tree, $activeMenuKey);
+        if ($keys === []) {
+            return [];
+        }
+
+        $nodes = [];
+        foreach ($keys as $key) {
+            $node = $this->findNodeById($tree, $key);
+            if ($node === null) {
+                continue;
+            }
+            $nodes[] = [
+                'key'   => $key,
+                'label' => (string) ($node['label'] ?? $key),
+                'href'  => $node['href'] ?? null,
+            ];
+        }
+
+        return $nodes;
+    }
+
+    /**
+     * @param list<array<string, mixed>> $tree
+     *
+     * @return array<string, mixed>|null
+     */
+    private function findNodeById(array $tree, string $id): ?array
+    {
+        foreach ($tree as $node) {
+            if (($node['id'] ?? '') === $id) {
+                return $node;
+            }
+            $found = $this->findNodeById($node['children'] ?? [], $id);
+            if ($found !== null) {
+                return $found;
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * @param list<array<string, mixed>> $tree
+     * @param list<string>             $path
+     */
+    private function pathContainsKey(array $tree, string $targetKey, array &$path): bool
+    {
+        foreach ($tree as $node) {
+            $path[] = $node['id'];
+            if ($node['id'] === $targetKey) {
+                return true;
+            }
+            $children = $node['children'] ?? [];
+            if ($children !== [] && $this->pathContainsKey($children, $targetKey, $path)) {
+                return true;
+            }
+            array_pop($path);
+        }
+
+        return false;
+    }
+
+    /**
      * @param list<array<string, mixed>> $tree
      *
      * @return list<string>
@@ -95,6 +201,10 @@ final class MenuTreeBuilder
      */
     private function filterVisible(array $menus, ?UserInterface $user, bool $includeDevOnlyItems): array
     {
+        $modulos        = $this->tenantContext->getModulosActivos();
+        $hasTenant      = $this->tenantContext->hasTenant();
+        $filterModules  = $hasTenant && $modulos !== [];
+
         $visible = [];
         foreach ($menus as $menu) {
             if ($menu->isDevOnly() && !$includeDevOnlyItems) {
@@ -103,6 +213,12 @@ final class MenuTreeBuilder
             $required = $menu->getRequiredRole();
             if ($required !== null && ($user === null || !$this->security->isGranted($required))) {
                 continue;
+            }
+            // Si el ítem corresponde a un módulo, solo mostrarlo si el tenant lo tiene activo
+            if ($filterModules && \in_array($menu->getMenuKey(), self::MODULE_KEYS, true)) {
+                if (!\in_array($menu->getMenuKey(), $modulos, true)) {
+                    continue;
+                }
             }
             $visible[] = $menu;
         }
@@ -135,7 +251,7 @@ final class MenuTreeBuilder
     /**
      * @param array<string, list<Menu>> $childrenMap
      *
-     * @return array{id: string, label: string, icon: string, href: string|null, children: list<array<string, mixed>>}
+     * @return array{id: string, label: string, icon: string, status: string, href: string|null, uiBadge: string|null, uiStyle: array<string, string>|null, children: list<array<string, mixed>>}
      */
     private function toNode(Menu $menu, array $childrenMap, bool $includeDevOnlyItems): array
     {
@@ -144,21 +260,39 @@ final class MenuTreeBuilder
         $childNodes  = array_map(fn (Menu $child) => $this->toNode($child, $childrenMap, $includeDevOnlyItems), $rawChildren);
         $hasChildren = $childNodes !== [];
 
+        $isPending = strtolower($menu->getStatus()) === 'pendiente';
+
+        $uiStyleRaw = $menu->getUiStyle();
+        $uiStyle = null;
+        if (\is_string($uiStyleRaw) && trim($uiStyleRaw) !== '') {
+            $decoded = json_decode($uiStyleRaw, true);
+            if (\is_array($decoded)) {
+                $uiStyle = $decoded;
+            }
+        }
+
         return [
             'id'       => $key,
             'label'    => $menu->getLabel(),
             'icon'     => $menu->getIcon(),
-            'href'     => $hasChildren ? null : $this->hrefForLeafKey($key),
+            'status'   => $menu->getStatus(),
+            'uiBadge'  => $menu->getUiBadge(),
+            'uiStyle'  => $uiStyle,
+            'href'     => ($hasChildren || $isPending) ? null : $this->hrefForLeafKey($key),
             'children' => $childNodes,
         ];
     }
 
-    private function hrefForLeafKey(string $menuKey): string
+    private function hrefForLeafKey(string $menuKey): ?string
     {
         $locale = $this->requestStack->getCurrentRequest()?->getLocale() ?? 'es';
         $params  = ['_locale' => $locale];
 
-        $route = WorkspaceLeafRoutes::routeNameForMenuKey($menuKey);
+        try {
+            $route = WorkspaceLeafRoutes::routeNameForMenuKey($menuKey);
+        } catch (\InvalidArgumentException) {
+            return null;
+        }
 
         return $this->urlGenerator->generate($route, $params);
     }

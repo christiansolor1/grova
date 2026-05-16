@@ -1,0 +1,54 @@
+<div class="row g-3">
+    <div class="col-sm-4">
+        <label class="form-label">Tipo</label>
+        <select class="form-select form-select-sm" name="tipo">
+            {% for key, label in {'cliente':'Cliente','proveedor':'Proveedor','empleado':'Empleado','paciente':'Paciente','otro':'Otro'} %}
+            <option value="{{ key }}" {{ contact and contact.tipo == key ? 'selected' : '' }}>{{ label }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <div class="col-sm-4">
+        <label class="form-label">Nombre *</label>
+        <input type="text" class="form-control form-control-sm" name="nombre" required maxlength="100"
+               value="{{ contact ? contact.nombre : '' }}">
+    </div>
+    <div class="col-sm-4">
+        <label class="form-label">Apellido</label>
+        <input type="text" class="form-control form-control-sm" name="apellido" maxlength="100"
+               value="{{ contact ? contact.apellido : '' }}">
+    </div>
+    <div class="col-sm-6">
+        <label class="form-label">Empresa</label>
+        <input type="text" class="form-control form-control-sm" name="empresa" maxlength="150"
+               value="{{ contact ? contact.empresa : '' }}">
+    </div>
+    <div class="col-sm-6">
+        <label class="form-label">Email</label>
+        <input type="email" class="form-control form-control-sm" name="email" maxlength="150"
+               value="{{ contact ? contact.email : '' }}">
+    </div>
+    <div class="col-sm-4">
+        <label class="form-label">Teléfono</label>
+        <input type="text" class="form-control form-control-sm" name="telefono" maxlength="30"
+               value="{{ contact ? contact.telefono : '' }}">
+    </div>
+    <div class="col-sm-4">
+        <label class="form-label">Ciudad</label>
+        <input type="text" class="form-control form-control-sm" name="ciudad" maxlength="100"
+               value="{{ contact ? contact.ciudad : '' }}">
+    </div>
+    <div class="col-sm-4">
+        <label class="form-label">País</label>
+        <input type="text" class="form-control form-control-sm" name="pais" maxlength="50"
+               value="{{ contact ? contact.pais : '' }}">
+    </div>
+    <div class="col-12">
+        <label class="form-label">Dirección</label>
+        <input type="text" class="form-control form-control-sm" name="direccion" maxlength="255"
+               value="{{ contact ? contact.direccion : '' }}">
+    </div>
+    <div class="col-12">
+        <label class="form-label">Notas</label>
+        <textarea class="form-control form-control-sm" name="notas" rows="2">{{ contact ? contact.notas : '' }}</textarea>
+    </div>
+</div>

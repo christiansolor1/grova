@@ -22,8 +22,8 @@ class MenuRepository extends ServiceEntityRepository
     public function findEnabledOrdered(): array
     {
         return $this->createQueryBuilder('m')
-            ->andWhere('m.enabled = :enabled')
-            ->setParameter('enabled', true)
+            ->andWhere('m.showInSidebar = :showInSidebar')
+            ->setParameter('showInSidebar', true)
             ->orderBy('m.sortOrder', 'ASC')
             ->addOrderBy('m.id', 'ASC')
             ->getQuery()

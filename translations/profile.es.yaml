@@ -1,0 +1,49 @@
+# ══ MÓDULO: Perfil de usuario ═════════════════════════════════════════════════
+# Dominio: profile
+# Uso en twig: {{ 'clave' | trans({}, 'profile') }}
+
+# ── Página ────────────────────────────────────────────────────────────────────
+profile.title: "Perfil de usuario"
+profile.subtitle: "Configura tu información personal y foto de perfil."
+
+# ── Formulario ────────────────────────────────────────────────────────────────
+profile.form_title: "Información de perfil"
+profile.change_photo: "Cambiar foto"
+profile.first_name: "Nombre"
+profile.last_name: "Apellido"
+profile.first_name_ph: "Tu nombre"
+profile.last_name_ph: "Tu apellido"
+profile.email: "Email"
+profile.phone: "Teléfono"
+profile.company: "Empresa"
+profile.position: "Cargo"
+profile.position_ph: "Tu cargo"
+profile.bio: "Biografía"
+profile.bio_ph: "Escribe una breve descripción sobre ti."
+profile.cancel: "Cancelar"
+profile.save: "Guardar cambios"
+
+# ── Seguridad ─────────────────────────────────────────────────────────────────
+profile.security_title: "Seguridad — Bloqueo de secciones"
+profile.locked_sections: "Secciones bloqueadas"
+profile.change_pin: "Cambiar PIN"
+profile.set_pin: "Establecer PIN"
+profile.pin_configured: "Configurado"
+profile.pin_placeholder: "4–8 dígitos (vacío = no cambiar)"
+profile.pin_hint: "Solo números."
+profile.relock_after: "Rebloquear después de"
+profile.ttl_1min: "1 minuto"
+profile.ttl_2min: "2 minutos"
+profile.ttl_5min: "5 minutos"
+profile.ttl_10min: "10 minutos"
+profile.ttl_15min: "15 minutos"
+profile.ttl_30min: "30 minutos"
+profile.ttl_1h: "1 hora"
+profile.ttl_2h: "2 horas"
+profile.ttl_8h: "8 horas"
+profile.biometric_title: "Huella / Face ID"
+profile.biometric_registered: "Credencial registrada"
+profile.biometric_delete: "Eliminar"
+profile.biometric_register: "Registrar huella / Face ID"
+profile.btn_save_security: "Guardar configuración"
+profile.confirm_delete_biometric: "¿Eliminar credencial biométrica?"

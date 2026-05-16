@@ -1,0 +1,778 @@
+{# Piel global DataTables (1.x + 2.x).
+   Default: Grova hybrid (quiet UI) — iconos semánticos, controles homogéneos, sin ruido.
+   Opcional: añadir clase .grova-dt-skin-rich al body, .dt-container o un wrapper para chip bar completo. #}
+/* ── Legacy DT1: inputs ── */
+.dataTables_wrapper .dataTables_filter input,
+.dataTables_wrapper .dataTables_length select {
+    background: #0f172a;
+    border: 1px solid #334155;
+    color: #e2e8f0;
+    border-radius: 6px;
+    padding: 4px 8px;
+    outline: none;
+}
+/* ── DT2: contenedor y tabla ── */
+.dt-container {
+    --grova-dt-inset: clamp(0.85rem, 2.5vw, 1.25rem);
+    box-sizing: border-box;
+    width: 100%;
+    max-width: 100%;
+    margin-bottom: 0;
+    padding: 0 var(--grova-dt-inset) 0.5rem;
+    overflow-x: hidden;
+}
+/* Card con DT: el contenedor aporta el inset; evita doble padding */
+.content-card-body.grova-dt-card-body,
+.content-card-body:has(> .dt-container),
+.content-card-body:has(> [data-grova-dual-scroll] > .dt-container) {
+    padding: 0;
+    overflow: hidden;
+}
+/* Bootstrap .row dentro de DT: sin márgenes negativos que rompen la simetría */
+.dt-container > .row,
+.dt-container > .dt-layout-row,
+.dt-container > .grova-dt-scroll-shell {
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    width: 100%;
+    max-width: 100%;
+}
+.dt-container > .grova-dt-scroll-shell {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+.dt-container .dt-layout-row.dt-layout-table {
+    margin-bottom: 0.35rem;
+    padding-left: 0;
+    padding-right: 0;
+}
+.dt-container .dt-layout-table {
+    overflow-x: visible;
+    margin-bottom: 0;
+}
+.dt-container .dt-layout-start,
+.dt-container .dt-layout-end {
+    padding-left: 0;
+    padding-right: 0;
+}
+.dt-container .dt-layout-end {
+    margin-left: 0 !important;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 0.35rem 0.5rem;
+}
+.dt-container .dt-layout-start {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.35rem 0.5rem;
+}
+.dt-container .dt-length label {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    font-size: 12px;
+    color: #94a3b8;
+    margin-bottom: 0;
+}
+body.light-mode .dt-container .dt-length label { color: #64748b; }
+.dt-container .dt-length select {
+    font-size: 12px;
+    padding: 0.28rem 2rem 0.28rem 0.55rem;
+    border-radius: 8px;
+    border: 1px solid #334155;
+    background: #0f172a;
+    color: #e2e8f0;
+    min-width: 4.5rem;
+}
+body.light-mode .dt-container .dt-length select {
+    background: #fff;
+    border-color: #cbd5e1;
+    color: #0f172a;
+}
+.dt-container .dt-search { margin: 0; }
+.dt-container .dt-search label {
+    font-size: 12px;
+    color: #94a3b8;
+    margin-right: 0.45rem;
+}
+body.light-mode .dt-container .dt-search label { color: #64748b; }
+.dt-container .dt-search .form-control {
+    font-size: 13px;
+    max-width: min(100%, 17rem);
+    border-radius: 999px;
+    padding: 0.35rem 0.9rem;
+    border: 1px solid #334155;
+    background: #0f172a;
+    color: #f1f5f9;
+}
+.dt-container .dt-search .form-control:focus {
+    border-color: #6366f1;
+    box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.22);
+}
+body.light-mode .dt-container .dt-search .form-control {
+    background: #fff;
+    border-color: #cbd5e1;
+    color: #0f172a;
+}
+/* Toolbar superior (default: limpia); overflow visible para dropdowns Buttons */
+.dt-container .dt-layout-row:not(.dt-layout-table) {
+    padding: 0.45rem 0;
+    align-items: center;
+    gap: 0.5rem 0.75rem;
+    background: transparent;
+    border: none;
+    border-radius: 0;
+    margin-bottom: 0.5rem;
+    overflow: visible;
+    position: relative;
+    z-index: 2;
+}
+.dt-container .dt-buttons.btn-group {
+    position: relative;
+}
+/* Colección Buttons: oculta si no está abierta; z-index sobre la tabla */
+div.dt-button-collection.dropdown-menu:not(.show) {
+    display: none !important;
+}
+div.dt-button-collection.dropdown-menu.show {
+    display: block !important;
+    z-index: 1200;
+}
+div.dt-button-collection.dtb-collection-fixed {
+    z-index: 1200;
+}
+/* Pie: leyenda + paginación — siempre debajo del shell (tabla + scroll inferior) */
+.dt-container > .grova-dt-scroll-shell + .row,
+.dt-container > .grova-dt-scroll-shell + .dt-layout-row,
+.dt-container > .grova-dt-scroll-foot + .row,
+.dt-container > .grova-dt-scroll-foot + .dt-layout-row,
+.dt-container > .row:last-child,
+.dt-container > .dt-layout-row:last-child {
+    margin-top: 0;
+    padding: 0.65rem 0 0.15rem;
+    border-top: 1px solid rgba(51, 65, 85, 0.35);
+    align-items: center;
+    gap: 0.5rem 0.75rem;
+    overflow-x: hidden;
+}
+body.light-mode .dt-container > .grova-dt-scroll-shell + .row,
+body.light-mode .dt-container > .grova-dt-scroll-shell + .dt-layout-row,
+body.light-mode .dt-container > .grova-dt-scroll-foot + .row,
+body.light-mode .dt-container > .grova-dt-scroll-foot + .dt-layout-row,
+body.light-mode .dt-container > .row:last-child,
+body.light-mode .dt-container > .dt-layout-row:last-child {
+    border-top-color: #e2e8f0;
+}
+.dt-container .dt-info {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+.dt-container .dt-paging {
+    flex: 0 1 auto;
+    min-width: 0;
+    max-width: 100%;
+}
+.dt-container .dt-info,
+.dataTables_wrapper .dataTables_info {
+    font-size: 12px;
+    font-weight: 400;
+    color: #94a3b8;
+    padding: 0;
+    margin: 0;
+    letter-spacing: 0.01em;
+}
+body.light-mode .dt-container .dt-info,
+body.light-mode .dataTables_wrapper .dataTables_info {
+    color: #64748b;
+}
+.dataTables_wrapper .dataTables_info,
+.dataTables_wrapper .dataTables_paginate {
+    color: #64748b;
+    font-size: 12px;
+}
+table.dataTable thead th {
+    border-bottom: 1px solid #334155 !important;
+    color: #64748b !important;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: .5px;
+    padding: 0.65rem 0.75rem;
+    white-space: nowrap;
+}
+table.dataTable tbody td {
+    border-bottom: 1px solid #1e293b !important;
+    color: #cbd5e1;
+    font-size: 13px;
+    padding: 0.6rem 0.75rem;
+    background-color: transparent;
+    transition: background-color 0.12s ease;
+}
+table.dataTable thead th:first-child,
+table.dataTable tbody td:first-child {
+    padding-left: 0.15rem;
+}
+table.dataTable thead th:last-child,
+table.dataTable tbody td:last-child {
+    padding-right: 0.15rem;
+}
+/* Filas pares (DT .even + nth-child); hover unificado y por encima del stripe */
+table.dataTable tbody tr.even > *,
+table.dataTable.table-hover > tbody > tr:nth-child(even) > * {
+    background-color: rgba(30, 41, 59, 0.38);
+}
+table.dataTable tbody tr:hover > *,
+table.dataTable.table-hover > tbody > tr:hover > * {
+    background-color: rgba(51, 65, 85, 0.44) !important;
+}
+body.light-mode table.dataTable thead th { border-bottom-color: #e2e8f0 !important; }
+body.light-mode table.dataTable tbody td {
+    border-bottom-color: #f1f5f9 !important;
+    color: #334155;
+}
+body.light-mode table.dataTable tbody tr.even > *,
+body.light-mode table.dataTable.table-hover > tbody > tr:nth-child(even) > * {
+    background-color: #f8fafc;
+}
+body.light-mode table.dataTable tbody tr:hover > *,
+body.light-mode table.dataTable.table-hover > tbody > tr:hover > * {
+    background-color: #e8eef4 !important;
+}
+
+/* ══════════════════════════════════════════════════════════════
+   DEFAULT — Grova hybrid (quiet UI)
+   ══════════════════════════════════════════════════════════════ */
+
+/* Barra de export: agrupación sutil */
+.dt-buttons,
+.dt-buttons.btn-group {
+    display: inline-flex !important;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.28rem;
+    padding: 0.28rem;
+    vertical-align: middle;
+    border-radius: 10px;
+    background: rgba(15, 23, 42, 0.35);
+    border: 1px solid rgba(51, 65, 85, 0.45);
+    box-shadow: none;
+}
+body.light-mode .dt-buttons,
+body.light-mode .dt-buttons.btn-group {
+    background: rgba(248, 250, 252, 0.9);
+    border-color: #e2e8f0;
+}
+/* Botones export/utilidades */
+.dt-buttons .btn,
+.dt-buttons .dt-button,
+.dt-container .dt-buttons button.dt-button {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 0.38rem !important;
+    font-size: 12px !important;
+    font-weight: 500 !important;
+    padding: 0.34rem 0.58rem !important;
+    line-height: 1.3 !important;
+    border-radius: 8px !important;
+    border: 1px solid rgba(71, 85, 105, 0.45) !important;
+    background: rgba(30, 41, 59, 0.55) !important;
+    color: #e2e8f0 !important;
+    box-shadow: none !important;
+    transform: none !important;
+    transition: border-color 0.12s ease, background 0.12s ease, color 0.12s ease !important;
+}
+.dt-buttons .btn:hover,
+.dt-buttons .dt-button:hover,
+.dt-container .dt-buttons button.dt-button:hover {
+    border-color: rgba(100, 116, 139, 0.65) !important;
+    background: rgba(51, 65, 85, 0.45) !important;
+    color: #f8fafc !important;
+    transform: none !important;
+    box-shadow: none !important;
+}
+.dt-buttons .btn.active,
+.dt-buttons .btn.show,
+.dt-buttons button.active,
+.dt-buttons .dt-button.active {
+    border-color: rgba(99, 102, 241, 0.55) !important;
+    background: rgba(99, 102, 241, 0.18) !important;
+    color: #e0e7ff !important;
+}
+body.light-mode .dt-buttons .btn,
+body.light-mode .dt-buttons .dt-button,
+body.light-mode .dt-container .dt-buttons button.dt-button {
+    border-color: #e2e8f0 !important;
+    background: #fff !important;
+    color: #475569 !important;
+}
+body.light-mode .dt-buttons .btn:hover,
+body.light-mode .dt-buttons .dt-button:hover {
+    background: #f1f5f9 !important;
+    border-color: #cbd5e1 !important;
+    color: #0f172a !important;
+}
+body.light-mode .dt-buttons .btn.active,
+body.light-mode .dt-buttons .btn.show,
+body.light-mode .dt-buttons .dt-button.active {
+    border-color: #a5b4fc !important;
+    background: #eef2ff !important;
+    color: #4338ca !important;
+}
+/* Iconos: badge pequeño + color semántico */
+div.dt-button-collection .dt-button::before,
+div.dt-button-collection button.dt-button::before,
+div.dt-button-collection .dropdown-item::before {
+    content: none !important;
+    display: none !important;
+}
+.dt-buttons button[class*="buttons-"]::before,
+.dt-buttons .btn[class*="buttons-"]::before {
+    display: inline-flex !important;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    width: 1.2rem;
+    height: 1.2rem;
+    border-radius: 6px;
+    font-family: "bootstrap-icons" !important;
+    font-size: 11px;
+    line-height: 1;
+    -webkit-font-smoothing: antialiased;
+}
+.dt-buttons button.buttons-copy::before, .dt-buttons .btn.buttons-copy::before { content: "\f290"; background: rgba(99, 102, 241, 0.18); color: #a5b4fc; }
+.dt-buttons button.buttons-csv::before, .dt-buttons .btn.buttons-csv::before { content: "\f743"; background: rgba(20, 184, 166, 0.18); color: #5eead4; }
+.dt-buttons button.buttons-excel::before, .dt-buttons .btn.buttons-excel::before { content: "\f367"; background: rgba(22, 163, 74, 0.2); color: #4ade80; }
+.dt-buttons button.buttons-pdf::before, .dt-buttons .btn.buttons-pdf::before { content: "\f63d"; background: rgba(239, 68, 68, 0.18); color: #fca5a5; }
+.dt-buttons button.buttons-print::before, .dt-buttons .btn.buttons-print::before { content: "\f501"; background: rgba(148, 163, 184, 0.18); color: #cbd5e1; }
+.dt-buttons button.buttons-colvis::before, .dt-buttons .btn.buttons-colvis::before { content: "\f465"; background: rgba(139, 92, 246, 0.18); color: #c4b5fd; }
+body.light-mode .dt-buttons button.buttons-copy::before, body.light-mode .dt-buttons .btn.buttons-copy::before { background: rgba(99, 102, 241, 0.1); color: #4f46e5; }
+body.light-mode .dt-buttons button.buttons-csv::before, body.light-mode .dt-buttons .btn.buttons-csv::before { background: rgba(13, 148, 136, 0.1); color: #0f766e; }
+body.light-mode .dt-buttons button.buttons-excel::before, body.light-mode .dt-buttons .btn.buttons-excel::before { background: rgba(22, 163, 74, 0.12); color: #15803d; }
+body.light-mode .dt-buttons button.buttons-pdf::before, body.light-mode .dt-buttons .btn.buttons-pdf::before { background: rgba(220, 38, 38, 0.1); color: #b91c1c; }
+body.light-mode .dt-buttons button.buttons-print::before, body.light-mode .dt-buttons .btn.buttons-print::before { background: rgba(100, 116, 139, 0.1); color: #475569; }
+body.light-mode .dt-buttons button.buttons-colvis::before, body.light-mode .dt-buttons .btn.buttons-colvis::before { background: rgba(124, 58, 237, 0.1); color: #6d28d9; }
+.dt-buttons button.buttons-colvis,
+.dt-buttons .btn.buttons-colvis {
+    margin-left: 0.25rem;
+    padding-left: 0.7rem !important;
+    position: relative;
+}
+.dt-buttons button.buttons-colvis::after,
+.dt-buttons .btn.buttons-colvis::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 20%;
+    bottom: 20%;
+    width: 1px;
+    background: rgba(71, 85, 105, 0.4);
+}
+body.light-mode .dt-buttons button.buttons-colvis::after { background: #e2e8f0; }
+div.dt-button-collection {
+    background: #0f172a !important;
+    border: 1px solid #334155 !important;
+    border-radius: 10px !important;
+    box-shadow: 0 10px 28px rgba(0, 0, 0, 0.35) !important;
+    padding: 0.35rem !important;
+}
+div.dt-button-collection .dt-button,
+div.dt-button-collection button.dt-button {
+    border: none !important;
+    background: transparent !important;
+    border-radius: 6px !important;
+    color: #e2e8f0 !important;
+    font-weight: 400 !important;
+    font-size: 12px !important;
+}
+div.dt-button-collection .dt-button:hover { background: rgba(51, 65, 85, 0.5) !important; }
+body.light-mode div.dt-button-collection {
+    background: #fff !important;
+    border-color: #e2e8f0 !important;
+    box-shadow: 0 10px 28px rgba(15, 23, 42, 0.08) !important;
+}
+body.light-mode div.dt-button-collection .dt-button { color: #334155 !important; }
+body.light-mode div.dt-button-collection .dt-button:hover { background: #f1f5f9 !important; }
+
+/* Paginación — mismos tokens que botones (DT2) */
+.dt-container .dt-paging { font-size: 12px; }
+.dt-container .dt-paging .pagination {
+    margin-bottom: 0;
+    gap: 0.2rem;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+}
+.dt-container .dt-paging .page-link {
+    border-radius: 8px;
+    padding: 0.34rem 0.58rem;
+    font-size: 12px;
+    font-weight: 500;
+    line-height: 1.3;
+    border: 1px solid rgba(71, 85, 105, 0.45);
+    background: rgba(30, 41, 59, 0.55);
+    color: #e2e8f0;
+    box-shadow: none;
+    transition: border-color 0.12s ease, background 0.12s ease, color 0.12s ease;
+}
+.dt-container .dt-paging .page-item.active .page-link {
+    border-color: rgba(99, 102, 241, 0.55);
+    background: rgba(99, 102, 241, 0.18);
+    color: #e0e7ff;
+    font-weight: 600;
+}
+.dt-container .dt-paging .page-link:hover {
+    border-color: rgba(100, 116, 139, 0.65);
+    background: rgba(51, 65, 85, 0.45);
+    color: #f8fafc;
+}
+body.light-mode .dt-container .dt-paging .page-link {
+    border-color: #e2e8f0;
+    color: #475569;
+    background: #fff;
+}
+body.light-mode .dt-container .dt-paging .page-link:hover {
+    background: #f1f5f9;
+    border-color: #cbd5e1;
+    color: #0f172a;
+}
+body.light-mode .dt-container .dt-paging .page-item.active .page-link {
+    border-color: #a5b4fc;
+    background: #eef2ff;
+    color: #4338ca;
+}
+/* Paginación legacy DT1 */
+.dataTables_wrapper .dataTables_paginate .paginate_button {
+    color: #e2e8f0 !important;
+    border-radius: 8px !important;
+    padding: 0.34rem 0.58rem !important;
+    border: 1px solid rgba(71, 85, 105, 0.45) !important;
+    background: rgba(30, 41, 59, 0.55) !important;
+    font-size: 12px !important;
+    font-weight: 500 !important;
+}
+.dataTables_wrapper .dataTables_paginate .paginate_button.current {
+    background: rgba(99, 102, 241, 0.18) !important;
+    border-color: rgba(99, 102, 241, 0.55) !important;
+    color: #e0e7ff !important;
+    font-weight: 600 !important;
+}
+.dataTables_wrapper .dataTables_paginate .paginate_button:hover {
+    background: rgba(51, 65, 85, 0.45) !important;
+    border-color: rgba(100, 116, 139, 0.65) !important;
+    color: #f8fafc !important;
+}
+body.light-mode .dataTables_wrapper .dataTables_paginate .paginate_button {
+    border-color: #e2e8f0 !important;
+    color: #475569 !important;
+    background: #fff !important;
+}
+body.light-mode .dataTables_wrapper .dataTables_paginate .paginate_button.current {
+    background: #eef2ff !important;
+    border-color: #a5b4fc !important;
+    color: #4338ca !important;
+}
+body.light-mode .dataTables_wrapper .dataTables_paginate .paginate_button:hover {
+    background: #f1f5f9 !important;
+    border-color: #cbd5e1 !important;
+    color: #0f172a !important;
+}
+
+/* ══════════════════════════════════════════════════════════════
+   OPCIONAL — .grova-dt-skin-rich (chip bar completo, demos)
+   Uso: class en body, .content-card o .dt-container
+   ══════════════════════════════════════════════════════════════ */
+.grova-dt-skin-rich .dt-container .dt-layout-row:not(.dt-layout-table) {
+    padding: 0.65rem 0.85rem;
+    background: rgba(15, 23, 42, 0.65);
+    border: 1px solid rgba(51, 65, 85, 0.65);
+    border-radius: 10px;
+    margin-bottom: 0.65rem;
+}
+body.light-mode .grova-dt-skin-rich .dt-container .dt-layout-row:not(.dt-layout-table) {
+    background: #f8fafc;
+    border-color: #e2e8f0;
+}
+.grova-dt-skin-rich .dt-buttons,
+.grova-dt-skin-rich .dt-buttons.btn-group {
+    gap: 0.38rem;
+    padding: 0.38rem 0.48rem;
+    border-radius: 12px;
+    background: linear-gradient(165deg, rgba(30, 41, 59, 0.82) 0%, rgba(15, 23, 42, 0.94) 100%);
+    border: 1px solid rgba(71, 85, 105, 0.55);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05), 0 2px 10px rgba(0, 0, 0, 0.22);
+}
+body.light-mode .grova-dt-skin-rich .dt-buttons,
+body.light-mode .grova-dt-skin-rich .dt-buttons.btn-group {
+    background: linear-gradient(165deg, #ffffff 0%, #f1f5f9 100%);
+    border-color: rgba(203, 213, 225, 0.95);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.85), 0 1px 6px rgba(15, 23, 42, 0.07);
+}
+.grova-dt-skin-rich .dt-buttons .btn,
+.grova-dt-skin-rich .dt-buttons .dt-button,
+.grova-dt-skin-rich .dt-container .dt-buttons button.dt-button {
+    gap: 0.42rem !important;
+    font-size: 11.5px !important;
+    font-weight: 600 !important;
+    letter-spacing: 0.02em !important;
+    padding: 0.4rem 0.72rem !important;
+    border-radius: 9px !important;
+    background: linear-gradient(180deg, rgba(51, 65, 85, 0.42) 0%, rgba(30, 41, 59, 0.72) 100%) !important;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.14), inset 0 1px 0 rgba(255, 255, 255, 0.06) !important;
+}
+.grova-dt-skin-rich .dt-buttons .btn:hover,
+.grova-dt-skin-rich .dt-buttons .dt-button:hover {
+    transform: translateY(-1px);
+    border-color: rgba(129, 140, 248, 0.6) !important;
+    background: linear-gradient(180deg, rgba(71, 85, 105, 0.55) 0%, rgba(51, 65, 85, 0.82) 100%) !important;
+    color: #ffffff !important;
+    box-shadow: 0 3px 12px rgba(99, 102, 241, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.08) !important;
+}
+.grova-dt-skin-rich .dt-buttons .btn.active,
+.grova-dt-skin-rich .dt-buttons .btn.show,
+.grova-dt-skin-rich .dt-buttons .dt-button.active {
+    border-color: #6366f1 !important;
+    background: linear-gradient(180deg, rgba(79, 70, 229, 0.32) 0%, rgba(67, 56, 202, 0.48) 100%) !important;
+    color: #e0e7ff !important;
+}
+body.light-mode .grova-dt-skin-rich .dt-buttons .btn,
+body.light-mode .grova-dt-skin-rich .dt-buttons .dt-button {
+    background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%) !important;
+}
+body.light-mode .grova-dt-skin-rich .dt-buttons .btn:hover {
+    background: linear-gradient(180deg, #ffffff 0%, #eef2ff 100%) !important;
+}
+.grova-dt-skin-rich .dt-buttons button[class*="buttons-"]::before,
+.grova-dt-skin-rich .dt-buttons .btn[class*="buttons-"]::before {
+    width: 1.42rem;
+    height: 1.42rem;
+    border-radius: 7px;
+    font-size: 12.5px;
+    transition: background 0.15s ease, color 0.15s ease, transform 0.12s ease;
+}
+.grova-dt-skin-rich .dt-buttons button.buttons-copy:hover::before,
+.grova-dt-skin-rich .dt-buttons .btn.buttons-copy:hover::before { transform: scale(1.06); }
+.grova-dt-skin-rich .dt-buttons button.buttons-csv:hover::before,
+.grova-dt-skin-rich .dt-buttons .btn.buttons-csv:hover::before { transform: scale(1.06); }
+.grova-dt-skin-rich .dt-buttons button.buttons-excel:hover::before,
+.grova-dt-skin-rich .dt-buttons .btn.buttons-excel:hover::before { transform: scale(1.06); }
+.grova-dt-skin-rich .dt-buttons button.buttons-pdf:hover::before,
+.grova-dt-skin-rich .dt-buttons .btn.buttons-pdf:hover::before { transform: scale(1.06); }
+.grova-dt-skin-rich .dt-buttons button.buttons-print:hover::before,
+.grova-dt-skin-rich .dt-buttons .btn.buttons-print:hover::before { transform: scale(1.06); }
+.grova-dt-skin-rich .dt-buttons button.buttons-colvis:hover::before,
+.grova-dt-skin-rich .dt-buttons .btn.buttons-colvis:hover::before { transform: scale(1.06); }
+.grova-dt-skin-rich .dt-buttons button.buttons-pageLength:hover::before,
+.grova-dt-skin-rich .dt-buttons .btn.buttons-pageLength:hover::before { transform: scale(1.06); }
+.grova-dt-skin-rich .dt-buttons button.buttons-colvis,
+.grova-dt-skin-rich .dt-buttons .btn.buttons-colvis {
+    margin-left: 0.15rem;
+    padding-left: 0.85rem !important;
+}
+.grova-dt-skin-rich div.dt-button-collection {
+    background: linear-gradient(165deg, #0f172a 0%, #020617 100%) !important;
+    border-radius: 12px !important;
+    box-shadow: 0 16px 36px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.04) !important;
+}
+body.light-mode .grova-dt-skin-rich div.dt-button-collection {
+    background: linear-gradient(165deg, #ffffff 0%, #f8fafc 100%) !important;
+}
+.grova-dt-skin-rich .dt-container .dt-paging .page-link {
+    border-radius: 9px;
+    padding: 0.32rem 0.55rem;
+    border: 1px solid rgba(100, 116, 139, 0.45);
+    background: linear-gradient(180deg, rgba(51, 65, 85, 0.42) 0%, rgba(30, 41, 59, 0.72) 100%);
+    color: #f1f5f9;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.14), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+.grova-dt-skin-rich .dt-container .dt-paging .page-item.active .page-link {
+    border-color: #6366f1;
+    background: linear-gradient(180deg, rgba(79, 70, 229, 0.32) 0%, rgba(67, 56, 202, 0.48) 100%);
+    color: #e0e7ff;
+    box-shadow: 0 0 0 1px rgba(99, 102, 241, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+.grova-dt-skin-rich .dt-container .dt-paging .page-link:hover {
+    transform: translateY(-1px);
+    border-color: rgba(129, 140, 248, 0.6);
+    background: linear-gradient(180deg, rgba(71, 85, 105, 0.55) 0%, rgba(51, 65, 85, 0.82) 100%);
+    color: #ffffff;
+}
+body.light-mode .grova-dt-skin-rich .dt-container .dt-paging .page-link {
+    background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+}
+body.light-mode .grova-dt-skin-rich .dt-container .dt-paging .page-item.active .page-link {
+    background: linear-gradient(180deg, #eef2ff 0%, #e0e7ff 100%);
+    color: #4338ca;
+}
+.grova-dt-skin-rich .dataTables_wrapper .dataTables_paginate .paginate_button {
+    border-radius: 9px !important;
+    background: linear-gradient(180deg, rgba(51, 65, 85, 0.42) 0%, rgba(30, 41, 59, 0.72) 100%) !important;
+}
+.grova-dt-skin-rich .dataTables_wrapper .dataTables_paginate .paginate_button.current {
+    background: linear-gradient(180deg, rgba(79, 70, 229, 0.32) 0%, rgba(67, 56, 202, 0.48) 100%) !important;
+    border-color: #6366f1 !important;
+}
+.grova-dt-skin-rich .dataTables_wrapper .dataTables_paginate .paginate_button:hover {
+    background: linear-gradient(180deg, rgba(71, 85, 105, 0.55) 0%, rgba(51, 65, 85, 0.82) 100%) !important;
+}
+
+/* ── Doble scroll: arriba thead · centro tabla · abajo leyenda/paginación ── */
+.dt-container,
+.work-invoice-dt-scroll-wrap,
+[data-grova-dual-scroll] {
+    min-width: 0;
+    max-width: 100%;
+}
+.work-invoice-dt-scroll-wrap,
+[data-grova-dual-scroll] {
+    overflow-x: hidden;
+}
+.dt-container .dt-layout-row.dt-layout-table {
+    overflow-x: hidden;
+    overflow-y: visible;
+    min-width: 0;
+    max-width: 100%;
+}
+.dt-container .dt-layout-row.dt-layout-table .dt-layout-cell,
+.dt-container .dt-layout-row.dt-layout-table .dt-layout-full {
+    padding-left: 0;
+    padding-right: 0;
+    min-width: 0;
+    max-width: 100%;
+    width: 100%;
+}
+/* Barras de scroll alineadas al ancho útil de la tabla (sin desbordar el card) */
+.dt-container .grova-dt-scroll-top,
+.dt-container .grova-dt-scroll-foot {
+    box-sizing: border-box;
+    max-width: 100%;
+}
+.dt-container .grova-dt-scroll-top {
+    overflow-x: auto;
+    overflow-y: hidden;
+    height: 14px;
+    margin: 0 0 0.2rem;
+    scrollbar-width: thin;
+    scrollbar-color: #475569 transparent;
+}
+.dt-container .grova-dt-scroll-top::-webkit-scrollbar {
+    height: 8px;
+}
+.dt-container .grova-dt-scroll-top::-webkit-scrollbar-thumb {
+    background: #475569;
+    border-radius: 4px;
+}
+body.light-mode .dt-container .grova-dt-scroll-top,
+body.light-mode .dt-container .grova-dt-scroll-foot {
+    scrollbar-color: #94a3b8 transparent;
+}
+body.light-mode .dt-container .grova-dt-scroll-top::-webkit-scrollbar-thumb,
+body.light-mode .dt-container .grova-dt-scroll-foot::-webkit-scrollbar-thumb {
+    background: #94a3b8;
+}
+.dt-container .grova-dt-scroll-top.is-hidden {
+    display: none !important;
+}
+.dt-container .grova-dt-scroll-top-inner {
+    height: 1px;
+}
+/* Tabla — scroll real (barra oculta; rueda en la tabla; top + foot visibles) */
+.dt-container .grova-dt-scroll-body {
+    overflow-x: auto;
+    overflow-y: visible;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+}
+.dt-container .grova-dt-scroll-body::-webkit-scrollbar {
+    display: none;
+    height: 0;
+}
+/* Barra inferior — al final del shell, antes del pie DT */
+.dt-container .grova-dt-scroll-shell > .grova-dt-scroll-foot,
+.dt-container > .grova-dt-scroll-foot {
+    display: block;
+    width: 100%;
+    max-width: 100%;
+    overflow-x: auto;
+    overflow-y: hidden;
+    height: 14px;
+    margin: 0.15rem 0 0;
+    padding: 0;
+    flex-shrink: 0;
+    order: 2;
+    scrollbar-width: thin;
+    scrollbar-color: #475569 transparent;
+}
+.dt-container .grova-dt-scroll-shell > .row.dt-layout-table,
+.dt-container .grova-dt-scroll-shell > .dt-layout-table {
+    order: 1;
+}
+/* Ocultar barra si quedó dentro de la celda por error */
+.dt-container .dt-layout-full > .grova-dt-scroll-foot,
+.dt-container .dt-layout-cell > .grova-dt-scroll-foot {
+    display: none !important;
+}
+.dt-container .grova-dt-scroll-foot.is-hidden {
+    display: none !important;
+}
+.dt-container .grova-dt-scroll-foot-inner {
+    height: 1px;
+}
+.dt-container .grova-dt-scroll-foot::-webkit-scrollbar {
+    height: 8px;
+}
+.dt-container .grova-dt-scroll-foot::-webkit-scrollbar-thumb {
+    background: #475569;
+    border-radius: 4px;
+}
+/* Legacy work (antes de init DT) */
+.work-invoice-dt-scroll-wrap,
+.grova-dt-dual-scroll-wrap {
+    position: relative;
+    width: 100%;
+}
+.work-invoice-table-wrap,
+.grova-dt-scroll-bottom {
+    overflow-x: auto;
+}
+
+/* Responsive: toolbar y pie apilados con aire simétrico */
+@media (max-width: 767.98px) {
+    .dt-container {
+        --grova-dt-inset: 0.75rem;
+    }
+    .dt-container .dt-layout-row:not(.dt-layout-table) {
+        flex-direction: column;
+        align-items: stretch !important;
+    }
+    .dt-container .dt-layout-row:last-child {
+        flex-direction: column;
+        align-items: stretch !important;
+    }
+    .dt-container .dt-layout-start,
+    .dt-container .dt-layout-end {
+        width: 100%;
+        max-width: 100%;
+        justify-content: flex-start !important;
+    }
+    .dt-container .dt-search {
+        width: 100%;
+    }
+    .dt-container .dt-search .form-control {
+        max-width: 100%;
+        width: 100%;
+    }
+    .dt-container .dt-paging .pagination {
+        justify-content: center;
+    }
+}
+@media (max-width: 575.98px) {
+    .dt-container .dt-paging .page-link {
+        padding: 0.3rem 0.45rem;
+        font-size: 11px;
+    }
+}

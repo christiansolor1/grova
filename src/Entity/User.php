@@ -34,6 +34,16 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Column(length: 180)]
     private ?string $username = null;
 
+    #[ORM\ManyToOne(targetEntity: Tenant::class)]
+    #[ORM\JoinColumn(nullable: true, onDelete: 'SET NULL')]
+    private ?Tenant $tenant = null;
+
+    #[ORM\Column(length: 100, nullable: true)]
+    private ?string $nombre = null;
+
+    #[ORM\Column(length: 100, nullable: true)]
+    private ?string $apellido = null;
+
     public function getId(): ?int
     {
         return $this->id;
@@ -104,7 +114,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function __serialize(): array
     {
         $data = (array) $this;
-        $data["\0".self::class."\0password"] = hash('crc32c', $this->password);
+        $data["\0".self::class."\0password"] = hash('crc32c', (string) ($this->password ?? ''));
 
         return $data;
     }
@@ -125,5 +135,37 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         $this->username = $username;
 
         return $this;
+    }
+
+    public function getTenant(): ?Tenant
+    {
+        return $this->tenant;
+    }
+
+    public function setTenant(?Tenant $tenant): static
+    {
+        $this->tenant = $tenant;
+
+        return $this;
+    }
+
+    public function getNombre(): ?string { return $this->nombre; }
+    public function setNombre(?string $nombre): static { $this->nombre = $nombre; return $this; }
+
+    public function getApellido(): ?string { return $this->apellido; }
+    public function setApellido(?string $apellido): static { $this->apellido = $apellido; return $this; }
+
+    public function getNombreCompleto(): string
+    {
+        return trim(($this->nombre ?? '') . ' ' . ($this->apellido ?? ''));
+    }
+
+    /** Iniciales para el avatar. */
+    public function getInitials(): string
+    {
+        $n = $this->nombre ? mb_strtoupper(mb_substr($this->nombre, 0, 1)) : '';
+        $a = $this->apellido ? mb_strtoupper(mb_substr($this->apellido, 0, 1)) : '';
+
+        return ($n . $a) ?: mb_strtoupper(mb_substr($this->email ?? '?', 0, 2));
     }
 }

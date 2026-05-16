@@ -1,0 +1,50 @@
+{% set raw = (icon|default('bi-list'))|trim %}
+{% set key = raw|lower %}
+{% set size = size|default(16) %}
+{% set legacy_to_bi = {
+    'dashboard': 'bi-grid',
+    'users': 'bi-people',
+    'list': 'bi-list',
+    'shield': 'bi-shield',
+    'plug': 'bi-plug',
+    'check': 'bi-check2',
+    'edit': 'bi-pencil',
+    'alert': 'bi-exclamation-triangle',
+    'settings': 'bi-gear',
+    'layout': 'bi-layout-sidebar',
+    'user': 'bi-person',
+    'dot': 'bi-dot',
+    'folder': 'bi-folder',
+} %}
+{% if 'fa-' in key %}
+    {% set fa_style = 'fa-solid' %}
+    {% if key starts with 'fa-brands ' %}
+        {% set fa_style = 'fa-brands' %}
+    {% elseif key starts with 'fa-regular ' %}
+        {% set fa_style = 'fa-regular' %}
+    {% elseif key starts with 'fa-light ' %}
+        {% set fa_style = 'fa-light' %}
+    {% elseif key starts with 'fa-duotone ' %}
+        {% set fa_style = 'fa-duotone' %}
+    {% endif %}
+    {% set fa_name = '' %}
+    {% for token in key|split(' ') %}
+        {% if token starts with 'fa-' and token not in ['fa-solid','fa-regular','fa-brands','fa-light','fa-duotone'] %}
+            {% set fa_name = token %}
+        {% endif %}
+    {% endfor %}
+    {% set icon_class = fa_style ~ ' ' ~ (fa_name != '' ? fa_name : 'fa-circle-question') %}
+{% elseif 'bi-' in key %}
+    {% set bi_name = '' %}
+    {% for token in key|split(' ') %}
+        {% if token starts with 'bi-' %}
+            {% set bi_name = token %}
+        {% endif %}
+    {% endfor %}
+    {% set icon_class = 'bi ' ~ (bi_name != '' ? bi_name : 'bi-list') %}
+{% else %}
+    {% set icon_class = 'bi ' ~ (legacy_to_bi[key]|default('bi-list')) %}
+{% endif %}
+<span class="nav-icon" aria-hidden="true">
+    <i class="{{ icon_class }}" style="font-size: {{ size }}px;"></i>
+</span>

@@ -1,0 +1,201 @@
+{% extends 'workspace/app_layout.html.twig' %}
+{% block page_title %}{{ finca.nombre }}{% endblock %}
+{% block app_page_subtitle %}
+    {% if finca.hasCoords %}GPS: {{ finca.latitud }}, {{ finca.longitud }}{% else %}Sin coordenadas GPS{% endif %}
+{% endblock %}
+
+{% block page_styles %}
+<style>
+.tag-funciona { background:#16a34a22; color:#4ade80; border:1px solid #16a34a44; font-size:11px; padding:2px 8px; border-radius:10px; }
+.tag-no-funciona { background:#dc262622; color:#f87171; border:1px solid #dc262644; font-size:11px; padding:2px 8px; border-radius:10px; }
+.tide-card { background:#0f172a; border:1px solid #1e3a5f; border-radius:10px; padding:.75rem 1rem; }
+body.light-mode .tide-card { background:#eff6ff; border-color:#bfdbfe; }
+.tide-alta { color:#60a5fa; font-weight:700; }
+.tide-baja { color:#94a3b8; }
+</style>
+{% endblock %}
+
+{% block app_main %}
+
+<div class="mb-3">
+    <a href="{{ path('grova_fishing_index', {_locale: app.request.locale}) }}" style="font-size:13px;color:#6366f1;">
+        <i class="bi bi-arrow-left me-1"></i>Volver a Pesca
+    </a>
+</div>
+
+<div class="row g-3">
+
+    {# ── Señuelos que funcionan / no funcionan ── #}
+    <div class="col-lg-7">
+        <div class="content-card">
+            <div class="content-card-header">
+                Señuelos en {{ finca.nombre }}
+                <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#modal-resultado">
+                    <i class="bi bi-plus-lg me-1"></i>Registrar resultado
+                </button>
+            </div>
+            <div class="content-card-body p-0">
+                {% if results|length > 0 %}
+                <ul class="list-group list-group-flush">
+                    {% for result in results %}
+                    <li class="list-group-item d-flex align-items-center gap-3" style="background:transparent;border-color:#1e293b;">
+                        <div style="flex:1;">
+                            <div style="font-weight:600;font-size:13px;">{{ result.lure.nombre }}</div>
+                            {% if result.lure.marca %}<div style="font-size:11px;color:#64748b;">{{ result.lure.marca }}{% if result.lure.color %} · {{ result.lure.color }}{% endif %}</div>{% endif %}
+                            {% if result.notas %}<div style="font-size:11px;color:#94a3b8;margin-top:2px;">{{ result.notas }}</div>{% endif %}
+                        </div>
+                        <div style="font-size:11px;color:#475569;">{{ result.createdAt|date('d/m/Y') }}</div>
+                        {% if result.funciono %}
+                        <span class="tag-funciona"><i class="bi bi-check-circle me-1"></i>Funciona</span>
+                        {% else %}
+                        <span class="tag-no-funciona"><i class="bi bi-x-circle me-1"></i>No funciona</span>
+                        {% endif %}
+                    </li>
+                    {% endfor %}
+                </ul>
+                {% else %}
+                <div class="grova-empty-state">
+                    <div class="grova-empty-icon"><i class="bi bi-fish"></i></div>
+                    <div class="grova-empty-title">Sin resultados registrados</div>
+                    <div class="grova-empty-desc">Registra qué señuelos funcionan en esta finca.</div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    {# ── Panel lateral ── #}
+    <div class="col-lg-5">
+
+        {# Descripción #}
+        {% if finca.descripcion %}
+        <div class="content-card mb-3">
+            <div class="content-card-header">Descripción</div>
+            <div class="content-card-body" style="font-size:13px;color:#94a3b8;">{{ finca.descripcion }}</div>
+        </div>
+        {% endif %}
+
+        {# Mareas — consulta manual #}
+        <div class="content-card">
+            <div class="content-card-header">
+                Mareas
+                {% if finca.hasCoords %}
+                <button type="button" class="btn btn-sm btn-outline-primary" id="btn-consultar-mareas">
+                    <i class="bi bi-water me-1"></i>Consultar
+                </button>
+                {% endif %}
+            </div>
+            <div class="content-card-body">
+                {% if not finca.hasCoords %}
+                <div style="font-size:12px;color:#475569;">Esta finca no tiene coordenadas GPS. Agrégalas para consultar mareas.</div>
+                {% else %}
+                <div class="mb-2">
+                    <input type="date" id="tide-date" class="form-control form-control-sm" value="{{ 'now'|date('Y-m-d') }}" style="max-width:180px;">
+                </div>
+                <div id="tide-result" style="font-size:13px;color:#64748b;">
+                    Presiona "Consultar" para ver las mareas del día. <br>
+                    <small style="font-size:11px;">Los resultados se cachean 24 horas (plan gratuito: 10 consultas/día).</small>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+    </div>
+</div>
+
+{# ── Modal: Registrar resultado de señuelo ── #}
+<div class="modal fade" id="modal-resultado" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <form method="post" action="{{ path('grova_fishing_lure_result_create', {_locale: app.request.locale}) }}">
+                <input type="hidden" name="_token" value="{{ csrf_token('fishing_lure_result') }}">
+                <input type="hidden" name="finca_id" value="{{ finca.id }}">
+                <input type="hidden" name="redirect_finca" value="{{ finca.id }}">
+                <div class="modal-header">
+                    <h5 class="modal-title">Resultado de señuelo en {{ finca.nombre }}</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row g-3">
+                        <div class="col-12">
+                            <label class="form-label">Señuelo</label>
+                            <select class="form-select form-select-sm" name="lure_id" required>
+                                <option value="">Selecciona...</option>
+                                {% for lure in lures %}
+                                <option value="{{ lure.id }}">{{ lure.nombre }}{% if lure.marca %} — {{ lure.marca }}{% endif %}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label">¿Funcionó en esta finca?</label>
+                            <div class="d-flex gap-3">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="funciono" value="1" id="r-si" checked>
+                                    <label class="form-check-label text-success" for="r-si">Sí funcionó</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="funciono" value="0" id="r-no">
+                                    <label class="form-check-label text-danger" for="r-no">No funcionó</label>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label">Notas</label>
+                            <textarea class="form-control form-control-sm" name="notas" rows="2"
+                                      placeholder="Hora del día, condiciones, profundidad..."></textarea>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary btn-sm">Guardar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block app_page_scripts %}
+{% if finca.hasCoords %}
+<script>
+document.getElementById('btn-consultar-mareas')?.addEventListener('click', function () {
+    const date    = document.getElementById('tide-date').value;
+    const result  = document.getElementById('tide-result');
+    const btn     = this;
+
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Consultando...';
+    result.innerHTML = '<span style="color:#64748b;font-size:12px;">Consultando API... (resultado se cacheará 24h)</span>';
+
+    fetch(`{{ path('grova_fishing_finca_tides', {id: finca.id, _locale: app.request.locale}) }}?date=${date}`)
+        .then(r => r.json())
+        .then(data => {
+            if (data.error) {
+                result.innerHTML = `<span style="color:#f87171;">${data.error}</span>`;
+                return;
+            }
+            if (!data.tides || data.tides.length === 0) {
+                result.innerHTML = '<span style="color:#64748b;">Sin datos de mareas para este día.</span>';
+                return;
+            }
+            let html = `<div style="font-size:11px;color:#475569;margin-bottom:.5rem;">Mareas del ${date}${data.cached ? ' · <i>desde caché</i>' : ''}</div>`;
+            data.tides.forEach(t => {
+                const cls = t.type === 'Alta' ? 'tide-alta' : 'tide-baja';
+                html += `<div class="tide-card mb-2 ${cls}">
+                    <span style="font-size:18px;">${t.time}</span>
+                    <span style="font-size:13px;margin-left:.5rem;">${t.type} · ${t.height}m</span>
+                </div>`;
+            });
+            result.innerHTML = html;
+        })
+        .catch(() => { result.innerHTML = '<span style="color:#f87171;">Error al consultar mareas.</span>'; })
+        .finally(() => {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="bi bi-water me-1"></i>Consultar';
+        });
+});
+</script>
+{% endif %}
+{% endblock %}

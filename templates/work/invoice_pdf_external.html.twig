@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: Helvetica, Arial, sans-serif; font-size: 12px; color: #1a1a1a; background: #fff; }
+.page { padding: 48px 56px; }
+
+/* Provider block */
+.provider { margin-bottom: 28px; }
+.provider-name { font-size: 15px; font-weight: 800; color: #0f172a; margin-bottom: 4px; }
+.provider-detail { font-size: 11px; color: #475569; line-height: 1.7; }
+
+/* Divider */
+.sep { border: none; border-top: 2px solid #0f172a; margin: 20px 0; }
+.sep-light { border: none; border-top: 1px solid #e2e8f0; margin: 16px 0; }
+
+/* Invoice title block */
+.invoice-header { display: table; width: 100%; margin-bottom: 28px; }
+.invoice-header-left { display: table-cell; vertical-align: top; }
+.invoice-header-right { display: table-cell; vertical-align: top; text-align: right; }
+.invoice-num { font-size: 20px; font-weight: 800; color: #0f172a; }
+.invoice-date { font-size: 12px; color: #475569; margin-top: 4px; }
+
+/* Client section */
+.client-table { display: table; width: 100%; border-collapse: collapse; margin-bottom: 28px; }
+.client-col { display: table-cell; vertical-align: top; padding: 12px 14px; border: 1px solid #cbd5e1; }
+.client-col:first-child { border-right: none; }
+.col-header { font-size: 9px; text-transform: uppercase; letter-spacing: 0.08em; color: #64748b; font-weight: 700; margin-bottom: 6px; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px; }
+.client-name { font-size: 12px; font-weight: 700; color: #0f172a; margin-bottom: 2px; }
+.client-detail { font-size: 11px; color: #475569; line-height: 1.6; }
+
+/* Concept table */
+.concept-table { width: 100%; border-collapse: collapse; margin-bottom: 0; }
+.concept-table thead tr { background: #0f172a; }
+.concept-table th {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: #fff;
+    font-weight: 700;
+    padding: 8px 12px;
+    text-align: left;
+}
+.concept-table th.right { text-align: right; }
+.concept-table td {
+    padding: 14px 12px;
+    font-size: 12px;
+    color: #1e293b;
+    border-bottom: 1px solid #e2e8f0;
+    vertical-align: top;
+}
+.concept-table td.right { text-align: right; }
+
+/* Totals */
+.totals-wrap { display: table; width: 100%; margin-top: 0; border: 1px solid #e2e8f0; border-top: none; }
+.totals-spacer { display: table-cell; width: 55%; }
+.totals-box { display: table-cell; width: 45%; vertical-align: top; border-left: 1px solid #e2e8f0; }
+.totals-row { display: table; width: 100%; border-bottom: 1px solid #e2e8f0; }
+.totals-label { display: table-cell; padding: 7px 12px; font-size: 11px; color: #64748b; }
+.totals-val { display: table-cell; padding: 7px 12px; font-size: 11px; text-align: right; font-weight: 600; }
+.totals-total { display: table; width: 100%; background: #0f172a; }
+.totals-total .totals-label { color: #fff; font-weight: 700; font-size: 12px; }
+.totals-total .totals-val { color: #fff; font-weight: 800; font-size: 14px; }
+
+/* Footer */
+.footer-note { text-align: center; font-size: 11px; color: #475569; font-style: italic; margin-top: 40px; padding-top: 20px; border-top: 1px solid #e2e8f0; }
+
+.paid-fx-note {
+    font-size: 10px;
+    color: #475569;
+    line-height: 1.5;
+    margin: 20px 0 0;
+    padding: 10px 14px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 4px;
+}
+.paid-fx-note strong { color: #0f172a; font-size: 10px; text-transform: uppercase; letter-spacing: 0.05em; }
+</style>
+</head>
+<body>
+<div class="page">
+
+    <!-- Datos del emisor (proveedor) -->
+    <div class="provider">
+        <div class="provider-name">Christian David Solórzano Girón</div>
+        <div class="provider-detail">
+            Barrio Los Mangos, Sexta Avenida N.E — Choluteca, Honduras<br>
+            Teléfono: +(504) 8900-3488 · DNI: 0601199303946<br>
+            Email: christiansolor1@gmail.com
+        </div>
+    </div>
+
+    <hr class="sep">
+
+    <!-- Número y fecha -->
+    <div class="invoice-header">
+        <div class="invoice-header-left">
+            <div class="invoice-num">Recibo N.º {{ invoice.numero ?? invoice.id }}</div>
+        </div>
+        <div class="invoice-header-right">
+            <div class="invoice-date">
+                Fecha: {{ (invoice.enviadaAt ?? invoice.createdAt)|date('d/m/Y') }}
+            </div>
+        </div>
+    </div>
+
+    <!-- Información del cliente -->
+    <div class="client-table">
+        <div class="client-col" style="width:60%;">
+            <div class="col-header">Información del Cliente</div>
+            <div class="client-name">{{ client.nombre }}</div>
+            <div class="client-detail">
+                {% if client.cifNif %}{{ client.cifNif }}<br>{% endif %}
+                {% if client.direccion %}{{ client.direccion }}{% endif %}
+            </div>
+        </div>
+        <div class="client-col" style="width:20%;">
+            <div class="col-header">Identificación del Cliente</div>
+            <div class="client-detail">
+                {% if client.cifNif %}{{ client.cifNif }}{% else %}—{% endif %}
+            </div>
+        </div>
+        <div class="client-col" style="width:20%;">
+            <div class="col-header">Términos</div>
+            <div class="client-detail">N/A</div>
+        </div>
+    </div>
+
+    <!-- Tabla de concepto -->
+    <table class="concept-table">
+        <thead>
+            <tr>
+                <th>Descripción</th>
+                <th class="right" style="width:70px;">Cantidad</th>
+                <th class="right" style="width:130px;">Precio unitario</th>
+                <th class="right" style="width:130px;">Precio total</th>
+            </tr>
+        </thead>
+        {# Recibo cliente: una sola línea; sin desglose de bonos extra (precio unit. = suma global). #}
+        <tbody>
+            <tr>
+                <td>{{ 'work.invoice_ext_concept_aggregate'|trans({'%period%': invoice_month_label}, 'work', pdf_locale) }}</td>
+                <td class="right">1</td>
+                <td class="right">{{ invoice.totalFloat|number_format(2, '.', ',') }} €</td>
+                <td class="right">{{ invoice.totalFloat|number_format(2, '.', ',') }} €</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <!-- Totales -->
+    <div class="totals-wrap">
+        <div class="totals-spacer"></div>
+        <div class="totals-box">
+            <div class="totals-row">
+                <span class="totals-label">{{ 'work.invoice_ext_taxable_amount'|trans({}, 'work', pdf_locale) }}</span>
+                <span class="totals-val">{{ invoice.totalFloat|number_format(2, '.', ',') }} €</span>
+            </div>
+            <div class="totals-row">
+                <span class="totals-label">Tasa de impuesto</span>
+                <span class="totals-val">—</span>
+            </div>
+            <div class="totals-row">
+                <span class="totals-label">Impuesto</span>
+                <span class="totals-val">0,00 €</span>
+            </div>
+            <div class="totals-total">
+                <span class="totals-label">Total</span>
+                <span class="totals-val">{{ invoice.totalFloat|number_format(2, '.', ',') }} €</span>
+            </div>
+        </div>
+    </div>
+
+    {% if invoice.pagadaAt and invoice.tasaPagoEurL is not null and invoice.tasaPagoEurLFloat > 0 %}
+    <div class="paid-fx-note">
+        <strong>{{ 'work.invoice_pdf_paid_fx_title'|trans({}, 'work', pdf_locale) }}</strong><br>
+        EUR {{ invoice.tasaPagoEurLFloat|number_format(4, '.', ',') }}/USD {% if invoice.tasaPagoUsdLFloat > 0 %}{{ invoice.tasaPagoUsdLFloat|number_format(4, '.', ',') }}{% else %}—{% endif %}
+        — {{ 'work.invoice_pdf_paid_fx_cobro'|trans({'%fecha%': invoice.pagadaAt|date('d/m/Y')}, 'work', pdf_locale) }}
+    </div>
+    {% endif %}
+
+    <!-- Nota de agradecimiento -->
+    <div class="footer-note">
+        ¡Agradecemos la oportunidad de colaborar con su empresa!
+    </div>
+
+</div>
+</body>
+</html>

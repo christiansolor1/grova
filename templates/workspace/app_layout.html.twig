@@ -5,15 +5,16 @@
 {% set is_dev = app.debug or (app.user and is_granted('ROLE_DEVELOPER')) %}
 {% set home_route = 'grova_page_dashboard' %}
 
-{% block title %}{{ 'app.name' | trans }} – {{ active_menu_key }}{% endblock %}
+{% block title %}{{ 'app.name' | trans }} – {% block page_title %}{{ active_menu_key }}{% endblock %}{% endblock %}
 
 {% block stylesheets %}
 {% include 'workspace/partials/_styles.html.twig' %}
 <style>
+/* No usar display:block en .nav-l1-btn: el layout del menú (flex, chevrons) viene de _styles.html.twig
+   (mismo patrón que el dashboard / estilo tipo Tailwind). */
 .ws-server-nav .ws-details > summary::-webkit-details-marker { display: none; }
 .ws-server-nav .ws-summary { cursor: pointer; list-style: none; }
-.ws-server-nav .ws-sub { padding: 4px 0 6px 8px; border-left: 1px solid #1f2937; margin-left: 8px; }
-.ws-server-nav .ws-nav-l1 .nav-l1-btn { text-decoration: none; display: block; }
+.ws-server-nav a.nav-l1-btn { text-decoration: none; }
 .ws-server-nav .ws-disabled { opacity: 0.45; pointer-events: none; }
 </style>
 {% block page_styles %}{% endblock %}
@@ -24,40 +25,121 @@
 <div id="dev-topbar"></div>
 {% endif %}
 
-<div class="nav-tooltip" id="nav-tooltip"></div>
+{% if is_granted('IS_IMPERSONATOR') %}
+{% set real_user   = app.token.originalToken.user %}
+{% set real_name   = real_user.nombreCompleto is defined and real_user.nombreCompleto ? real_user.nombreCompleto : real_user.username %}
+{% set real_role   = 'ROLE_DEVELOPER' in real_user.roles ? ('navbar.role.superadmin'|trans) : ('ROLE_ADMIN' in real_user.roles ? ('navbar.role.admin'|trans) : ('navbar.role.user'|trans)) %}
+{% set viewed_name = app.user.nombreCompleto is defined and app.user.nombreCompleto ? app.user.nombreCompleto : app.user.username %}
+<div id="impersonate-banner" style="
+    position:fixed; top:0; left:0; right:0; z-index:9999;
+    background:#991b1b;
+    padding:0 1.25rem;
+    display:flex; align-items:center; justify-content:space-between;
+    gap:1rem; height:40px;
+    box-shadow: 0 2px 8px rgba(0,0,0,.5);
+    font-size:12px;
+">
+    <div style="display:flex; align-items:center; gap:.75rem; color:#fca5a5;">
+        {# Quién soy yo realmente #}
+        <div style="display:flex; align-items:center; gap:.4rem;">
+            <div style="
+                width:24px; height:24px; border-radius:50%;
+                background:rgba(255,255,255,.15); border:1px solid rgba(255,255,255,.3);
+                display:flex; align-items:center; justify-content:center;
+                font-size:10px; font-weight:800; color:#fff; flex-shrink:0;
+            ">{{ real_name|first|upper }}</div>
+            <span style="color:#fff; font-weight:700;">{{ real_name }}</span>
+            <span style="background:rgba(255,255,255,.15); color:#fca5a5; border-radius:4px; padding:1px 6px; font-size:10px; font-weight:600;">{{ real_role }}</span>
+        </div>
+        {# Flecha #}
+        <i class="bi bi-arrow-right" style="color:#f87171; font-size:11px;"></i>
+        {# A quién estoy viendo #}
+        <div style="display:flex; align-items:center; gap:.4rem;">
+            <i class="bi bi-incognito" style="color:#fbbf24; cursor:default;"
+               data-bs-toggle="tooltip" data-bs-placement="bottom"
+               title="{{ 'impersonate.tooltip'|trans }}"></i>
+            <span style="color:#fbbf24; font-weight:700;">{{ viewed_name }}</span>
+            <span style="color:#fca5a5; font-weight:400; font-size:11px;">({{ app.user.email }})</span>
+        </div>
+    </div>
+    <a href="{{ path('grova_page_dashboard', {_locale: app.request.locale, _switch_user: '_exit'}) }}"
+       style="color:#fff; background:rgba(0,0,0,.3); border:1px solid rgba(255,255,255,.2); padding:.2rem .85rem; border-radius:6px; text-decoration:none; font-size:11px; font-weight:600; white-space:nowrap; display:flex; align-items:center; gap:.35rem;">
+        <i class="bi bi-person-fill-check"></i> {{ 'impersonate.exit'|trans }}
+    </a>
+</div>
+<div style="height:40px;"></div>
+<script>document.addEventListener('DOMContentLoaded',function(){var el=document.querySelector('#impersonate-banner [data-bs-toggle="tooltip"]');if(el)new bootstrap.Tooltip(el);});</script>
+{% endif %}
 
-<button id="sidebar-toggle" title="{{ 'nav.expand' | trans }}">
-    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M4 6h16M4 12h16M4 18h16"/>
-    </svg>
-</button>
+<div class="nav-tooltip" id="nav-tooltip"></div>
 
 {% include 'workspace/partials/sidebar_workspace.html.twig' %}
 {% include 'dashboard/partials/navbar.html.twig' %}
 
-<main id="main">
+{# Columna contenido + pie: flex para que el footer quede al final del viewport sin solapar el área principal. #}
+<div class="grova-app-column">
+<main id="main"{% block main_attributes %} data-grova-filter-schema="default"{% endblock %}>
+    {% block breadcrumb_tail %}{{ block('page_title') }}{% endblock %}
+
     {% block app_breadcrumb %}
-    <nav class="grova-breadcrumb mb-2" aria-label="breadcrumb">
-        <a href="{{ path(home_route, {_locale: app.request.locale}) }}" class="breadcrumb-home">{{ 'breadcrumb.home' | trans }}</a>
-        <span class="sep">/</span>
-        <span class="current">{{ active_menu_key }}</span>
-    </nav>
+        {% include 'workspace/partials/_breadcrumb_workspace.html.twig' with {
+            home_route: home_route,
+            breadcrumb_tail: block('breadcrumb_tail'),
+        } %}
     {% endblock %}
 
     {% block app_page_header %}
     <div class="page-header">
-        <h1 id="page-title">{% block app_page_h1 %}{{ active_menu_key }}{% endblock %}</h1>
+        <h1 id="page-title">{% block app_page_h1 %}{{ block('page_title') }}{% endblock %}</h1>
         <p id="page-subtitle" class="text-muted">{% block app_page_subtitle %}{% endblock %}</p>
     </div>
     {% endblock %}
 
+    {% block app_filters_row %}{% endblock %}
+
     {% block app_main %}{% endblock %}
 </main>
-
 {% include 'dashboard/partials/footer.html.twig' %}
+</div>
+{# Fijos al viewport: fuera de la columna evita recortes con tablas / DataTables. #}
+{% block app_filters_drawer %}{% endblock %}
 {% endblock %}
 
 {% block javascripts %}
+{# DataTables 2 + integración Bootstrap + Buttons (export / ColVis) globales #}
+<script src="https://cdn.datatables.net/2.1.8/js/dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/2.1.8/js/dataTables.bootstrap5.min.js"></script>
+<script src="https://cdn.datatables.net/buttons/3.1.2/js/dataTables.buttons.min.js"></script>
+<script src="https://cdn.datatables.net/buttons/3.1.2/js/buttons.bootstrap5.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js"></script>
+<script src="https://cdn.datatables.net/buttons/3.1.2/js/buttons.html5.min.js"></script>
+<script src="https://cdn.datatables.net/buttons/3.1.2/js/buttons.print.min.js"></script>
+<script src="https://cdn.datatables.net/buttons/3.1.2/js/buttons.colVis.min.js"></script>
+<script src="{{ asset('js/grova-datatables-dual-scroll.js') }}"></script>
+<script src="{{ asset('js/grova-datatables-defaults.js') }}"></script>
 {% block app_page_scripts %}{% endblock %}
 {% include 'workspace/partials/_chrome_scripts.html.twig' %}
+
+{# ── Auto-relock: redirige a la pantalla de bloqueo cuando expira el TTL ── #}
+{% if app.user %}
+{% set _unlock_data = lock_unlock_data() %}
+{% if _unlock_data is not empty %}
+<script>
+(function() {
+    const locale  = '{{ app.request.locale }}';
+    const data    = {{ _unlock_data | json_encode | raw }};
+    Object.entries(data).forEach(([section, seconds]) => {
+        if (seconds <= 0) return;
+        setTimeout(() => {
+            window.location.href =
+                '/' + locale + '/lock/screen/' + section +
+                '?redirect=' + encodeURIComponent(window.location.href);
+        }, seconds * 1000);
+    });
+})();
+</script>
+{% endif %}
+{% endif %}
 {% endblock %}

@@ -1,12 +1,140 @@
 {% extends 'workspace/app_layout.html.twig' %}
 
+{% block page_title %}{{ 'Badges y estados' | trans }}{% endblock %}
+{% block app_page_subtitle %}{{ 'Estados visuales con badges, pills y etiquetas. Copia el código y úsalo en cualquier vista.' | trans }}{% endblock %}
+
+{% block page_styles %}
+<style>
+.ui-component { border: 1px solid #1e293b; border-radius: 10px; overflow: hidden; margin-bottom: 1.5rem; }
+.ui-component-preview { padding: 1.5rem; background: #0f172a; }
+.ui-component-code { background: #020617; border-top: 1px solid #1e293b; }
+.ui-component-code-header { display: flex; align-items: center; justify-content: space-between; padding: .5rem 1rem; border-bottom: 1px solid #1e293b; }
+.ui-component-code-label { font-size: 11px; color: #64748b; text-transform: uppercase; letter-spacing: .5px; }
+.ui-component-code pre { margin: 0; padding: 1rem; font-size: 12px; color: #94a3b8; overflow-x: auto; }
+.btn-copy-code { font-size: 11px; padding: 2px 10px; }
+body.light-mode .ui-component { border-color: #dbe3ee; }
+body.light-mode .ui-component-preview { background: #f8fafc; }
+body.light-mode .ui-component-code { background: #f1f5f9; border-color: #dbe3ee; }
+body.light-mode .ui-component-code-header { border-color: #dbe3ee; }
+body.light-mode .ui-component-code pre { color: #475569; }
+</style>
+{% endblock %}
+
 {% block app_main %}
 <div class="content-card">
-    <div class="content-card-header">Estados (badges, estados, vacíos…)</div>
+    <div class="content-card-header">Badges y estados</div>
     <div class="content-card-body">
-        <p class="text-muted mb-0">
-            Referencia de estados. Módulo <code>ui-status</code> en la demo legacy.
-        </p>
+
+        {# ── Estados de registros ── #}
+        <div class="ui-component">
+            <div class="ui-component-preview d-flex flex-wrap gap-2">
+                <span class="badge bg-success">Activo</span>
+                <span class="badge bg-danger">Inactivo</span>
+                <span class="badge bg-warning text-dark">Pendiente</span>
+                <span class="badge bg-info text-dark">En proceso</span>
+                <span class="badge bg-secondary">Borrador</span>
+                <span class="badge bg-primary">Admin</span>
+                <span class="badge bg-dark">Archivado</span>
+            </div>
+            <div class="ui-component-code">
+                <div class="ui-component-code-header">
+                    <span class="ui-component-code-label">Twig / HTML — Estados de registro</span>
+                    <button type="button" class="btn btn-outline-secondary btn-sm btn-copy-code" data-copy-target="code-status-badges">Copiar</button>
+                </div>
+                <pre id="code-status-badges">{% verbatim %}<span class="badge bg-success">Activo</span>
+<span class="badge bg-danger">Inactivo</span>
+<span class="badge bg-warning text-dark">Pendiente</span>
+<span class="badge bg-info text-dark">En proceso</span>
+<span class="badge bg-secondary">Borrador</span>
+<span class="badge bg-primary">Admin</span>
+<span class="badge bg-dark">Archivado</span>{% endverbatim %}</pre>
+            </div>
+        </div>
+
+        {# ── Badges con icono ── #}
+        <div class="ui-component">
+            <div class="ui-component-preview d-flex flex-wrap gap-2">
+                <span class="badge bg-success"><i class="bi bi-check-circle me-1"></i>Pagado</span>
+                <span class="badge bg-danger"><i class="bi bi-x-circle me-1"></i>Rechazado</span>
+                <span class="badge bg-warning text-dark"><i class="bi bi-clock me-1"></i>Pendiente</span>
+                <span class="badge bg-info text-dark"><i class="bi bi-arrow-repeat me-1"></i>En revisión</span>
+            </div>
+            <div class="ui-component-code">
+                <div class="ui-component-code-header">
+                    <span class="ui-component-code-label">Twig / HTML — Badges con icono</span>
+                    <button type="button" class="btn btn-outline-secondary btn-sm btn-copy-code" data-copy-target="code-status-icon">Copiar</button>
+                </div>
+                <pre id="code-status-icon">{% verbatim %}<span class="badge bg-success"><i class="bi bi-check-circle me-1"></i>Pagado</span>
+<span class="badge bg-danger"><i class="bi bi-x-circle me-1"></i>Rechazado</span>
+<span class="badge bg-warning text-dark"><i class="bi bi-clock me-1"></i>Pendiente</span>
+<span class="badge bg-info text-dark"><i class="bi bi-arrow-repeat me-1"></i>En revisión</span>{% endverbatim %}</pre>
+            </div>
+        </div>
+
+        {# ── Roles de usuario ── #}
+        <div class="ui-component">
+            <div class="ui-component-preview d-flex flex-wrap gap-2">
+                <span class="badge bg-primary">Super Admin</span>
+                <span class="badge bg-info text-dark">Admin</span>
+                <span class="badge bg-secondary">Editor</span>
+                <span class="badge bg-dark">Viewer</span>
+            </div>
+            <div class="ui-component-code">
+                <div class="ui-component-code-header">
+                    <span class="ui-component-code-label">Twig / HTML — Roles</span>
+                    <button type="button" class="btn btn-outline-secondary btn-sm btn-copy-code" data-copy-target="code-roles">Copiar</button>
+                </div>
+                <pre id="code-roles">{% verbatim %}<span class="badge bg-primary">Super Admin</span>
+<span class="badge bg-info text-dark">Admin</span>
+<span class="badge bg-secondary">Editor</span>
+<span class="badge bg-dark">Viewer</span>{% endverbatim %}</pre>
+            </div>
+        </div>
+
+        {# ── Alertas inline ── #}
+        <div class="ui-component">
+            <div class="ui-component-preview d-flex flex-column gap-2">
+                <div class="alert alert-success alert-sm mb-0 py-2" role="alert"><i class="bi bi-check-circle me-2"></i>Registro guardado correctamente.</div>
+                <div class="alert alert-danger alert-sm mb-0 py-2" role="alert"><i class="bi bi-exclamation-circle me-2"></i>Ocurrió un error. Intenta de nuevo.</div>
+                <div class="alert alert-warning alert-sm mb-0 py-2" role="alert"><i class="bi bi-exclamation-triangle me-2"></i>Atención: este cambio es irreversible.</div>
+                <div class="alert alert-info alert-sm mb-0 py-2" role="alert"><i class="bi bi-info-circle me-2"></i>Este módulo está en modo de prueba.</div>
+            </div>
+            <div class="ui-component-code">
+                <div class="ui-component-code-header">
+                    <span class="ui-component-code-label">Twig / HTML — Alertas inline</span>
+                    <button type="button" class="btn btn-outline-secondary btn-sm btn-copy-code" data-copy-target="code-alerts">Copiar</button>
+                </div>
+                <pre id="code-alerts">{% verbatim %}<div class="alert alert-success mb-0 py-2" role="alert">
+    <i class="bi bi-check-circle me-2"></i>Registro guardado correctamente.
+</div>
+<div class="alert alert-danger mb-0 py-2" role="alert">
+    <i class="bi bi-exclamation-circle me-2"></i>Ocurrió un error. Intenta de nuevo.
+</div>
+<div class="alert alert-warning mb-0 py-2" role="alert">
+    <i class="bi bi-exclamation-triangle me-2"></i>Atención: este cambio es irreversible.
+</div>
+<div class="alert alert-info mb-0 py-2" role="alert">
+    <i class="bi bi-info-circle me-2"></i>Este módulo está en modo de prueba.
+</div>{% endverbatim %}</pre>
+            </div>
+        </div>
+
     </div>
 </div>
+{% endblock %}
+
+{% block app_page_scripts %}
+<script>
+document.querySelectorAll('.btn-copy-code').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+        var target = document.getElementById(btn.getAttribute('data-copy-target'));
+        if (!target) return;
+        navigator.clipboard.writeText(target.textContent.trim()).then(function () {
+            var old = btn.textContent;
+            btn.textContent = 'Copiado';
+            setTimeout(function () { btn.textContent = old; }, 1200);
+        });
+    });
+});
+</script>
 {% endblock %}

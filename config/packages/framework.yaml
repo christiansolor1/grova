@@ -2,11 +2,27 @@
 framework:
     secret: '%env(APP_SECRET)%'
 
-    # Note that the session will be started ONLY if you read or write from it.
-    session: true
+    default_locale: es
+    translator:
+        default_path: '%kernel.project_dir%/translations'
+        fallbacks: [es]
+
+    # Sesión con timeout de inactividad (30 minutos)
+    session:
+        cookie_lifetime: 0          # expira al cerrar el navegador
+        gc_maxlifetime: 1800        # 30 min de inactividad → sesión inválida
+        cookie_secure: auto         # https en prod, http en dev automáticamente
+        cookie_httponly: true       # inaccesible desde JS → protege contra XSS
+        cookie_samesite: lax        # protege contra CSRF cross-origin
 
     #esi: true
     #fragments: true
+
+when@dev:
+    framework:
+        profiler:
+            enabled: true
+            collect: true
 
 when@test:
     framework:
