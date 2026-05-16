@@ -7,6 +7,9 @@
 # Put parameters here that don't need to change on each machine where the app is deployed
 # https://symfony.com/doc/current/best_practices.html#use-parameters-for-application-configuration
 parameters:
+    app.version: '%env(APP_VERSION)%'
+    app.git_sha: '%env(APP_GIT_SHA)%'
+    mailer_from_email: '%env(MAILER_FROM_EMAIL)%'
 
 services:
     # default configuration for services in *this* file
@@ -18,6 +21,32 @@ services:
     # this creates a service per class whose id is the fully-qualified class name
     App\:
         resource: '../src/'
+
+    App\Service\BuildInfoProvider:
+        arguments:
+            $projectDir: '%kernel.project_dir%'
+            $baseVersion: '%app.version%'
+            $defaultGitSha: '%app.git_sha%'
+
+    App\Command\TransBuildCommand:
+        arguments:
+            $projectDir: '%kernel.project_dir%'
+
+    App\Command\TransAuditCommand:
+        arguments:
+            $projectDir: '%kernel.project_dir%'
+
+    App\Service\WorkInvoicePaymentProofStorage:
+        arguments:
+            $projectDir: '%kernel.project_dir%'
+
+    App\Doctrine\TenantSwitchMiddleware:
+        tags:
+            - { name: doctrine.dbal.middleware, connection: tenant }
+
+    App\EventListener\JWTCreatedListener:
+        tags:
+            - { name: kernel.event_listener, event: lexik_jwt_authentication.on_jwt_created, method: onJWTCreated }
 
     # add more service definitions when explicit configuration is needed
     # please note that last definitions always *replace* previous ones

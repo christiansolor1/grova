@@ -2,6 +2,7 @@
 
 namespace App\EventSubscriber;
 
+use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 use Symfony\Component\HttpKernel\Event\ResponseEvent;
 use Symfony\Component\HttpKernel\KernelEvents;
@@ -9,6 +10,7 @@ use Symfony\Component\HttpKernel\KernelEvents;
 class SecurityHeadersSubscriber implements EventSubscriberInterface
 {
     public function __construct(
+        #[Autowire('%kernel.environment%')]
         private readonly string $kernelEnvironment,
     ) {
     }
@@ -25,6 +27,14 @@ class SecurityHeadersSubscriber implements EventSubscriberInterface
             return;
         }
 
+        $request = $event->getRequest();
+        $path = $request->getPathInfo();
+
+        // Excluir rutas del Web Profiler para que funcione correctamente
+        if (str_starts_with($path, '/_wdt') || str_starts_with($path, '/_profiler')) {
+            return;
+        }
+
         $response = $event->getResponse();
         $headers  = $response->headers;
 
@@ -38,7 +48,7 @@ class SecurityHeadersSubscriber implements EventSubscriberInterface
         $headers->set('Referrer-Policy', 'strict-origin-when-cross-origin');
 
         // Fuerza HTTPS en producción (HSTS)
-        if ($event->getRequest()->isSecure()) {
+        if ($request->isSecure()) {
             $headers->set('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
         }
 
