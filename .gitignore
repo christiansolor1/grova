@@ -24,4 +24,5 @@
 
 ###> Deploy — configs de servidor (no van al repo) ###
 /deploy/env.production
+/deploy/env.*.local
 ###< Deploy ###
