@@ -21,3 +21,7 @@
 ###> Documentación interna ###
 /docs/
 ###< Documentación interna ###
+
+###> Deploy — configs de servidor (no van al repo) ###
+/deploy/env.production
+###< Deploy ###

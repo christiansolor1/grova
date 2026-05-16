@@ -1,4 +1,8 @@
 security:
+    role_hierarchy:
+        ROLE_DEVELOPER: [ROLE_ADMIN, ROLE_ALLOWED_TO_SWITCH]
+        ROLE_ADMIN:     [ROLE_USER,  ROLE_ALLOWED_TO_SWITCH]
+
     password_hashers:
         App\Entity\User:
             algorithm: auto
@@ -10,10 +14,11 @@ security:
                 property: username
 
     firewalls:
-        dev:
+        dev_toolbar:
             pattern: ^/(_(profiler|wdt)|css|images|js)/
             security: false
 
+        # ── API — stateless JWT ───────────────────────────────────────────
         api:
             pattern: ^/api
             stateless: true
@@ -24,7 +29,55 @@ security:
                 failure_handler: lexik_jwt_authentication.handler.authentication_failure
             jwt: ~
 
+        # ── Web — session based (prod + dev prefix) ───────────────────────
+        main:
+            lazy: true
+            provider: app_user_provider
+            access_denied_handler: App\Security\AccessDeniedHandler
+            switch_user:
+                role: ROLE_ALLOWED_TO_SWITCH
+                parameter: _switch_user
+            form_login:
+                login_path: login
+                check_path: login_check
+                username_parameter: username
+                password_parameter: password
+                default_target_path: workspace
+                always_use_default_target_path: false
+                enable_csrf: true
+                csrf_parameter: _csrf_token
+                csrf_token_id: authenticate
+            logout:
+                path: logout
+                target: login
+                invalidate_session: true
+                clear_site_data: ['cache', 'cookies']
+            remember_me:
+                secret: '%kernel.secret%'
+                lifetime: 604800
+                path: /
+                secure: false      # sobreescrito en prod (when@prod abajo)
+                httponly: true
+                samesite: lax
+
     access_control:
-        - { path: ^/api/auth/login, roles: PUBLIC_ACCESS }
-        - { path: ^/api/auth/register, roles: PUBLIC_ACCESS }
-        - { path: ^/api, roles: IS_AUTHENTICATED_FULLY }
+        # API pública
+        - { path: '^/api/auth/login',    roles: PUBLIC_ACCESS }
+        - { path: '^/api/auth/register', roles: PUBLIC_ACCESS }
+        - { path: '^/api/docs',          roles: PUBLIC_ACCESS }
+        - { path: '^/api/contexts',      roles: PUBLIC_ACCESS }
+        - { path: '^/api$',              roles: PUBLIC_ACCESS }
+        - { path: '^/api',               roles: IS_AUTHENTICATED_FULLY }
+        # Web pública
+        - { path: '^/(es|en)/login',              roles: PUBLIC_ACCESS }
+        - { path: '^/(es|en)/lock/login-webauthn', roles: PUBLIC_ACCESS }
+        - { path: '^/$',                 roles: PUBLIC_ACCESS }
+        # Web protegida prod
+        - { path: '^/(es|en)/',          roles: IS_AUTHENTICATED_FULLY }
+
+when@prod:
+    security:
+        firewalls:
+            main:
+                remember_me:
+                    secure: true    # fuerza HTTPS en prod
