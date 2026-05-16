@@ -1,0 +1,356 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}{{ 'app.name' | trans }} – {{ 'auth.login.title' | trans }}{% endblock %}
+
+{% block stylesheets %}
+<style>
+    body {
+        background-color: #0f172a;
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .login-card {
+        width: 100%;
+        max-width: 420px;
+        background: #1e293b;
+        border: 1px solid #334155;
+        border-radius: 12px;
+    }
+    .login-logo-box {
+        width: 40px; height: 40px;
+        background: #2563eb;
+        border-radius: 8px;
+        display: flex; align-items: center; justify-content: center;
+        font-weight: 700; color: #fff; font-size: 1.1rem;
+    }
+    .login-title { color: #f1f5f9; font-weight: 700; font-size: 1.4rem; letter-spacing: -0.5px; }
+    .login-subtitle { color: #94a3b8; font-size: .875rem; }
+    .form-label { color: #cbd5e1; font-size: .8rem; font-weight: 500; }
+    .form-control, .input-group-text {
+        background: #0f172a;
+        border-color: #334155;
+        color: #f1f5f9;
+    }
+    .form-control:focus {
+        background: #0f172a;
+        border-color: #2563eb;
+        color: #f1f5f9;
+        box-shadow: 0 0 0 3px rgba(37,99,235,.2);
+    }
+    .form-control::placeholder { color: #475569; }
+    .input-group-text { color: #64748b; }
+    .btn-grova {
+        background: #2563eb;
+        border: none;
+        font-weight: 600;
+        padding: .65rem;
+        transition: background .2s;
+    }
+    .btn-grova:hover { background: #1d4ed8; }
+    .btn-grova:disabled { background: #1e40af; opacity: .7; cursor: not-allowed; }
+    .alert-dark-error {
+        background: rgba(239,68,68,.1);
+        border: 1px solid rgba(239,68,68,.3);
+        color: #fca5a5;
+        border-radius: 8px;
+        font-size: .85rem;
+    }
+    .remember-label { color: #94a3b8; font-size: .8rem; cursor: pointer; }
+    .attempts-warning { color: #fbbf24; font-size: .78rem; }
+    .login-wrapper {
+        width: 100%;
+        max-width: 520px;
+    }
+    .login-footer {
+        margin-top: 14px;
+        border: 1px solid #334155;
+        border-radius: 12px;
+        overflow: hidden;
+        background: #1e293b;
+    }
+    .login-footer-main {
+        padding: 10px 12px;
+        border-bottom: 1px solid #334155;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+    }
+    .login-footer-title {
+        color: #e2e8f0;
+        font-size: .78rem;
+        font-weight: 600;
+    }
+    .login-footer-links {
+        display: flex;
+        gap: 10px;
+    }
+    .login-footer-links a {
+        color: #93c5fd;
+        text-decoration: none;
+        font-size: .72rem;
+    }
+    .login-footer-copy {
+        padding: 8px 12px;
+        text-align: center;
+        color: #64748b;
+        font-size: .72rem;
+    }
+    .login-footer-copy a {
+        color: #93c5fd;
+        text-decoration: none;
+        font-weight: 500;
+    }
+    .login-footer-copy a:hover {
+        text-decoration: underline;
+    }
+    .login-footer-form {
+        padding: 10px 12px 4px;
+    }
+    .login-footer-form .form-label {
+        color: #94a3b8;
+        font-size: .68rem;
+        margin-bottom: 3px;
+    }
+    .login-footer-form .form-control {
+        background: #0f172a;
+        border-color: #334155;
+        color: #f1f5f9;
+        font-size: .72rem;
+    }
+    .login-footer-form .form-control::placeholder {
+        color: #64748b;
+    }
+    @media (max-width: 480px) {
+        .login-footer-main {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+    }
+
+    /* Minimal theme overrides */
+    body {
+        background: #0b1020;
+    }
+    .login-card,
+    .login-footer {
+        background: #111827;
+        border-color: #1f2937;
+        box-shadow: none !important;
+    }
+    .login-title {
+        font-size: 1.25rem;
+        letter-spacing: -0.3px;
+    }
+    .login-subtitle {
+        color: #9ca3af;
+    }
+    .form-control,
+    .input-group-text {
+        background: #0f172a;
+        border-color: #1f2937;
+        border-radius: 8px;
+    }
+    .btn-grova {
+        background: #2563eb;
+        border-radius: 8px;
+    }
+    .btn-grova:hover {
+        background: #1e40af;
+    }
+    .login-footer-form .form-control {
+        border-radius: 8px;
+    }
+    body.light-mode {
+        background: #f8fafc;
+    }
+    body.light-mode .login-card,
+    body.light-mode .login-footer {
+        background: #ffffff;
+        border-color: #e5e7eb;
+    }
+    body.light-mode .login-title {
+        color: #111827;
+    }
+    body.light-mode .login-subtitle {
+        color: #6b7280;
+    }
+    body.light-mode .form-label {
+        color: #475569;
+    }
+    body.light-mode .form-control,
+    body.light-mode .input-group-text {
+        background: #ffffff;
+        border-color: #d1d5db;
+        color: #111827;
+    }
+    body.light-mode .form-control::placeholder {
+        color: #9ca3af;
+    }
+    body.light-mode .input-group-text {
+        color: #64748b;
+    }
+    body.light-mode .remember-label {
+        color: #64748b;
+    }
+    body.light-mode .login-footer-title {
+        color: #1f2937;
+    }
+    body.light-mode .login-footer-main {
+        border-bottom-color: #e5e7eb;
+    }
+    body.light-mode .login-footer-links a {
+        color: #2563eb;
+    }
+    body.light-mode .login-footer-form .form-label {
+        color: #64748b;
+    }
+    body.light-mode .login-footer-form .form-control {
+        background: #ffffff;
+        border-color: #d1d5db;
+        color: #111827;
+    }
+    body.light-mode .login-footer-copy {
+        color: #6b7280;
+    }
+    body.light-mode .login-footer-copy a {
+        color: #2563eb;
+    }
+</style>
+{% endblock %}
+
+{% block body %}
+<div class="login-wrapper">
+    <div class="card login-card p-4 shadow-lg">
+        <div class="card-body px-2">
+
+        <div class="d-flex align-items-center gap-3 mb-4">
+            <div class="login-logo-box">G</div>
+            <div>
+                <div class="login-title">{{ 'app.name' | trans }}</div>
+                <div class="login-subtitle">{{ 'auth.login.subtitle' | trans }}</div>
+            </div>
+        </div>
+
+        {# Error de autenticación #}
+        {% if error %}
+            <div class="alert alert-dark-error mb-3 px-3 py-2">
+                <i class="bi bi-exclamation-triangle me-2"></i>
+                {{ error.messageKey | trans(error.messageData, 'security') }}
+            </div>
+        {% endif %}
+
+        {# Bloqueo por rate limiting #}
+        {% if retry_after %}
+            <div class="alert alert-dark-error mb-3 px-3 py-2">
+                <i class="bi bi-shield-lock me-2"></i>
+                {{ 'auth.login.error.too_many_attempts' | trans }}
+            </div>
+        {% endif %}
+
+        {# Advertencia de intentos restantes #}
+        {% if attempts_left is defined and attempts_left <= 2 and attempts_left > 0 and not retry_after %}
+            <div class="attempts-warning mb-3">
+                <i class="bi bi-exclamation-circle me-1"></i>
+                {{ 'auth.login.error.attempts_left' | trans({'%count%': attempts_left}) }}
+            </div>
+        {% endif %}
+
+        <form method="post" action="{{ path('login_check', {'_locale': app.request.locale}) }}" id="login-form">
+            <input type="hidden" name="_csrf_token" value="{{ csrf_token('authenticate') }}">
+            {% if post_login_path is defined %}
+            <input type="hidden" name="_target_path" value="{{ post_login_path }}">
+            {% endif %}
+
+            <div class="mb-3">
+                <label for="username" class="form-label">{{ 'auth.login.username' | trans }}</label>
+                <div class="input-group">
+                    <span class="input-group-text"><i class="bi bi-person"></i></span>
+                    <input type="text"
+                           class="form-control"
+                           id="username"
+                           name="username"
+                           value="{{ last_username }}"
+                           placeholder="{{ 'auth.login.username_placeholder' | trans }}"
+                           required
+                           autofocus
+                           autocomplete="username"
+                           {% if retry_after %}disabled{% endif %}>
+                </div>
+            </div>
+
+            <div class="mb-3">
+                <label for="password" class="form-label">{{ 'auth.login.password' | trans }}</label>
+                <div class="input-group">
+                    <span class="input-group-text"><i class="bi bi-lock"></i></span>
+                    <input type="password"
+                           class="form-control"
+                           id="password"
+                           name="password"
+                           placeholder="{{ 'auth.login.password_placeholder' | trans }}"
+                           required
+                           autocomplete="current-password"
+                           {% if retry_after %}disabled{% endif %}>
+                </div>
+            </div>
+
+            <div class="mb-4 d-flex align-items-center">
+                <input class="form-check-input me-2" type="checkbox" name="_remember_me" id="remember_me">
+                <label class="remember-label" for="remember_me">{{ 'auth.login.remember_me' | trans }}</label>
+            </div>
+
+            <button type="submit" class="btn btn-grova btn-primary w-100" id="btn-submit" {% if retry_after %}disabled{% endif %}>
+                <span id="btn-text">{{ 'auth.login.submit' | trans }}</span>
+                <span id="btn-spinner" class="spinner-border spinner-border-sm d-none ms-2" role="status"></span>
+            </button>
+        </form>
+
+        </div>
+    </div>
+    <footer class="login-footer">
+        <div class="login-footer-main">
+            <span class="login-footer-title">{{ 'app.name' | trans }}</span>
+            <div class="login-footer-links">
+                <a href="#">Privacidad</a>
+                <a href="#">Soporte</a>
+            </div>
+        </div>
+        <div class="login-footer-form">
+            <div class="row g-2">
+                <div class="col-6">
+                    <label class="form-label" for="login-footer-email">Email demo</label>
+                    <input id="login-footer-email" type="email" class="form-control form-control-sm" placeholder="nombre@empresa.com">
+                </div>
+                <div class="col-6">
+                    <label class="form-label" for="login-footer-phone">Telefono demo</label>
+                    <input id="login-footer-phone" type="text" class="form-control form-control-sm" placeholder="+34 600 123 456">
+                </div>
+            </div>
+        </div>
+        <div class="login-footer-copy">
+            &copy; {{ "now"|date("Y") }} {{ 'app.name' | trans }}. Todos los derechos reservados. ·
+            v{{ build_info.display_version|default(build_info.version) }} ·
+            {% if is_granted('ROLE_DEVELOPER') and build_info.commit_url %}
+                <a href="{{ build_info.commit_url }}" target="_blank" rel="noopener noreferrer">{{ build_info.git_sha }}</a>
+            {% else %}
+                {{ build_info.git_sha }}
+            {% endif %}
+        </div>
+    </footer>
+</div>
+{% endblock %}
+
+{% block javascripts %}
+<script>
+document.getElementById('login-form').addEventListener('submit', function() {
+    const btn    = document.getElementById('btn-submit');
+    const text   = document.getElementById('btn-text');
+    const spinner = document.getElementById('btn-spinner');
+    btn.disabled = true;
+    text.textContent = {{ 'auth.login.submitting' | trans | json_encode | raw }};
+    spinner.classList.remove('d-none');
+});
+</script>
+{% endblock %}

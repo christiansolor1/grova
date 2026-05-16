@@ -1,0 +1,63 @@
+{# Capa de aplicación (shell): base + sidebar + navbar + breadcrumb + pie. Cada vista hija extiende este archivo y rellena solo app_main (y opc. page_styles, app_page_header, app_breadcrumb, app_page_scripts). #}
+{# is_dev: cromo “modo dev” = entorno Symfony dev (p. ej. app_dev en SF2) vía app.debug, o usuario con ROLE_DEVELOPER (ítems de menú dev_only siguen yendo con ese rol en PHP). #}
+{% extends 'base.html.twig' %}
+
+{% set is_dev = app.debug or (app.user and is_granted('ROLE_DEVELOPER')) %}
+{% set home_route = 'grova_page_dashboard' %}
+
+{% block title %}{{ 'app.name' | trans }} – {{ active_menu_key }}{% endblock %}
+
+{% block stylesheets %}
+{% include 'workspace/partials/_styles.html.twig' %}
+<style>
+.ws-server-nav .ws-details > summary::-webkit-details-marker { display: none; }
+.ws-server-nav .ws-summary { cursor: pointer; list-style: none; }
+.ws-server-nav .ws-sub { padding: 4px 0 6px 8px; border-left: 1px solid #1f2937; margin-left: 8px; }
+.ws-server-nav .ws-nav-l1 .nav-l1-btn { text-decoration: none; display: block; }
+.ws-server-nav .ws-disabled { opacity: 0.45; pointer-events: none; }
+</style>
+{% block page_styles %}{% endblock %}
+{% endblock %}
+
+{% block body %}
+{% if is_dev %}
+<div id="dev-topbar"></div>
+{% endif %}
+
+<div class="nav-tooltip" id="nav-tooltip"></div>
+
+<button id="sidebar-toggle" title="{{ 'nav.expand' | trans }}">
+    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M4 6h16M4 12h16M4 18h16"/>
+    </svg>
+</button>
+
+{% include 'workspace/partials/sidebar_workspace.html.twig' %}
+{% include 'dashboard/partials/navbar.html.twig' %}
+
+<main id="main">
+    {% block app_breadcrumb %}
+    <nav class="grova-breadcrumb mb-2" aria-label="breadcrumb">
+        <a href="{{ path(home_route, {_locale: app.request.locale}) }}" class="breadcrumb-home">{{ 'breadcrumb.home' | trans }}</a>
+        <span class="sep">/</span>
+        <span class="current">{{ active_menu_key }}</span>
+    </nav>
+    {% endblock %}
+
+    {% block app_page_header %}
+    <div class="page-header">
+        <h1 id="page-title">{% block app_page_h1 %}{{ active_menu_key }}{% endblock %}</h1>
+        <p id="page-subtitle" class="text-muted">{% block app_page_subtitle %}{% endblock %}</p>
+    </div>
+    {% endblock %}
+
+    {% block app_main %}{% endblock %}
+</main>
+
+{% include 'dashboard/partials/footer.html.twig' %}
+{% endblock %}
+
+{% block javascripts %}
+{% block app_page_scripts %}{% endblock %}
+{% include 'workspace/partials/_chrome_scripts.html.twig' %}
+{% endblock %}

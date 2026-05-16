@@ -1,0 +1,13 @@
+{% extends 'workspace/app_layout.html.twig' %}
+
+{% block app_main %}
+<div class="content-card">
+    <div class="content-card-header">{{ active_menu_key }}</div>
+    <div class="content-card-body">
+        <p class="text-muted mb-0">
+            Esta sección ya tiene su propia ruta y plantilla modular. El contenido interactivo de la demo anterior
+            sigue en <code>templates/dashboard/index.html.twig</code>; se puede ir portando aquí por módulo.
+        </p>
+    </div>
+</div>
+{% endblock %}

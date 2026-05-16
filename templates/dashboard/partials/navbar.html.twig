@@ -1,0 +1,87 @@
+<!-- Navbar -->
+<header id="navbar">
+    {% if is_dev %}
+    <div class="dev-badge me-2">
+        <span class="dev-dot"></span>
+        DEV MODE
+    </div>
+    {% endif %}
+    <div class="navbar-search">
+        <span class="search-icon">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 21l-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0z"/></svg>
+        </span>
+        <input type="text" placeholder="{{ 'navbar.search_placeholder' | trans }}">
+    </div>
+    <div class="navbar-actions">
+        <button class="nav-btn" id="theme-toggle" title="{{ 'navbar.theme_toggle' | trans }}">
+            <svg id="icon-sun" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:none"><path d="M12 3v1M12 20v1M4.22 4.22l.7.7M18.36 18.36l.7.7M3 12H4M20 12h1M4.22 19.78l.7-.7M18.36 5.64l.7-.7M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8z"/></svg>
+            <svg id="icon-moon" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+        </button>
+        <button class="nav-btn" title="{{ 'navbar.notifications' | trans }}">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+            <span class="notif-dot"></span>
+        </button>
+        <button class="nav-btn" title="{{ 'navbar.help' | trans }}">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20zM9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3M12 17h.01"/></svg>
+        </button>
+        {% set flags = {'es': '🇪🇸', 'en': '🇺🇸'} %}
+        {% set current_flag = flags[app.request.locale] ?? '🌐' %}
+        <div class="nav-divider"></div>
+        <div class="lang-combo" id="lang-combo-nav">
+            <button class="lang-combo-trigger" onclick="toggleLangCombo('nav', event)" type="button">
+                <span class="lc-flag">{{ current_flag }}</span>
+                <span class="lc-code">{{ app.request.locale|upper }}</span>
+                <svg class="lc-chevron" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
+            </button>
+            <div class="lang-combo-list">
+                {% for locale, flag in flags %}
+                    {% set locale_url = path(app.request.attributes.get('_route'), app.request.attributes.get('_route_params')|merge({'_locale': locale})) %}
+                    <a href="{{ locale_url }}" onclick="setCookie('grova_locale','{{ locale }}',365)" class="lang-combo-option {{ app.request.locale == locale ? 'active' : '' }}">
+                        <span style="font-size:15px;">{{ flag }}</span>
+                        <span>{{ locale|upper }}</span>
+                        {% if app.request.locale == locale %}<svg class="lc-check" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>{% endif %}
+                    </a>
+                {% endfor %}
+            </div>
+        </div>
+        <div class="nav-divider"></div>
+        <div id="profile-wrap">
+            <button class="profile-btn" id="profile-btn">
+                <span class="profile-badge">{{ 'navbar.role.admin' | trans }}</span>
+                <div class="profile-avatar">{{ app.user.username|first|upper }}</div>
+                <span class="profile-name">{{ app.user.username }}</span>
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
+            </button>
+            <div class="profile-dropdown" id="profile-dropdown" style="display:none;">
+                <div class="profile-dropdown-header">
+                    <span class="profile-badge" style="display:inline-block;margin-bottom:6px;">{{ 'navbar.role.admin' | trans }}</span>
+                    <div class="name">{{ app.user.username }}</div>
+                    <div class="email">{{ app.user.email }}</div>
+                </div>
+                <button class="profile-dropdown-item">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z"/></svg>
+                    {{ 'navbar.profile' | trans }}
+                </button>
+                <button class="profile-dropdown-item">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+                    {{ 'navbar.settings' | trans }}
+                </button>
+                <div class="dev-switch-row" style="border-top:none;padding-top:0;">
+                    <span class="dev-switch-label" style="color:#94a3b8;font-weight:500;">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+                        Modo noche
+                    </span>
+                    <label class="form-switch-dev" title="Alternar modo noche">
+                        <input type="checkbox" id="theme-toggle-dropdown" {{ app.request.cookies.get('grova_theme') != 'light' ? 'checked' : '' }}>
+                        <span class="slider"></span>
+                    </label>
+                </div>
+                <div class="profile-dropdown-divider"></div>
+                <a href="{{ path('logout', {'_locale': app.request.locale}) }}" class="profile-dropdown-item danger" style="text-decoration:none;">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/></svg>
+                    {{ 'navbar.logout' | trans }}
+                </a>
+            </div>
+        </div>
+    </div>
+</header>

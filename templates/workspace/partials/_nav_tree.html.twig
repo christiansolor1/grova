@@ -1,0 +1,23 @@
+{% for item in items %}
+    {% set children = item.children|default([]) %}
+    <div class="nav-l1 ws-nav-l1">
+        {% if children|length > 0 %}
+            <details class="ws-details">
+                <summary class="nav-l1-btn ws-summary">
+                    <span class="nav-label">{{ item.label }}</span>
+                    <span class="nav-chevron" aria-hidden="true">▾</span>
+                </summary>
+                <div class="nav-l2-wrap ws-sub">
+                    {% include 'workspace/partials/_nav_tree.html.twig' with { items: children, active_menu_key: active_menu_key } only %}
+                </div>
+            </details>
+        {% elseif item.href is defined and item.href %}
+            <a href="{{ item.href }}"
+               class="nav-l1-btn {{ item.id == active_menu_key ? 'active-leaf' : '' }}">
+                <span class="nav-label">{{ item.label }}</span>
+            </a>
+        {% else %}
+            <div class="nav-l1-btn ws-disabled"><span class="nav-label">{{ item.label }}</span></div>
+        {% endif %}
+    </div>
+{% endfor %}

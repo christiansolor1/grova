@@ -1,0 +1,78 @@
+{% extends 'workspace/app_layout.html.twig' %}
+
+{% block title %}{{ 'app.name' | trans }} – {{ 'dashboard.title' | trans }}{% endblock %}
+
+{% block app_page_h1 %}{{ 'dashboard.title' | trans }}{% endblock %}
+
+{% block app_page_subtitle %}{{ 'dashboard.subtitle' | trans }}{% endblock %}
+
+{% block app_main %}
+<div id="dashboard-stats" class="row g-3 mb-4">
+    <div class="col-sm-6 col-xl-3">
+        <div class="stat-card">
+            <div class="stat-label">{{ 'stat.active_users' | trans }}</div>
+            <div class="stat-value">1,248</div>
+            <div class="stat-change">{{ 'stat.active_users.change' | trans }}</div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-xl-3">
+        <div class="stat-card">
+            <div class="stat-label">{{ 'stat.organizations' | trans }}</div>
+            <div class="stat-value">84</div>
+            <div class="stat-change">{{ 'stat.organizations.change' | trans }}</div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-xl-3">
+        <div class="stat-card">
+            <div class="stat-label">{{ 'stat.revenue' | trans }}</div>
+            <div class="stat-value">$24.8k</div>
+            <div class="stat-change">{{ 'stat.revenue.change' | trans }}</div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-xl-3">
+        <div class="stat-card">
+            <div class="stat-label">{{ 'stat.churn' | trans }}</div>
+            <div class="stat-value">2.1%</div>
+            <div class="stat-change down">{{ 'stat.churn.change' | trans }}</div>
+        </div>
+    </div>
+</div>
+
+<div id="dashboard-users-table" class="content-card">
+    <div class="content-card-header">
+        {{ 'table.users.title' | trans }}
+        <button class="btn btn-sm btn-primary" type="button">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="me-1"><path d="M12 5v14M5 12h14"/></svg>
+            {{ 'table.users.new' | trans }}
+        </button>
+    </div>
+    <div class="content-card-body">
+        <table id="users-table" class="table table-hover w-100" style="color:inherit;">
+            <thead>
+                <tr>
+                    <th>{{ 'table.col.id' | trans }}</th>
+                    <th>{{ 'table.col.username' | trans }}</th>
+                    <th>{{ 'table.col.email' | trans }}</th>
+                    <th>{{ 'table.col.role' | trans }}</th>
+                    <th>{{ 'table.col.status' | trans }}</th>
+                    <th>{{ 'table.col.actions' | trans }}</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>1</td>
+                    <td>demo</td>
+                    <td>demo@grova.com</td>
+                    <td><span class="badge bg-primary">{{ 'role.admin' | trans }}</span></td>
+                    <td><span class="badge bg-success">{{ 'status.active' | trans }}</span></td>
+                    <td>—</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+
+{% block app_page_scripts %}
+{% include 'workspace/pages/dashboard_scripts.html.twig' %}
+{% endblock %}

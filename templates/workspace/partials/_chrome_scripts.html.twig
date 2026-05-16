@@ -1,0 +1,97 @@
+<script>
+(function () {
+    function getCookie(name) {
+        return document.cookie.split('; ').reduce(function (acc, c) {
+            var p = c.split('=');
+            return p[0] === name ? decodeURIComponent(p[1] || '') : acc;
+        }, null);
+    }
+    function setCookie(name, value, days) {
+        var expires = new Date(Date.now() + days * 864e5).toUTCString();
+        document.cookie = name + '=' + encodeURIComponent(value) + ';expires=' + expires + ';path=/;SameSite=Lax';
+    }
+    window.setCookie = setCookie;
+    window.toggleLangCombo = function (id, e) {
+        e.stopPropagation();
+        var combo = document.getElementById('lang-combo-' + id);
+        if (!combo) return;
+        var isOpen = combo.classList.contains('open');
+        document.querySelectorAll('.lang-combo.open').forEach(function (el) { el.classList.remove('open'); });
+        if (!isOpen) combo.classList.add('open');
+    };
+    var sidebarCollapsed = localStorage.getItem('grova_sidebar') === '1';
+    var darkMode = getCookie('grova_theme') !== 'light';
+
+    function applySidebar() {
+        var sidebar = document.getElementById('sidebar');
+        if (!sidebar) return;
+        if (sidebarCollapsed) {
+            sidebar.classList.add('collapsed');
+            document.body.classList.add('sidebar-collapsed');
+        } else {
+            sidebar.classList.remove('collapsed');
+            document.body.classList.remove('sidebar-collapsed');
+        }
+    }
+    function applyTheme() {
+        var dd = document.getElementById('theme-toggle-dropdown');
+        if (darkMode) {
+            document.body.classList.remove('light-mode');
+            var sun = document.getElementById('icon-sun');
+            var moon = document.getElementById('icon-moon');
+            if (sun) sun.style.display = 'block';
+            if (moon) moon.style.display = 'none';
+            if (dd) dd.checked = true;
+        } else {
+            document.body.classList.add('light-mode');
+            var sun2 = document.getElementById('icon-sun');
+            var moon2 = document.getElementById('icon-moon');
+            if (sun2) sun2.style.display = 'none';
+            if (moon2) moon2.style.display = 'block';
+            if (dd) dd.checked = false;
+        }
+    }
+
+    var st = document.getElementById('sidebar-toggle');
+    if (st) {
+        st.addEventListener('click', function () {
+            sidebarCollapsed = !sidebarCollapsed;
+            localStorage.setItem('grova_sidebar', sidebarCollapsed ? '1' : '0');
+            applySidebar();
+        });
+    }
+    var tt = document.getElementById('theme-toggle');
+    if (tt) {
+        tt.addEventListener('click', function () {
+            darkMode = !darkMode;
+            setCookie('grova_theme', darkMode ? 'dark' : 'light', 365);
+            applyTheme();
+        });
+    }
+    var ttd = document.getElementById('theme-toggle-dropdown');
+    if (ttd) {
+        ttd.addEventListener('change', function (e) {
+            darkMode = e.target.checked;
+            setCookie('grova_theme', darkMode ? 'dark' : 'light', 365);
+            applyTheme();
+        });
+    }
+    var profileBtn = document.getElementById('profile-btn');
+    var profileDropdown = document.getElementById('profile-dropdown');
+    if (profileBtn && profileDropdown) {
+        profileBtn.addEventListener('click', function (e) {
+            e.stopPropagation();
+            var vis = profileDropdown.style.display === 'block';
+            profileDropdown.style.display = vis ? 'none' : 'block';
+        });
+    }
+    document.addEventListener('click', function () {
+        document.querySelectorAll('.lang-combo.open').forEach(function (el) { el.classList.remove('open'); });
+        var pd = document.getElementById('profile-dropdown');
+        if (pd) pd.style.display = 'none';
+    });
+
+    applySidebar();
+    applyTheme();
+})();
+</script>
