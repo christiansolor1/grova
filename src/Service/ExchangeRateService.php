@@ -87,11 +87,23 @@ final class ExchangeRateService
     private function fetchAtlantida(): ?array
     {
         try {
-            $html = $this->fetch('https://www.bancatlan.hn/');
-            preg_match('/id="moneda_dolar"[^>]*>Compra:\s*([\d.]+)\s*\|\s*Venta:\s*([\d.]+)/i', $html, $d);
-            preg_match('/id="moneda_euro"[^>]*>Compra:\s*([\d.]+)\s*\|\s*Venta:\s*([\d.]+)/i', $html, $e);
-            if (empty($d[1]) || empty($e[1])) return null;
-            return ['usd' => (float)$d[1], 'usd_venta' => (float)$d[2], 'eur' => (float)$e[1], 'eur_venta' => (float)$e[2], 'url' => 'bancatlan.hn'];
+            $json = $this->fetch('https://basa-static.s3.amazonaws.com/tasa-de-cambio.json');
+            $data = json_decode($json, true);
+            if (!is_array($data) || empty($data)) return null;
+
+            // Buscar la fecha más reciente (hoy primero, luego la última disponible)
+            $hoy = date('d-m-Y');
+            $fecha = isset($data[$hoy]) ? $hoy : array_key_last($data);
+            $dia = $data[$fecha] ?? null;
+            if (!$dia || empty($dia['USD']['compra']) || empty($dia['EUR']['compra'])) return null;
+
+            return [
+                'usd'       => (float) $dia['USD']['compra'],
+                'usd_venta' => (float) ($dia['USD']['venta'] ?? $dia['USD']['compra']),
+                'eur'       => (float) $dia['EUR']['compra'],
+                'eur_venta' => (float) ($dia['EUR']['venta'] ?? $dia['EUR']['compra']),
+                'url'       => 'bancatlan.hn',
+            ];
         } catch (\Throwable) { return null; }
     }
 

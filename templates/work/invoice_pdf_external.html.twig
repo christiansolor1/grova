@@ -159,15 +159,15 @@ body { font-family: Helvetica, Arial, sans-serif; font-size: 12px; color: #1a1a1
                 <span class="totals-val">{{ invoice.totalFloat|number_format(2, '.', ',') }} €</span>
             </div>
             <div class="totals-row">
-                <span class="totals-label">Tasa de impuesto</span>
+                <span class="totals-label">{{ 'work.invoice_ext_tax_rate'|trans({}, 'work', pdf_locale) }}</span>
                 <span class="totals-val">—</span>
             </div>
             <div class="totals-row">
-                <span class="totals-label">Impuesto</span>
+                <span class="totals-label">{{ 'work.invoice_ext_tax'|trans({}, 'work', pdf_locale) }}</span>
                 <span class="totals-val">0,00 €</span>
             </div>
             <div class="totals-total">
-                <span class="totals-label">Total</span>
+                <span class="totals-label">{{ 'work.invoice_ext_total'|trans({}, 'work', pdf_locale) }}</span>
                 <span class="totals-val">{{ invoice.totalFloat|number_format(2, '.', ',') }} €</span>
             </div>
         </div>
