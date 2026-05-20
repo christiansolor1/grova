@@ -1921,7 +1921,9 @@ body.light-mode .list-li-dark { border-color:#e2e8f0 !important; }
                         </td>
                         <td class="col-inv-eur"><span class="inv-eur-cell">€{{ inv.totalFloat|number_format(2, '.', ',') }}</span></td>
                         <td class="col-inv-l">
-                            {% if inv_fx is defined and inv_fx.eur is defined and inv_fx.eur > 0 %}
+                            {% if inv.lempirasRecibidos is not null and inv.lempirasRecibidosFloat > 0 %}
+                            <span class="inv-fx-cell" style="color:#22c55e;" title="Lempiras reales recibidos">{{ inv.lempirasRecibidosFloat|number_format(2, '.', ',') }}</span>
+                            {% elseif inv_fx is defined and inv_fx.eur is defined and inv_fx.eur > 0 %}
                             <span class="inv-fx-cell">{{ (inv.totalFloat * inv_fx.eur)|number_format(2, '.', ',') }}</span>
                             {% else %}
                             <span class="text-muted">—</span>
@@ -2047,6 +2049,8 @@ body.light-mode .list-li-dark { border-color:#e2e8f0 !important; }
                                         <div class="inv-pay-row-pendiente">
                                             <label for="fecha-pay-{{ inv.id }}" class="visually-hidden">{{ 'work.invoice_paid_date_label'|trans({}, 'work') }}</label>
                                             <input id="fecha-pay-{{ inv.id }}" type="date" name="fecha_cobro" value="{{ 'now'|date('Y-m-d') }}" max="{{ 'now'|date('Y-m-d') }}" class="form-control form-control-sm inv-fecha-input" required title="{{ 'work.invoice_paid_date_hint'|trans({}, 'work') }}">
+                                            <label for="lempiras-pay-{{ inv.id }}" class="visually-hidden">{{ 'work.invoice_paid_lempiras_label'|trans({}, 'work') }}</label>
+                                            <input id="lempiras-pay-{{ inv.id }}" type="number" step="0.01" min="0" name="lempiras_recibidos" value="" class="form-control form-control-sm inv-lempiras-input" placeholder="{{ 'work.invoice_paid_lempiras_ph'|trans({}, 'work') }}" title="{{ 'work.invoice_paid_lempiras_hint'|trans({}, 'work') }}">
                                             <label for="comision-pay-{{ inv.id }}" class="visually-hidden">{{ 'work.invoice_paid_bank_commission_label'|trans({}, 'work') }}</label>
                                             <input id="comision-pay-{{ inv.id }}" type="number" step="0.01" min="0" name="comision_banco_hnl" value="{{ recargo_hnl|number_format(2, '.', '') }}" class="form-control form-control-sm inv-comision-input" title="{{ 'work.invoice_paid_bank_commission_hint'|trans({}, 'work') }}">
                                             <label for="recibo-pay-{{ inv.id }}" class="visually-hidden">{{ 'work.field_recibo_swift'|trans({}, 'work') }}</label>
@@ -2061,7 +2065,11 @@ body.light-mode .list-li-dark { border-color:#e2e8f0 !important; }
                                 {% endif %}
                             {% else %}
                                 {% if inv.pagadaAt %}
-                                    <div class="small text-muted mt-0 inv-commission-paid-line" title="{{ 'work.invoice_row_commission_title'|trans({}, 'work') }}">
+                                    <div class="small text-muted mt-0 inv-commission-paid-line">
+                                        {% if inv.lempirasRecibidos is not null and inv.lempirasRecibidosFloat > 0 %}
+                                            <span title="Lempiras recibidos del banco">L {{ inv.lempirasRecibidosFloat|number_format(2, '.', ',') }}</span>
+                                            <span class="text-muted mx-1">·</span>
+                                        {% endif %}
                                         −L {{ inv_comm_l|number_format(2, '.', ',') }}{% if inv.comisionBancoHnl is null %} <span class="text-muted">({{ 'work.commission_estimated_suffix'|trans({}, 'work') }})</span>{% endif %}
                                     </div>
                                 {% else %}

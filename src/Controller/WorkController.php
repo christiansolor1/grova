@@ -945,7 +945,22 @@ final class WorkController extends AbstractController
             $invoice->setComisionBancoHnl(number_format($comisionL, 2, '.', ''));
             $invoice->setPagadaAt($fechaCobro);
             $invoice->setReciboSwift($this->parseReciboSwift((string) $request->request->get('recibo_swift', '')));
-            $this->applyPaymentFxSnapshotToInvoice($invoice);
+
+            // Si el usuario ingresó cuántos Lempiras recibió, calcular tasa efectiva
+            $rawLempiras = $request->request->get('lempiras_recibidos');
+            if ($rawLempiras !== null && $rawLempiras !== '') {
+                $lempirasL = max(0.0, (float) $rawLempiras);
+                $totalEur  = $invoice->getTotalFloat();
+                $invoice->setLempirasRecibidos(number_format($lempirasL, 2, '.', ''));
+                if ($totalEur > 0) {
+                    $tasaEfectiva = ($lempirasL + $comisionL) / $totalEur;
+                    $invoice->setTasaPagoEurL(number_format($tasaEfectiva, 5, '.', ''));
+                    $invoice->setTasaPagoFecha(date('d/m/Y'));
+                    $invoice->setTasaPagoSource('real (ingresado)');
+                }
+            } else {
+                $this->applyPaymentFxSnapshotToInvoice($invoice);
+            }
             $this->addFlash('success', $this->translator->trans('work.flash_invoice_marked_paid', ['%month%' => $monthLabel], 'work'));
             $this->notificationService->notify(
                 user: $user,
@@ -1010,7 +1025,20 @@ final class WorkController extends AbstractController
             $invoice->setReciboSwift($this->parseReciboSwift($rawRecibo));
         }
 
-        $this->applyPaymentFxSnapshotToInvoice($invoice);
+        $rawLempiras = $request->request->get('lempiras_recibidos');
+        if ($rawLempiras !== null && $rawLempiras !== '') {
+            $lempirasL = max(0.0, (float) $rawLempiras);
+            $totalEur  = $invoice->getTotalFloat();
+            $invoice->setLempirasRecibidos(number_format($lempirasL, 2, '.', ''));
+            if ($totalEur > 0) {
+                $tasaEfectiva = ($lempirasL + $comisionL) / $totalEur;
+                $invoice->setTasaPagoEurL(number_format($tasaEfectiva, 5, '.', ''));
+                $invoice->setTasaPagoFecha(date('d/m/Y'));
+                $invoice->setTasaPagoSource('real (ingresado)');
+            }
+        } else {
+            $this->applyPaymentFxSnapshotToInvoice($invoice);
+        }
         $em->flush();
 
         $monthLabel = WorkMonthLabel::format($invoice->getAnio(), $invoice->getMes(), $request->getLocale());
@@ -1379,6 +1407,7 @@ final class WorkController extends AbstractController
     private function clearInvoicePaymentFxFields(WorkInvoice $invoice): void
     {
         $invoice->setReciboSwift(null);
+        $invoice->setLempirasRecibidos(null);
         $invoice->setTasaPagoEurL(null);
         $invoice->setTasaPagoUsdL(null);
         $invoice->setTasaPagoFecha(null);

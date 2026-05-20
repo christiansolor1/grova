@@ -1,0 +1,201 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}{{ 'app.name' | trans }} – Tasas de Cambio{% endblock %}
+
+{% block stylesheets %}
+<style>
+    body {
+        background-color: #0f172a;
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 16px;
+    }
+    .rates-card {
+        width: 100%;
+        max-width: 600px;
+        background: #111827;
+        border: 1px solid #1f2937;
+        border-radius: 12px;
+        padding: 24px;
+    }
+    .rates-title {
+        color: #f1f5f9;
+        font-weight: 700;
+        font-size: 1.35rem;
+        letter-spacing: -0.3px;
+        margin-bottom: 4px;
+    }
+    .rates-subtitle {
+        color: #9ca3af;
+        font-size: .85rem;
+        margin-bottom: 20px;
+    }
+    .rate-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 12px 14px;
+        border: 1px solid #1f2937;
+        border-radius: 8px;
+        margin-bottom: 8px;
+        transition: border-color .15s;
+    }
+    .rate-row:hover {
+        border-color: #374151;
+    }
+    .rate-row.best {
+        border-color: #166534;
+        background: rgba(22, 101, 52, .1);
+    }
+    .rate-bank-name {
+        color: #e2e8f0;
+        font-weight: 600;
+        font-size: .9rem;
+        min-width: 90px;
+    }
+    .rate-bank-name .best-badge {
+        display: inline-block;
+        font-size: .6rem;
+        background: #166534;
+        color: #4ade80;
+        padding: 1px 6px;
+        border-radius: 4px;
+        margin-left: 4px;
+        font-weight: 700;
+        vertical-align: middle;
+    }
+    .rate-pairs {
+        display: flex;
+        gap: 14px;
+        font-size: .82rem;
+    }
+    .rate-pair {
+        text-align: right;
+    }
+    .rate-pair-label {
+        color: #64748b;
+        font-size: .68rem;
+        text-transform: uppercase;
+        letter-spacing: .5px;
+    }
+    .rate-pair-value {
+        color: #f1f5f9;
+        font-weight: 600;
+    }
+    .rate-pair-value.best-rate {
+        color: #4ade80;
+    }
+    .rate-divider {
+        border: none;
+        border-top: 1px solid #1f2937;
+        margin: 16px 0;
+    }
+    .rates-footer {
+        text-align: center;
+        color: #64748b;
+        font-size: .75rem;
+        margin-top: 16px;
+    }
+    .rates-footer a {
+        color: #93c5fd;
+        text-decoration: none;
+    }
+    .rates-footer a:hover {
+        text-decoration: underline;
+    }
+    .btn-volver {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        margin-top: 16px;
+        padding: 8px 16px;
+        border: 1px solid #1f2937;
+        border-radius: 8px;
+        color: #94a3b8;
+        font-size: .82rem;
+        text-decoration: none;
+        transition: border-color .15s, color .15s;
+    }
+    .btn-volver:hover {
+        border-color: #374151;
+        color: #e2e8f0;
+    }
+    .rates-source {
+        color: #6b7280;
+        font-size: .72rem;
+        margin-top: 12px;
+        text-align: center;
+    }
+    @media (max-width: 480px) {
+        .rate-row {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 8px;
+        }
+        .rate-pairs {
+            width: 100%;
+            justify-content: space-between;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block body %}
+<div class="rates-card">
+    <div class="rates-title">{% trans %}Tasas de Cambio{% endtrans %}</div>
+    <div class="rates-subtitle">USD y EUR → Lempiras (HNL) · {{ rates.fecha }}</div>
+
+    <hr class="rate-divider">
+
+    {% for name, bank in rates.banks %}
+    {% set isBestEur = name == rates.best_eur %}
+    {% set isBestUsd = name == rates.best_usd %}
+    {% set isBest = isBestEur or isBestUsd %}
+    <div class="rate-row {{ isBest ? 'best' : '' }}">
+        <div class="rate-bank-name">
+            {{ name }}
+            {% if isBest %}<span class="best-badge">★ MEJOR</span>{% endif %}
+        </div>
+        <div class="rate-pairs">
+            <div class="rate-pair">
+                <div class="rate-pair-label">USD</div>
+                <div class="rate-pair-value {{ isBestUsd ? 'best-rate' : '' }}">
+                    {{ bank.usd|number_format(4, '.', ',') }}
+                </div>
+                <div style="color:#6b7280;font-size:.68rem;">venta: {{ bank.usd_venta|number_format(4, '.', ',') }}</div>
+            </div>
+            {% if bank.eur > 0 %}
+            <div class="rate-pair">
+                <div class="rate-pair-label">EUR</div>
+                <div class="rate-pair-value {{ isBestEur ? 'best-rate' : '' }}">
+                    {{ bank.eur|number_format(4, '.', ',') }}
+                </div>
+                <div style="color:#6b7280;font-size:.68rem;">venta: {{ bank.eur_venta|number_format(4, '.', ',') }}</div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    {% endfor %}
+
+    <hr class="rate-divider">
+
+    <div class="rates-footer">
+        Datos obtenidos de los sitios web de cada banco.
+        {% if rates.source != 'fallback' %}
+            <br>Mejor tasa EUR: <strong>{{ rates.best_eur }}</strong> · Mejor tasa USD: <strong>{{ rates.best_usd }}</strong>
+        {% endif %}
+    </div>
+
+    <div class="rates-source">
+        Última actualización: {{ rates.fecha }}{% if rates.source == 'fallback' %} · Datos de respaldo (sin conexión){% endif %}
+    </div>
+
+    <div style="text-align:center;">
+        <a href="{{ path('login', {'_locale': app.request.locale}) }}" class="btn-volver">
+            <i class="bi bi-arrow-left"></i> Volver a iniciar sesión
+        </a>
+    </div>
+</div>
+{% endblock %}

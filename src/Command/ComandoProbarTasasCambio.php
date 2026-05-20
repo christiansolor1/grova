@@ -62,6 +62,11 @@ final class ComandoProbarTasasCambio extends Command
             return Command::FAILURE;
         }
 
+        if (!isset($r['banks']['BAC'])) {
+            $io->warning('BAC no respondió desde este servidor (GetExchangeRateInfo.go). Atlántida/Ficohsa/Occidente siguen activos.');
+            $io->text('Fuente BAC: https://www.sucursalelectronica.com/ebac/common/GetExchangeRateInfo.go');
+        }
+
         $io->success('Atlántida OK. Mejor EUR: ' . $r['best_eur'] . ' · Mejor USD: ' . $r['best_usd']);
 
         return Command::SUCCESS;

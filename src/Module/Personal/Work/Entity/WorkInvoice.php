@@ -66,6 +66,10 @@ class WorkInvoice
     #[ORM\Column(nullable: true)]
     private ?\DateTimeImmutable $pagadaAt = null;
 
+    /** Lempiras realmente recibidos del banco (netos, después de comisión). */
+    #[ORM\Column(type: 'decimal', precision: 12, scale: 2, nullable: true)]
+    private ?string $lempirasRecibidos = null;
+
     /** Comisión banco en L al acreditar este cobro (null = usar estimado del cliente al calcular). */
     #[ORM\Column(type: 'decimal', precision: 10, scale: 2, nullable: true)]
     private ?string $comisionBancoHnl = null;
@@ -236,6 +240,10 @@ class WorkInvoice
 
     public function getReciboSwift(): ?int { return $this->reciboSwift; }
     public function setReciboSwift(?int $reciboSwift): static { $this->reciboSwift = $reciboSwift; return $this; }
+
+    public function getLempirasRecibidos(): ?string { return $this->lempirasRecibidos; }
+    public function getLempirasRecibidosFloat(): float { return (float) ($this->lempirasRecibidos ?? 0); }
+    public function setLempirasRecibidos(?string $v): static { $this->lempirasRecibidos = $v; return $this; }
 
     public function getTasaEmisionEurL(): ?string { return $this->tasaEmisionEurL; }
     public function getTasaEmisionEurLFloat(): float { return (float) ($this->tasaEmisionEurL ?? 0); }

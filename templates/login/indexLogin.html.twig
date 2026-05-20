@@ -504,6 +504,7 @@
         <div class="login-footer-main">
             <span class="login-footer-title">{{ 'app.name' | trans }}</span>
             <div class="login-footer-links">
+                <a href="{{ path('grova_tasas_cambio_index', {'_locale': app.request.locale}) }}"><i class="bi bi-bank me-1"></i>Tasas de cambio</a>
                 <a href="#">{{ 'auth.login.footer.privacy' | trans }}</a>
                 <a href="#">{{ 'auth.login.footer.support' | trans }}</a>
             </div>
