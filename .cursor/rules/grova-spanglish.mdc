@@ -1,0 +1,51 @@
+---
+description: Convención Spanglish — nombres en español, keywords y framework en inglés
+alwaysApply: true
+---
+
+# Spanglish en Grova
+
+Código nuevo (PHP, JS propio del proyecto, servicios, controladores, comandos):
+
+- **Español**: variables, parámetros, propiedades, funciones, métodos y clases propias.
+- **Inglés**: palabras reservadas del lenguaje (`if`, `foreach`, `return`, `class`, `private`, …) y API del framework/librerías (`find`, `render`, `flush`, `persist`, `getOption`, …).
+- **Entidades y bundles de terceros**: mantener nombres originales (`User`, `Tenant`, `EntityManagerInterface`).
+
+## Ejemplos PHP
+
+```php
+// ❌ Evitar
+function createInvoice(array $items): Invoice
+$user->getName();
+
+// ✅ Preferir
+function crearFactura(array $lineas): Invoice
+$usuario->getNombre();  // getNombre si es getter propio; si es entidad legacy en inglés, no renombrar la entidad
+```
+
+```php
+// ❌ Evitar
+private readonly SetupState $setupState;
+public function isInstalled(): bool
+
+// ✅ Preferir
+private readonly EstadoInstalacion $estadoInstalacion;
+public function estaInstalado(): bool
+```
+
+## Nombres habituales
+
+| Concepto | Español |
+|----------|---------|
+| User (variable) | `$usuario` |
+| Tenant (variable) | `$inquilino` |
+| Request (variable) | `$solicitud` / `$peticion` |
+| Error list | `$errores` |
+| Install | `instalar()` |
+| Validate | `validarSolicitud()` |
+
+## Excepciones
+
+- Rutas Symfony (`app_setup`, `login`) y nombres de tablas/columnas existentes.
+- Traducciones, templates Twig: claves y copy según `translations/`.
+- No renombrar entidades ni métodos ya publicados en API sin acuerdo explícito.

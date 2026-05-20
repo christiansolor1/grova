@@ -1,0 +1,186 @@
+{% extends 'admin/layout.html.twig' %}
+
+{% block title %}{{ 'admin.suscripciones.titulo'|trans }} – {{ inquilino.nombre }} – {{ 'app.name'|trans }}{% endblock %}
+
+{% block admin_styles %}
+<style>
+    .badge-activa  { background: rgba(34,197,94,.15); border: 1px solid rgba(34,197,94,.3); color: #86efac; font-size:11px; padding: 2px 8px; border-radius:20px; }
+    .badge-vencida { background: rgba(234,179,8,.15); border: 1px solid rgba(234,179,8,.3); color: #fde047; font-size:11px; padding: 2px 8px; border-radius:20px; }
+    .badge-cancelada { background: rgba(239,68,68,.15); border: 1px solid rgba(239,68,68,.3); color: #fca5a5; font-size:11px; padding: 2px 8px; border-radius:20px; }
+    .badge-cortesia { background: rgba(234,179,8,.15); border: 1px solid rgba(234,179,8,.3); color: #fde047; font-size:10px; padding: 2px 7px; border-radius:20px; }
+    .badge-pago { background: rgba(34,197,94,.15); border: 1px solid rgba(34,197,94,.3); color: #86efac; font-size:10px; padding: 2px 7px; border-radius:20px; }
+    .form-suscripcion select,
+    .form-suscripcion input[type=date] {
+        background: #0f172a;
+        border: 1px solid #334155;
+        color: #e2e8f0;
+        border-radius: 6px;
+        font-size: 13px;
+    }
+    .form-suscripcion select:focus,
+    .form-suscripcion input[type=date]:focus {
+        background: #0f172a;
+        border-color: #2563eb;
+        color: #f1f5f9;
+        box-shadow: none;
+    }
+    .card-activa {
+        background: rgba(34,197,94,.05);
+        border: 1px solid rgba(34,197,94,.2);
+        border-radius: 8px;
+        padding: 14px;
+        margin-bottom: 14px;
+    }
+</style>
+{% endblock %}
+
+{% block admin_main %}
+{# Breadcrumb #}
+<div class="d-flex align-items-center gap-2 mb-3" style="font-size:13px; color:#64748b;">
+    <a href="{{ path('grova_admin_empresas') }}" style="color:#64748b; text-decoration:none;">
+        <i class="bi bi-building me-1"></i>Empresas
+    </a>
+    <i class="bi bi-chevron-right" style="font-size:10px;"></i>
+    <span style="color:#cbd5e1;">{{ inquilino.nombre }}</span>
+    <i class="bi bi-chevron-right" style="font-size:10px;"></i>
+    <span>{{ 'admin.suscripciones.titulo'|trans }}</span>
+</div>
+
+{# Flashes #}
+{% for etiqueta, mensajes in app.flashes %}
+    {% for mensaje in mensajes %}
+        <div class="alert mb-3 px-3 py-2 {{ etiqueta == 'success' ? 'admin-flash-success' : 'admin-flash-error' }}">
+            <i class="bi {{ etiqueta == 'success' ? 'bi-check-circle' : 'bi-exclamation-triangle' }} me-2"></i>{{ mensaje }}
+        </div>
+    {% endfor %}
+{% endfor %}
+
+<div class="row g-3">
+    {# ── Asignar plan ──────────────────────────────────────────────────── #}
+    <div class="col-lg-4">
+        <div class="admin-content-card">
+            <div class="admin-content-header">
+                <i class="bi bi-credit-card me-2"></i>{{ 'admin.suscripciones.asignar'|trans }}
+            </div>
+            <div class="admin-content-body form-suscripcion">
+                <form method="post" action="{{ path('grova_admin_suscripciones_asignar', {id: inquilino.id}) }}">
+                    <input type="hidden" name="_token" value="{{ csrf_token('asignar_plan_' ~ inquilino.id) }}">
+
+                    <div class="mb-3">
+                        <label class="form-label" style="color:#94a3b8; font-size:12px;">{{ 'admin.suscripciones.form.plan'|trans }}</label>
+                        <select name="plan_id" class="form-select form-select-sm" required>
+                            <option value="">— Seleccionar —</option>
+                            {% for plan in planes %}
+                                <option value="{{ plan.id }}"
+                                    {{ suscripcionActiva and suscripcionActiva.plan.id == plan.id ? 'selected' }}>
+                                    {{ plan.nombre }} (${{ plan.precioMensual|number_format(2, '.', ',') }})
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label" style="color:#94a3b8; font-size:12px;">{{ 'admin.suscripciones.form.tipo_cliente'|trans }}</label>
+                        <select name="tipo_cliente" class="form-select form-select-sm">
+                            <option value="">— Sin clasificar —</option>
+                            <option value="cortesia" {{ suscripcionActiva and suscripcionActiva.tipoCliente == 'cortesia' ? 'selected' }}>Cortesía</option>
+                            <option value="pago" {{ suscripcionActiva and suscripcionActiva.tipoCliente == 'pago' ? 'selected' }}>Pago</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label" style="color:#94a3b8; font-size:12px;">{{ 'admin.suscripciones.form.fecha_vencimiento'|trans }}</label>
+                        <input type="date" name="fecha_vencimiento" class="form-control form-control-sm">
+                        <div style="font-size:11px; color:#475569; margin-top:4px;">Por defecto: 1 año desde hoy</div>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary btn-sm w-100">
+                        <i class="bi bi-check-lg me-1"></i>{{ 'admin.suscripciones.asignar'|trans }}
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    {# ── Historial de suscripciones ────────────────────────────────────── #}
+    <div class="col-lg-8">
+        <div class="admin-content-card">
+            <div class="admin-content-header">
+                <i class="bi bi-list-ul me-2"></i>{{ 'admin.suscripciones.historial'|trans }}
+                <span class="text-secondary fw-normal ms-2" style="font-size:.8rem;">({{ historial|length }})</span>
+            </div>
+            <div class="admin-content-body">
+                {# Suscripción activa destacada #}
+                {% if suscripcionActiva %}
+                    <div class="card-activa">
+                        <div class="d-flex align-items-center justify-content-between mb-2">
+                            <span class="badge-activa">{{ 'admin.suscripciones.estado.activa'|trans }}</span>
+                            <span class="badge text-bg-primary" style="font-size:12px;">{{ suscripcionActiva.plan.nombre }}</span>
+                        </div>
+                        <div style="font-size:13px; color:#cbd5e1;">
+                            <i class="bi bi-calendar me-1"></i>Inicio: {{ suscripcionActiva.fechaInicio|date('d/m/Y') }}
+                            · Vence: {{ suscripcionActiva.fechaVencimiento|date('d/m/Y') }}
+                        </div>
+                        {% if suscripcionActiva.tipoCliente %}
+                            <div class="mt-1">
+                                {% if suscripcionActiva.tipoCliente == 'cortesia' %}
+                                    <span class="badge-cortesia">cortesía</span>
+                                {% else %}
+                                    <span class="badge-pago">pago</span>
+                                {% endif %}
+                            </div>
+                        {% endif %}
+                    </div>
+                {% endif %}
+
+                {% if historial is empty %}
+                    <p class="text-secondary mb-0" style="font-size:13px;">{{ 'admin.suscripciones.vacio'|trans }}</p>
+                {% else %}
+                    <div class="table-responsive">
+                        <table class="table table-sm admin-table">
+                            <thead>
+                                <tr>
+                                    <th>{{ 'admin.suscripciones.col.inicio'|trans }}</th>
+                                    <th>{{ 'admin.suscripciones.col.vencimiento'|trans }}</th>
+                                    <th>{{ 'admin.suscripciones.col.plan'|trans }}</th>
+                                    <th>{{ 'admin.suscripciones.col.estado'|trans }}</th>
+                                    <th>{{ 'admin.suscripciones.col.tipo'|trans }}</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for sub in historial %}
+                                <tr>
+                                    <td style="font-size:13px;">{{ sub.fechaInicio|date('d/m/Y') }}</td>
+                                    <td style="font-size:13px;">{{ sub.fechaVencimiento|date('d/m/Y') }}</td>
+                                    <td>
+                                        <span class="badge text-bg-primary" style="font-size:11px;">{{ sub.plan.nombre }}</span>
+                                    </td>
+                                    <td>
+                                        {% if sub.estado == 'activa' %}
+                                            <span class="badge-activa">{{ 'admin.suscripciones.estado.activa'|trans }}</span>
+                                        {% elseif sub.estado == 'vencida' %}
+                                            <span class="badge-vencida">{{ 'admin.suscripciones.estado.vencida'|trans }}</span>
+                                        {% else %}
+                                            <span class="badge-cancelada">{{ 'admin.suscripciones.estado.cancelada'|trans }}</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if sub.tipoCliente == 'cortesia' %}
+                                            <span class="badge-cortesia">{{ 'admin.suscripciones.tipo.cortesia'|trans }}</span>
+                                        {% elseif sub.tipoCliente == 'pago' %}
+                                            <span class="badge-pago">{{ 'admin.suscripciones.tipo.pago'|trans }}</span>
+                                        {% else %}
+                                            <span class="text-secondary" style="font-size:12px;">—</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

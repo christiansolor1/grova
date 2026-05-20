@@ -239,9 +239,27 @@
         row.classList.add('show');
     }
 
+    function bindFilterSectionToggles(root) {
+        var scope = root || document;
+        scope.querySelectorAll('.filter-section-btn').forEach(function (btn) {
+            if (btn.dataset.grovaSectionBound === '1') return;
+            btn.dataset.grovaSectionBound = '1';
+            btn.addEventListener('click', function () {
+                var section = btn.closest('.filter-section');
+                if (section) section.classList.toggle('open');
+            });
+        });
+    }
+
+    function filtersBodyIsCustom() {
+        var body = document.getElementById('filters-body');
+        return !!(body && body.getAttribute('data-grova-filters-custom') === '1');
+    }
+
     function renderFilterPanelForView(viewId) {
         var body = document.getElementById('filters-body');
         if (!body) return;
+        if (filtersBodyIsCustom()) return;
 
         if (window.GrovaSelect2 && typeof window.GrovaSelect2.destroyAll === 'function') {
             window.GrovaSelect2.destroyAll(body);
@@ -373,12 +391,7 @@
             })
             .join('');
 
-        body.querySelectorAll('.filter-section-btn').forEach(function (btn) {
-            btn.addEventListener('click', function () {
-                var section = btn.closest('.filter-section');
-                if (section) section.classList.toggle('open');
-            });
-        });
+        bindFilterSectionToggles(body);
 
         // Select2 con tema bootstrap-5 y dropdown dentro del panel (reinit forzado).
         if (window.GrovaSelect2 && typeof window.GrovaSelect2.init === 'function') {
@@ -403,6 +416,12 @@
         }
     }
 
+    function bindFilterChromeOnce(el, handler) {
+        if (!el || el.dataset.grovaFilterBound === '1') return;
+        el.dataset.grovaFilterBound = '1';
+        el.addEventListener('click', handler);
+    }
+
     function initFilterPanel() {
         if (filterPanelInitialized) return;
         if (!document.getElementById('filters-body')) return;
@@ -414,10 +433,29 @@
         var overlay = document.getElementById('filters-overlay');
         var applyBtn = document.getElementById('filters-apply');
         var resetBtn = document.getElementById('filters-reset');
+        var isCustom = filtersBodyIsCustom();
 
-        if (toggleBtn) toggleBtn.addEventListener('click', function () { toggleFilters(); });
-        if (closeBtn) closeBtn.addEventListener('click', function () { toggleFilters(false); });
-        if (overlay) overlay.addEventListener('click', function () { toggleFilters(false); });
+        bindFilterChromeOnce(toggleBtn, function () { toggleFilters(); });
+        bindFilterChromeOnce(closeBtn, function () { toggleFilters(false); });
+        bindFilterChromeOnce(overlay, function () { toggleFilters(false); });
+
+        if (isCustom) {
+            bindFilterSectionToggles(document.getElementById('filters-body'));
+        }
+
+        if (isCustom) {
+            var activeFiltersText = document.getElementById('active-filters-text');
+            var activeFiltersClear = document.getElementById('active-filters-clear');
+            if (activeFiltersText) {
+                bindFilterChromeOnce(activeFiltersText, function () { toggleFilters(true); });
+            }
+            if (activeFiltersClear) {
+                bindFilterChromeOnce(activeFiltersClear, function () {
+                    if (resetBtn) resetBtn.click();
+                });
+            }
+            return;
+        }
 
         if (applyBtn) {
             applyBtn.addEventListener('click', function () {
@@ -492,10 +530,18 @@
         if (m && FILTER_SCHEMAS[m]) {
             schemaKey = m;
         }
-        renderFilterPanelForView(schemaKey);
+        if (!filtersBodyIsCustom()) {
+            renderFilterPanelForView(schemaKey);
+        } else {
+            bindFilterSectionToggles(document.getElementById('filters-body'));
+        }
         initFilterPanel();
         updateActiveFiltersBanner();
     }
+
+    window.GrovaFilters = window.GrovaFilters || {};
+    window.GrovaFilters.toggle = toggleFilters;
+    window.GrovaFilters.refreshSections = bindFilterSectionToggles;
 
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', boot);

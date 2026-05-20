@@ -1,0 +1,220 @@
+{% extends 'base.html.twig' %}
+{% block title %}Nueva contraseña — Grova{% endblock %}
+
+{% block stylesheets %}
+<style>
+    body { background:#0b1020; min-height:100vh; display:flex; align-items:center; justify-content:center; padding:16px; }
+    .card-auth { width:100%; max-width:460px; background:#111827; border:1px solid #1f2937; border-radius:12px; padding:40px 36px; }
+    .logo-box { width:40px; height:40px; background:#2563eb; border-radius:8px; display:flex; align-items:center; justify-content:center; font-weight:700; color:#fff; font-size:1.1rem; }
+    h1 { color:#f1f5f9; font-size:1.4rem; font-weight:700; margin:0 0 8px; }
+    p.sub { color:#9ca3af; font-size:.9rem; line-height:1.6; margin:0 0 24px; }
+    .form-label { color:#cbd5e1; font-size:.88rem; font-weight:600; margin-bottom:.4rem; }
+    .form-control { background:#0f172a; border-color:#1f2937; border-radius:8px; color:#f1f5f9; }
+    .form-control:focus { background:#0f172a; border-color:#2563eb; color:#f1f5f9; box-shadow:0 0 0 3px rgba(37,99,235,.2); }
+    .is-invalid-custom { border-color:#ef4444 !important; }
+    .error-msg { color:#fca5a5; font-size:.78rem; margin-top:.25rem; }
+    .btn-grova { background:#2563eb; border:none; border-radius:8px; font-weight:600; padding:.75rem; width:100%; color:#fff; transition:background .2s; }
+    .btn-grova:hover { background:#1e40af; }
+    .btn-gen { background:transparent; border:1px solid #374151; border-radius:6px; color:#9ca3af; font-size:.78rem; padding:.25rem .75rem; cursor:pointer; transition:.2s; white-space:nowrap; }
+    .btn-gen:hover { border-color:#2563eb; color:#93c5fd; }
+    .btn-gen:disabled { opacity:.4; cursor:not-allowed; }
+    .strength-bar { height:4px; border-radius:2px; transition:all .3s ease; margin-top:6px; background:#374151; }
+    .strength-bar-fill { height:100%; border-radius:2px; transition:all .3s ease; width:0; }
+    .strength-label { font-size:.72rem; margin-top:2px; min-height:1.2em; }
+    .input-group-append { display:flex; align-items:center; }
+    .toggle-pw { background:transparent; border:1px solid #1f2937; border-left:none; border-radius:0 8px 8px 0; color:#64748b; padding:0 12px; cursor:pointer; }
+    .toggle-pw:hover { color:#93c5fd; }
+    .badge-gen { display:inline-flex; align-items:center; gap:4px; background:#1e293b; color:#94a3b8; font-size:.72rem; padding:2px 8px; border-radius:4px; margin-top:4px; }
+</style>
+{% endblock %}
+
+{% block body %}
+<div class="card-auth">
+    <div class="d-flex align-items-center gap-3 mb-4">
+        <div class="logo-box">G</div>
+        <h1 style="margin:0;">Nueva contraseña</h1>
+    </div>
+
+    <p class="sub">Elige una contraseña segura. Recomendamos usar una frase de 4-5 palabras separadas por guiones.</p>
+
+    <form method="post" action="{{ path('nueva_contrasena_guardar', {token: token}) }}">
+        <input type="hidden" name="_token" value="{{ csrf_token('nueva_contrasena') }}">
+
+        <div class="mb-3">
+            <div class="d-flex justify-content-between align-items-center mb-1">
+                <label class="form-label" style="margin:0;" for="contrasena">Nueva contraseña</label>
+                <button type="button" class="btn-gen" id="btn-generar" onclick="generarContrasena()">
+                    <i class="bi bi-magic"></i> Generar
+                </button>
+            </div>
+            <div class="input-group">
+                <span class="input-group-text" style="background:#0f172a;border-color:#1f2937;color:#64748b;"><i class="bi bi-lock"></i></span>
+                <input type="password" id="contrasena" name="contrasena"
+                       class="form-control {% if errors.contrasena is defined %}is-invalid-custom{% endif %}"
+                       placeholder="Mínimo 8 caracteres" required autofocus autocomplete="new-password"
+                       oninput="medirFortaleza(this.value)">
+                <button type="button" class="toggle-pw" onclick="togglePassword()" tabindex="-1">
+                    <i class="bi bi-eye" id="pw-icon"></i>
+                </button>
+            </div>
+            <!-- Barra de fortaleza -->
+            <div class="strength-bar">
+                <div class="strength-bar-fill" id="strength-fill"></div>
+            </div>
+            <div class="strength-label" id="strength-label"></div>
+            <div class="badge-gen" id="pw-type-label" style="display:none;">
+                <i class="bi bi-info-circle"></i> <span id="pw-type-text"></span>
+            </div>
+            {% if errors.contrasena is defined %}
+                <div class="error-msg">{{ errors.contrasena }}</div>
+            {% endif %}
+        </div>
+
+        <div class="mb-4">
+            <label class="form-label" for="contrasena_confirmar">Confirmar contraseña</label>
+            <div class="input-group">
+                <span class="input-group-text" style="background:#0f172a;border-color:#1f2937;color:#64748b;"><i class="bi bi-lock-fill"></i></span>
+                <input type="password" id="contrasena_confirmar" name="contrasena_confirmar"
+                       class="form-control {% if errors.contrasena_confirmar is defined %}is-invalid-custom{% endif %}"
+                       placeholder="Repite la contraseña" required autocomplete="new-password"
+                       oninput="medirCoincidencia()">
+            </div>
+            {% if errors.contrasena_confirmar is defined %}
+                <div class="error-msg">{{ errors.contrasena_confirmar }}</div>
+            {% endif %}
+            <div class="strength-label" id="match-label"></div>
+        </div>
+
+        <button type="submit" class="btn-grova" id="btn-submit">Guardar nueva contraseña</button>
+    </form>
+</div>
+{% endblock %}
+
+{% block javascripts %}
+<script>
+function medirFortaleza(pw) {
+    var fill = document.getElementById('strength-fill');
+    var label = document.getElementById('strength-label');
+    var tipo = document.getElementById('pw-type-label');
+    var tipoTexto = document.getElementById('pw-type-text');
+
+    if (pw.length === 0) {
+        fill.style.width = '0';
+        label.textContent = '';
+        tipo.style.display = 'none';
+        return;
+    }
+
+    var score = 0;
+
+    // Largo: +0 a +40
+    score += Math.min(40, pw.length * 2.5);
+
+    // Variedad
+    var tieneMin = /[a-z]/.test(pw) ? 1 : 0;
+    var tieneMay = /[A-Z]/.test(pw) ? 1 : 0;
+    var tieneNum = /[0-9]/.test(pw) ? 1 : 0;
+    var tieneSim = /[^a-zA-Z0-9]/.test(pw) ? 1 : 0;
+    var tipos = tieneMin + tieneMay + tieneNum + tieneSim;
+    score += tipos * 5;
+    if (tipos >= 3) score += 10;
+
+    // Penalizar repeticiones
+    var reps = 0;
+    for (var i = 0; i < pw.length - 2; i++) {
+        if (pw[i] === pw[i+1] && pw[i] === pw[i+2]) reps++;
+    }
+    score -= reps * 5;
+
+    // Penalizar secuencias comunes
+    var secuencias = ['123', 'abc', 'qwerty', 'asdf', 'zxcv', '000', '111', 'password', 'contrasena', 'admin'];
+    var lower = pw.toLowerCase();
+    for (var s = 0; s < secuencias.length; s++) {
+        if (lower.indexOf(secuencias[s]) !== -1) score -= 20;
+    }
+
+    score = Math.max(0, Math.min(100, score));
+
+    var width = score + '%';
+    var color, texto, nivel;
+
+    if (score >= 80) { color = '#22c55e'; texto = 'Excelente'; nivel = 4; }
+    else if (score >= 60) { color = '#84cc16'; texto = 'Buena'; nivel = 3; }
+    else if (score >= 40) { color = '#eab308'; texto = 'Regular'; nivel = 2; }
+    else if (score >= 20) { color = '#f97316'; texto = 'Débil'; nivel = 1; }
+    else { color = '#ef4444'; texto = 'Muy débil'; nivel = 0; }
+
+    fill.style.width = width;
+    fill.style.background = color;
+    label.textContent = 'Fortaleza: ' + texto;
+    label.style.color = color;
+
+    // Detectar si parece frase memorable
+    var tieneGuiones = pw.indexOf('-') !== -1;
+    var palabras = pw.split('-').filter(function(p) { return p.length > 0; });
+    var esFrase = tieneGuiones && palabras.length >= 3;
+
+    if (esFrase) {
+        tipo.style.display = 'inline-flex';
+        tipoTexto.textContent = 'Frase memorable';
+    } else if (score >= 60) {
+        tipo.style.display = 'inline-flex';
+        tipoTexto.textContent = 'Clave fuerte';
+    } else {
+        tipo.style.display = 'none';
+    }
+}
+
+function medirCoincidencia() {
+    var pw = document.getElementById('contrasena').value;
+    var confirm = document.getElementById('contrasena_confirmar').value;
+    var label = document.getElementById('match-label');
+
+    if (confirm.length === 0) {
+        label.textContent = '';
+        return;
+    }
+
+    if (pw === confirm) {
+        label.textContent = '✓ Coinciden';
+        label.style.color = '#22c55e';
+    } else {
+        label.textContent = '✗ No coinciden';
+        label.style.color = '#f87171';
+    }
+}
+
+function togglePassword() {
+    var input = document.getElementById('contrasena');
+    var icon = document.getElementById('pw-icon');
+    if (input.type === 'password') {
+        input.type = 'text';
+        icon.className = 'bi bi-eye-slash';
+    } else {
+        input.type = 'password';
+        icon.className = 'bi bi-eye';
+    }
+}
+
+function generarContrasena() {
+    var btn = document.getElementById('btn-generar');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
+
+    fetch('/generar-contrasena?tipo=frase')
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            document.getElementById('contrasena').value = data.contrasena;
+            document.getElementById('contrasena_confirmar').value = '';
+            medirFortaleza(data.contrasena);
+            document.getElementById('match-label').textContent = '';
+            btn.innerHTML = '<i class="bi bi-magic"></i> Generar';
+            btn.disabled = false;
+        })
+        .catch(function() {
+            btn.innerHTML = '<i class="bi bi-magic"></i> Generar';
+            btn.disabled = false;
+        });
+}
+</script>
+{% endblock %}

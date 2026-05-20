@@ -94,8 +94,14 @@
                 <svg class="lc-chevron" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
             </button>
             <div class="lang-combo-list">
+                {% set _current_route = app.request.attributes.get('_route')|default('') %}
+                {% set _route_params = app.request.attributes.get('_route_params')|default({}) %}
                 {% for locale, flag in flags %}
-                    {% set locale_url = path(app.request.attributes.get('_route'), app.request.attributes.get('_route_params')|merge({'_locale': locale})) %}
+                    {% if _current_route starts with 'grova_admin_' and locale != 'es' %}
+                        {% set locale_url = '#' %}
+                    {% else %}
+                        {% set locale_url = path(_current_route, _route_params|merge({'_locale': locale})) %}
+                    {% endif %}
                     <a href="{{ locale_url }}" onclick="setCookie('grova_locale','{{ locale }}',365)" class="lang-combo-option {{ app.request.locale == locale ? 'active' : '' }}">
                         <span style="font-size:15px;">{{ flag }}</span>
                         <span>{{ locale|upper }}</span>
@@ -165,6 +171,23 @@
                 </a>
                 {% endif %}
                 <div class="profile-dropdown-divider"></div>
+                <a href="{{ path('grova_usuarios_index', {_locale: app.request.locale}) }}" class="profile-dropdown-item" style="text-decoration:none;">
+                    <i class="bi bi-people" style="font-size:15px;"></i>
+                    Usuarios
+                </a>
+                <div class="profile-dropdown-divider"></div>
+                <a href="{{ path('grova_respaldo_index', {_locale: app.request.locale}) }}" class="profile-dropdown-item" style="text-decoration:none;">
+                    <i class="bi bi-archive" style="font-size:15px;"></i>
+                    Respaldos
+                </a>
+                {% if is_granted('ROLE_SUPER_ADMIN') %}
+                <div class="profile-dropdown-divider"></div>
+                <a href="{{ path('grova_admin_empresas', {_locale: 'es'}) }}" class="profile-dropdown-item" style="text-decoration:none; color:#fbbf24;">
+                    <i class="bi bi-shield-lock" style="font-size:15px;"></i>
+                    Admin panel
+                </a>
+                <div class="profile-dropdown-divider"></div>
+                {% endif %}
                 <a href="{{ path('logout', {'_locale': app.request.locale}) }}" class="profile-dropdown-item danger" style="text-decoration:none;">
                     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/></svg>
                     {{ 'navbar.logout' | trans }}

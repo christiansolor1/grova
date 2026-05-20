@@ -17,4 +17,25 @@ class PlanRepository extends ServiceEntityRepository
     {
         parent::__construct($registry, Plan::class);
     }
+
+    /**
+     * @return list<Plan>
+     */
+    public function findAllOrdered(): array
+    {
+        return $this->findBy([], ['precioMensual' => 'ASC']);
+    }
+
+    /**
+     * @return list<Plan>
+     */
+    public function findActivos(): array
+    {
+        return $this->findBy(['estado' => 'activo'], ['precioMensual' => 'ASC']);
+    }
+
+    public function findByNombre(string $nombre): ?Plan
+    {
+        return $this->findOneBy(['nombre' => $nombre]);
+    }
 }

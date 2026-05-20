@@ -1,0 +1,86 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Revisa tu correo — Grova{% endblock %}
+
+{% block stylesheets %}
+<style>
+    body {
+        background: #0b1020;
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 16px;
+    }
+    .card-confirm {
+        width: 100%;
+        max-width: 480px;
+        background: #111827;
+        border: 1px solid #1f2937;
+        border-radius: 12px;
+        padding: 40px 36px;
+        text-align: center;
+    }
+    .icon-circle {
+        width: 64px; height: 64px;
+        background: rgba(37,99,235,.15);
+        border-radius: 50%;
+        display: flex; align-items: center; justify-content: center;
+        margin: 0 auto 24px;
+    }
+    h1 { color: #f1f5f9; font-size: 1.4rem; font-weight: 700; margin: 0 0 12px; }
+    p  { color: #9ca3af; font-size: .95rem; line-height: 1.6; margin: 0 0 8px; }
+    .email-badge {
+        display: inline-block;
+        background: #1f2937;
+        border: 1px solid #374151;
+        border-radius: 6px;
+        color: #93c5fd;
+        font-size: .9rem;
+        padding: 4px 12px;
+        margin: 8px 0 24px;
+    }
+    .btn-login {
+        display: inline-block;
+        background: #2563eb;
+        color: #fff;
+        font-weight: 600;
+        font-size: .95rem;
+        padding: 12px 28px;
+        border-radius: 8px;
+        text-decoration: none;
+        transition: background .2s;
+    }
+    .btn-login:hover { background: #1e40af; }
+    .reenviar { margin-top: 24px; font-size: .8rem; color: #6b7280; }
+    .reenviar form { display: inline; }
+    .reenviar button {
+        background: none; border: none; color: #93c5fd;
+        font-size: .8rem; cursor: pointer; text-decoration: underline; padding: 0;
+    }
+</style>
+{% endblock %}
+
+{% block body %}
+<div class="card-confirm">
+    <div class="icon-circle">
+        <i class="bi bi-envelope-check" style="font-size:28px;color:#2563eb;"></i>
+    </div>
+
+    <h1>Revisa tu correo</h1>
+    <p>Te enviamos un enlace de verificación a:</p>
+    <div class="email-badge">{{ email }}</div>
+    <p>Haz clic en el enlace del correo para activar tu cuenta.<br>Expira en <strong style="color:#e2e8f0;">24 horas</strong>.</p>
+
+    <a href="{{ path('login') }}" class="btn-login">Ir al login</a>
+
+    <div class="reenviar">
+        ¿No te llegó?
+        <form method="post" action="{{ path('reenviar_verificacion') }}">
+            <input type="hidden" name="_token" value="{{ csrf_token('reenviar_verificacion') }}">
+            <input type="hidden" name="email" value="{{ email }}">
+            <button type="submit">Reenviar enlace</button>
+        </form>
+    </div>
+</div>
+{% endblock %}

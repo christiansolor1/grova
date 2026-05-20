@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace App\Controller;
 
 use App\Entity\User;
+use App\Entity\UserCredencialBiometrica;
+use App\Repository\UserCredencialBiometricaRepository;
 use App\Repository\UserLockRepository;
 use App\Service\SectionLockService;
 use Doctrine\ORM\EntityManagerInterface;
@@ -25,6 +27,7 @@ final class LockController extends AbstractController
     public function __construct(
         private readonly SectionLockService $lockService,
         private readonly UserLockRepository $lockRepo,
+        private readonly UserCredencialBiometricaRepository $credencialRepo,
         private readonly EntityManagerInterface $em,
         private readonly TokenStorageInterface $tokenStorage,
     ) {
@@ -44,13 +47,16 @@ final class LockController extends AbstractController
             return $this->redirect($request->query->get('redirect', $this->generateUrl('workspace', ['_locale' => $request->getLocale()])));
         }
 
+        $credenciales  = $this->credencialRepo->findByUser($user);
+        $tieneWebAuthn = count($credenciales) > 0;
+
         return $this->render('lock/screen.html.twig', [
-            'section'           => $section,
-            'section_label'     => SectionLockService::SECTIONS[$section] ?? $section,
-            'redirect'          => $request->query->get('redirect', ''),
-            'has_webauthn'      => $lock->isWebauthnEnabled(),
-            'has_pin'           => $lock->hasPin(),
-            'auto_prompt'       => $lock->isWebauthnEnabled(),
+            'section'       => $section,
+            'section_label' => SectionLockService::SECTIONS[$section] ?? $section,
+            'redirect'      => $request->query->get('redirect', ''),
+            'has_webauthn'  => $tieneWebAuthn,
+            'has_pin'       => $lock->hasPin(),
+            'auto_prompt'   => $tieneWebAuthn && $lock->isWebauthnAutoPrompt(),
         ]);
     }
 
@@ -92,20 +98,16 @@ final class LockController extends AbstractController
     {
         try {
             /** @var User $user */
-            $user = $this->getUser();
-            $lock = $this->lockRepo->findOneBy(['user' => $user]);
+            $user        = $this->getUser();
+            $credenciales = $this->credencialRepo->findByUser($user);
 
-            if ($lock === null || !$lock->isWebauthnEnabled() || $lock->getWebauthnCredentialId() === null) {
-                return new JsonResponse(['error' => 'WebAuthn no configurado'], 400);
+            if (count($credenciales) === 0) {
+                return new JsonResponse(['error' => 'Biométrico no configurado'], 400);
             }
 
+            $ids  = array_map(fn($c) => base64_decode($c->getCredentialId()), $credenciales);
             $wa   = $this->buildWebAuthn($request);
-            $args = $wa->getGetArgs(
-                [base64_decode($lock->getWebauthnCredentialId())],
-                20,
-                true, true, true, true, true,
-                true,
-            );
+            $args = $wa->getGetArgs($ids, 20, true, true, true, true, true, true);
 
             $request->getSession()->set('_wa_challenge_lock_' . $section, $wa->getChallenge()->getBinaryString());
 
@@ -123,31 +125,35 @@ final class LockController extends AbstractController
     {
         try {
             /** @var User $user */
-            $user = $this->getUser();
-            $lock = $this->lockRepo->findOneBy(['user' => $user]);
-
-            if ($lock === null || !$lock->isWebauthnEnabled()) {
-                return new JsonResponse(['error' => 'WebAuthn no configurado'], 400);
-            }
-
+            $user      = $this->getUser();
             $challenge = $request->getSession()->get('_wa_challenge_lock_' . $section);
+
             if ($challenge === null) {
                 return new JsonResponse(['error' => 'Sesión expirada'], 400);
             }
 
-            $data = json_decode((string) $request->getContent(), true, 512, JSON_THROW_ON_ERROR);
+            $data        = json_decode((string) $request->getContent(), true, 512, JSON_THROW_ON_ERROR);
+            $credentialId = base64_encode($this->b64Decode((string) ($data['id'] ?? '')));
+            $credencial  = $this->credencialRepo->findByCredentialId($credentialId);
+
+            if ($credencial === null || $credencial->getUser()->getId() !== $user->getId()) {
+                return new JsonResponse(['error' => 'Credencial no encontrada'], 401);
+            }
 
             $wa = $this->buildWebAuthn($request);
             $wa->processGet(
                 $this->b64Decode((string) ($data['clientDataJSON'] ?? '')),
                 $this->b64Decode((string) ($data['authenticatorData'] ?? '')),
                 $this->b64Decode((string) ($data['signature'] ?? '')),
-                $lock->getWebauthnPublicKey(),
+                $credencial->getPublicKey(),
                 $challenge,
                 null,
                 true,
                 true,
             );
+
+            $credencial->marcarUso();
+            $this->em->flush();
 
             $this->lockService->unlockSection($request->getSession(), $section);
             $request->getSession()->remove('_wa_challenge_lock_' . $section);
@@ -158,7 +164,7 @@ final class LockController extends AbstractController
         }
     }
 
-    // ── WebAuthn: registrar credencial ───────────────────────────────────────
+    // ── WebAuthn: registrar nueva credencial ────────────────────────────────
 
     #[Route('/webauthn/register/start', name: 'webauthn_register_start', methods: ['POST'])]
     #[IsGranted('IS_AUTHENTICATED_FULLY')]
@@ -177,7 +183,7 @@ final class LockController extends AbstractController
                 20,
                 false,
                 true,
-                false,   // solo autenticador de plataforma (Touch ID, Face ID)
+                false,
             );
 
             $request->getSession()->set('_wa_challenge_reg', $wa->getChallenge()->getBinaryString());
@@ -194,16 +200,14 @@ final class LockController extends AbstractController
     {
         try {
             /** @var User $user */
-            $user = $this->getUser();
-            $lock = $this->lockService->getOrCreate($user);
-
+            $user      = $this->getUser();
             $challenge = $request->getSession()->get('_wa_challenge_reg');
+
             if ($challenge === null) {
                 return new JsonResponse(['error' => 'Sesión expirada, recarga e intenta de nuevo'], 400);
             }
 
             $data = json_decode((string) $request->getContent(), true, 512, JSON_THROW_ON_ERROR);
-
             $wa   = $this->buildWebAuthn($request);
 
             $cred = $wa->processCreate(
@@ -215,41 +219,84 @@ final class LockController extends AbstractController
                 false,
             );
 
-            $this->lockService->saveWebAuthn(
-                $lock,
-                base64_encode($cred->credentialId),
-                $cred->credentialPublicKey,
-            );
+            $nombreDispositivo = trim((string) ($data['deviceName'] ?? '')) ?: $this->detectarNombreDispositivo($request);
+
+            $credencial = new UserCredencialBiometrica();
+            $credencial->setUser($user);
+            $credencial->setCredentialId(base64_encode($cred->credentialId));
+            $credencial->setPublicKey($cred->credentialPublicKey);
+            $credencial->setNombreDispositivo($nombreDispositivo);
+            $this->em->persist($credencial);
+            $this->em->flush();
 
             $request->getSession()->remove('_wa_challenge_reg');
 
-            $response = new JsonResponse(['ok' => true]);
+            $response = new JsonResponse(['ok' => true, 'id' => $credencial->getId()]);
             $response->headers->setCookie(Cookie::create('grova_biometric', '1', strtotime('+1 year'), '/', null, true, false));
+
             return $response;
         } catch (\Throwable $e) {
             return new JsonResponse(['error' => $e->getMessage()], 500);
         }
     }
 
-    // ── WebAuthn: eliminar credencial ────────────────────────────────────────
+    // ── Consentimiento biométrico ─────────────────────────────────────────────
 
-    #[Route('/webauthn/remove', name: 'webauthn_remove', methods: ['POST'])]
+    #[Route('/biometrico/consentir', name: 'biometrico_consentir', methods: ['POST'])]
     #[IsGranted('IS_AUTHENTICATED_FULLY')]
-    public function webauthnRemove(Request $request): Response
+    public function consentirBiometrico(Request $request): JsonResponse
     {
-        if (!$this->isCsrfTokenValid('lock_webauthn_remove', (string) $request->request->get('_token'))) {
-            $this->addFlash('danger', 'Token inválido.');
-        } else {
-            /** @var User $user */
-            $user = $this->getUser();
-            $lock = $this->lockRepo->findOneBy(['user' => $user]);
-            if ($lock !== null) {
-                $this->lockService->removeWebAuthn($lock);
-                $this->addFlash('success', 'Credencial biométrica eliminada.');
-            }
+        /** @var User $user */
+        $user = $this->getUser();
+
+        try {
+            $consentimiento = \App\Entity\ConsentimientoBiometrico::crear(
+                usuario: $user,
+                ip: $request->getClientIp() ?? '0.0.0.0',
+                userAgent: $request->headers->get('User-Agent'),
+            );
+            $this->em->persist($consentimiento);
+            $this->em->flush();
+
+            return new JsonResponse(['ok' => true, 'id' => $consentimiento->getId()]);
+        } catch (\Throwable $e) {
+            return new JsonResponse(['error' => $e->getMessage()], 500);
         }
+    }
+
+    // ── WebAuthn: eliminar credencial específica ─────────────────────────────
+
+    #[Route('/webauthn/remove/{id}', name: 'webauthn_remove', methods: ['POST'])]
+    #[IsGranted('IS_AUTHENTICATED_FULLY')]
+    public function webauthnRemove(int $id, Request $request): Response
+    {
+        if (!$this->isCsrfTokenValid('lock_webauthn_remove_' . $id, (string) $request->request->get('_token'))) {
+            $this->addFlash('danger', 'Token inválido.');
+            return $this->redirectToRoute('grova_profile', ['_locale' => $request->getLocale()]);
+        }
+
+        /** @var User $user */
+        $user       = $this->getUser();
+        $credencial = $this->credencialRepo->find($id);
+
+        if ($credencial === null || $credencial->getUser()->getId() !== $user->getId()) {
+            $this->addFlash('danger', 'Credencial no encontrada.');
+            return $this->redirectToRoute('grova_profile', ['_locale' => $request->getLocale()]);
+        }
+
+        $nombre = $credencial->getNombreDispositivo() ?? 'Dispositivo';
+        $this->em->remove($credencial);
+        $this->em->flush();
+
+        $this->addFlash('success', sprintf('"%s" eliminado.', $nombre));
+
         $response = $this->redirectToRoute('grova_profile', ['_locale' => $request->getLocale()]);
-        $response->headers->clearCookie('grova_biometric', '/');
+
+        // Limpiar cookie si no quedan más credenciales
+        if (count($this->credencialRepo->findByUser($user)) === 0) {
+            $response->headers->clearCookie('grova_biometric', '/');
+        }
+
         return $response;
     }
 
@@ -286,7 +333,7 @@ final class LockController extends AbstractController
         return $this->redirectToRoute('grova_profile', ['_locale' => $request->getLocale()]);
     }
 
-    // ── LOGIN BIOMÉTRICO (público) ───────────────────────────────────────────
+    // ── LOGIN BIOMÉTRICO (público — reemplaza contraseña) ───────────────────
 
     #[Route('/login-webauthn/challenge', name: 'login_webauthn_challenge', methods: ['GET'])]
     public function loginWebauthnChallenge(Request $request): JsonResponse
@@ -310,12 +357,11 @@ final class LockController extends AbstractController
                 return new JsonResponse(['error' => 'Sesión expirada'], 400);
             }
 
-            $data = json_decode((string) $request->getContent(), true, 512, JSON_THROW_ON_ERROR);
-
+            $data        = json_decode((string) $request->getContent(), true, 512, JSON_THROW_ON_ERROR);
             $credentialId = base64_encode($this->b64Decode((string) ($data['id'] ?? '')));
-            $lock         = $this->lockRepo->findByCredentialId($credentialId);
+            $credencial  = $this->credencialRepo->findByCredentialId($credentialId);
 
-            if ($lock === null || !$lock->isWebauthnEnabled()) {
+            if ($credencial === null) {
                 return new JsonResponse(['error' => 'Credencial no encontrada'], 401);
             }
 
@@ -324,16 +370,19 @@ final class LockController extends AbstractController
                 $this->b64Decode((string) ($data['clientDataJSON'] ?? '')),
                 $this->b64Decode((string) ($data['authenticatorData'] ?? '')),
                 $this->b64Decode((string) ($data['signature'] ?? '')),
-                $lock->getWebauthnPublicKey(),
+                $credencial->getPublicKey(),
                 $challenge,
                 null,
                 true,
                 true,
             );
 
+            $credencial->marcarUso();
+            $this->em->flush();
+
             $request->getSession()->remove('_wa_challenge_login');
 
-            $user  = $lock->getUser();
+            $user  = $credencial->getUser();
             $token = new UsernamePasswordToken($user, 'main', $user->getRoles());
             $this->tokenStorage->setToken($token);
             $request->getSession()->migrate(true);
@@ -344,15 +393,15 @@ final class LockController extends AbstractController
                 'redirect' => $this->generateUrl('workspace', ['_locale' => $request->getLocale()]),
             ]);
             $response->headers->setCookie(Cookie::create('grova_biometric', '1', strtotime('+1 year'), '/', null, true, false));
+
             return $response;
         } catch (\Throwable $e) {
             return new JsonResponse(['error' => $e->getMessage()], 400);
         }
     }
 
-    // ── Helper ───────────────────────────────────────────────────────────────
+    // ── Helpers ──────────────────────────────────────────────────────────────
 
-    /** Decode standard base64 or base64url (URL-safe) strings to binary. */
     private function b64Decode(string $s): string
     {
         $s   = str_replace(['-', '_'], ['+', '/'], $s);
@@ -366,28 +415,34 @@ final class LockController extends AbstractController
     private function buildWebAuthn(Request $request): WebAuthn
     {
         $rpId = $this->getRpId($request);
-        // 4º parámetro true = usar base64url en la serialización JSON
         return new WebAuthn('Grova', $rpId, null, true);
     }
 
     private function getRpId(Request $request): string
     {
-        // WebAuthn solo permite HTTP para rpId='localhost'.
-        // Para cualquier subdominio de .localhost (ej: grova.localhost) en HTTP,
-        // se usa 'localhost' como rpId — es válido porque el spec permite rpId = suffix del origin.
-        // En HTTPS se usa el host real.
         if ($request->getScheme() === 'https') {
             return $request->getHost();
         }
 
         $host = $request->getHost();
-
-        // grova.localhost, app.localhost, etc. → localhost
         if ($host === 'localhost' || str_ends_with($host, '.localhost')) {
             return 'localhost';
         }
 
-        // Cualquier otro host HTTP no funcionará con WebAuthn (requiere HTTPS)
         return $host;
+    }
+
+    private function detectarNombreDispositivo(Request $request): string
+    {
+        $ua = strtolower($request->headers->get('User-Agent', ''));
+
+        if (str_contains($ua, 'iphone')) return 'iPhone';
+        if (str_contains($ua, 'ipad')) return 'iPad';
+        if (str_contains($ua, 'mac os')) return 'Mac';
+        if (str_contains($ua, 'windows')) return 'Windows';
+        if (str_contains($ua, 'android')) return 'Android';
+        if (str_contains($ua, 'linux')) return 'Linux';
+
+        return 'Dispositivo';
     }
 }

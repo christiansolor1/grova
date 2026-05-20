@@ -41,7 +41,7 @@ final class ContactController extends AbstractController
             $contacts = $this->contactRepo->findAllOrdered();
         }
 
-        return $this->render('workspace/pages/contacts/index.html.twig', [
+        return $this->render('workspace/pages/contacts/indexContactos.html.twig', [
             'menu_tree'               => $tree,
             'active_menu_key'         => 'contactos',
             'workspace_home_menu_key' => MenuTreeBuilder::HOME_MENU_KEY,

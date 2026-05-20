@@ -1,0 +1,99 @@
+{% extends 'admin/layout.html.twig' %}
+
+{% block title %}{{ 'admin.planes.titulo'|trans }} – {{ 'app.name'|trans }}{% endblock %}
+
+{% block admin_styles %}
+<style>
+    .badge-activo  { background: rgba(34,197,94,.15); border: 1px solid rgba(34,197,94,.3); color: #86efac; font-size:11px; padding: 2px 8px; border-radius:20px; }
+    .badge-inactivo { background: rgba(100,116,139,.15); border: 1px solid rgba(100,116,139,.3); color: #94a3b8; font-size:11px; padding: 2px 8px; border-radius:20px; }
+</style>
+{% endblock %}
+
+{% block admin_main %}
+<div class="admin-content-card">
+    <div class="admin-content-header d-flex align-items-center justify-content-between">
+        <div>
+            <i class="bi bi-box-seam me-2"></i>{{ 'admin.planes.titulo'|trans }}
+            <span class="text-secondary fw-normal ms-2" style="font-size:.8rem;">({{ planes|length }})</span>
+        </div>
+        <a href="{{ path('grova_admin_planes_crear') }}" class="btn btn-sm btn-admin-outline">
+            <i class="bi bi-plus-lg me-1"></i>{{ 'admin.planes.crear'|trans }}
+        </a>
+    </div>
+    <div class="admin-content-body">
+        {% if planes is empty %}
+            <p class="text-secondary mb-0" style="font-size:13px;">{{ 'admin.planes.vacio'|trans }}</p>
+        {% else %}
+            <div class="table-responsive">
+                <table class="table table-sm admin-table">
+                    <thead>
+                        <tr>
+                            <th>{{ 'admin.planes.col.nombre'|trans }}</th>
+                            <th>{{ 'admin.planes.col.modulos'|trans }}</th>
+                            <th>{{ 'admin.planes.col.precio'|trans }}</th>
+                            <th>{{ 'admin.planes.col.estado'|trans }}</th>
+                            <th class="text-end">{{ 'admin.planes.col.acciones'|trans }}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for plan in planes %}
+                        <tr>
+                            <td>
+                                <span style="font-weight:500; color:#e2e8f0;">{{ plan.nombre }}</span>
+                            </td>
+                            <td>
+                                {% if plan.modulos is not empty %}
+                                    {% for modulo in plan.modulos %}
+                                        <span class="badge text-bg-secondary me-1" style="font-size:10px;">{{ modulo }}</span>
+                                    {% endfor %}
+                                {% else %}
+                                    <span class="text-secondary" style="font-size:12px;">—</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if plan.precioMensual > 0 %}
+                                    <span>${{ plan.precioMensual|number_format(2, '.', ',') }}</span>
+                                {% else %}
+                                    <span class="text-secondary">Gratis</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if plan.estado == 'activo' %}
+                                    <span class="badge-activo">{{ 'admin.planes.estado.activo'|trans }}</span>
+                                {% else %}
+                                    <span class="badge-inactivo">{{ 'admin.planes.estado.inactivo'|trans }}</span>
+                                {% endif %}
+                            </td>
+                            <td class="text-end">
+                                <div class="d-flex align-items-center justify-content-end gap-2">
+                                    <a href="{{ path('grova_admin_planes_editar', {id: plan.id}) }}"
+                                       class="btn btn-sm btn-admin-outline"
+                                       title="{{ 'admin.planes.editar'|trans }}">
+                                        <i class="bi bi-pencil"></i>
+                                    </a>
+
+                                    <form method="post"
+                                          action="{{ path('grova_admin_planes_alternar_estado', {id: plan.id}) }}"
+                                          class="d-inline">
+                                        <input type="hidden" name="_token" value="{{ csrf_token('plan_estado_' ~ plan.id) }}">
+                                        <button type="submit"
+                                                class="btn btn-sm {{ plan.estado == 'activo' ? 'btn-outline-warning' : 'btn-outline-success' }}"
+                                                title="{{ plan.estado == 'activo' ? 'admin.planes.accion.desactivar'|trans : 'admin.planes.accion.activar'|trans }}">
+                                            {% if plan.estado == 'activo' %}
+                                                <i class="bi bi-pause-circle me-1"></i>{{ 'admin.planes.accion.desactivar'|trans }}
+                                            {% else %}
+                                                <i class="bi bi-play-circle me-1"></i>{{ 'admin.planes.accion.activar'|trans }}
+                                            {% endif %}
+                                        </button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

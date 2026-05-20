@@ -1,0 +1,309 @@
+{% extends 'workspace/app_layout.html.twig' %}
+
+{% block page_title %}{{ 'usuarios.titulo'|trans }}{% endblock %}
+
+{% block main_attributes %} data-grova-filter-schema="filter-usuarios"{% endblock %}
+
+{% block app_filters_row %}{% include 'workspace/partials/_filters_active_row.html.twig' %}{% endblock %}
+{% block app_filters_drawer %}{% include 'workspace/partials/_filters_drawer.html.twig' %}{% endblock %}
+
+{% block app_main %}
+<div class="content-card">
+    <div class="content-card-header d-flex justify-content-between align-items-center">
+        <span>{{ 'usuarios.titulo'|trans }}</span>
+        <a href="{{ path('grova_usuarios_crear', {_locale: app.request.locale}) }}" class="btn btn-sm btn-primary">
+            <i class="bi bi-person-plus"></i>
+            {{ 'usuarios.crear'|trans }}
+        </a>
+    </div>
+    <div class="content-card-body">
+        {% if usuarios is empty %}
+        <p class="text-muted mb-0">{{ 'usuarios.vacio'|trans }}</p>
+        {% else %}
+        <div class="table-responsive">
+            <table id="users-table" class="table table-sm align-middle mb-0">
+                <thead>
+                    <tr>
+                        <th>{{ 'usuarios.col.acciones'|trans }}</th>
+                        <th>{{ 'usuarios.col.username'|trans }}</th>
+                        <th>{{ 'usuarios.col.email'|trans }}</th>
+                        <th>{{ 'usuarios.col.nombre'|trans }}</th>
+                        {% if es_gestor_global %}
+                        <th>{{ 'usuarios.col.tenant'|trans }}</th>
+                        {% endif %}
+                        <th>{{ 'usuarios.col.roles'|trans }}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for usuario in usuarios %}
+                    <tr>
+                        <td>
+                            <div class="d-flex gap-1">
+                                <a href="{{ path('grova_usuarios_editar', {id: usuario.id, _locale: app.request.locale}) }}"
+                                   class="btn btn-sm btn-outline-primary"
+                                   title="{{ 'btn.edit'|trans }}">
+                                    <i class="bi bi-pencil"></i>
+                                </a>
+                                <form action="{{ path('grova_usuarios_eliminar', {id: usuario.id, _locale: app.request.locale}) }}"
+                                      method="post"
+                                      onsubmit="return confirm('{{ 'usuarios.confirmar_eliminar'|trans({ '%username%': usuario.username }) }}');"
+                                      style="display:inline">
+                                    <input type="hidden" name="_token" value="{{ csrf_token('eliminar_usuario_' ~ usuario.id) }}">
+                                    <button type="submit" class="btn btn-sm btn-outline-danger" title="{{ 'btn.delete'|trans }}">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </form>
+                            </div>
+                        </td>
+                        <td><code>{{ usuario.username }}</code></td>
+                        <td>{{ usuario.email }}</td>
+                        <td>{{ usuario.nombreCompleto ?: '—' }}</td>
+                        {% if es_gestor_global %}
+                        <td data-search="{{ usuario.tenant ? usuario.tenant.nombre : '' }}">
+                            {% if usuario.tenant %}
+                            <span class="badge bg-secondary">{{ usuario.tenant.nombre }}</span>
+                            {% else %}
+                            <span class="text-muted">—</span>
+                            {% endif %}
+                        </td>
+                        {% endif %}
+                        <td>
+                            {% set roles_str = '' %}
+                            {% for rol in usuario.roles %}
+                                {% if rol != 'ROLE_USER' %}
+                                {% set roles_str = roles_str ~ ' ' ~ (rol|split('_')|last) %}
+                                <span class="badge {% if rol == 'ROLE_SUPER_ADMIN' %}bg-warning text-dark{% elseif rol == 'ROLE_DEVELOPER' %}bg-info text-dark{% elseif rol == 'ROLE_ADMIN' %}bg-primary{% endif %}">
+                                    {{ rol|split('_')|last }}
+                                </span>
+                                {% endif %}
+                            {% endfor %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block app_page_scripts %}
+{{ parent() }}
+<script>
+(function () {
+    // ── Filtros (siempre se inicializan, haya o no DataTable) ────────────────
+    var filterPanelInit = false;
+    var dt = null;
+
+    function toggleFilters(force) {
+        var open = force === undefined ? !document.body.classList.contains('filters-open') : !!force;
+        document.body.classList.toggle('filters-open', open);
+    }
+
+    function getFilterSummary() {
+        var parts = [];
+        document.querySelectorAll('[data-filter-input="1"]').forEach(function (el) {
+            if (!('value' in el)) return;
+            var raw = (el.value || '').trim();
+            if (!raw) return;
+            var label = el.dataset.label || el.id || 'Filtro';
+            if (el.tagName === 'SELECT') {
+                var txt = el.options && el.selectedIndex >= 0 ? el.options[el.selectedIndex].text : raw;
+                var norm = (txt || '').trim().toLowerCase();
+                if (['todos', 'todas', '-seleccionar-', 'all'].includes(norm)) return;
+                parts.push(label + ': ' + txt);
+            } else {
+                parts.push(label + ': ' + raw);
+            }
+        });
+        return parts;
+    }
+
+    function updateActiveFilters() {
+        var row = document.getElementById('active-filters-row');
+        var text = document.getElementById('active-filters-text');
+        if (!row || !text) return;
+        var parts = getFilterSummary();
+        if (!parts.length) {
+            row.classList.remove('show');
+            text.textContent = '';
+            return;
+        }
+        var preview = parts.slice(0, 3).join(' ; ');
+        if (parts.length > 3) preview += ' ; +' + (parts.length - 3) + ' m\u00e1s';
+        text.textContent = ' ' + preview;
+        row.classList.add('show');
+    }
+
+    function applyFilters() {
+        var parts = [];
+        document.querySelectorAll('[data-filter-input="1"]').forEach(function (el) {
+            if (!('value' in el)) return;
+            var raw = (el.value || '').trim();
+            if (!raw) return;
+            if (el.tagName === 'SELECT') {
+                var txt = el.options && el.selectedIndex >= 0 ? el.options[el.selectedIndex].text : raw;
+                var norm = (txt || '').trim().toLowerCase();
+                if (['todos', 'todas', '-seleccionar-', 'all'].includes(norm)) return;
+                parts.push(raw);
+            } else {
+                parts.push(raw);
+            }
+        });
+
+        if (dt && typeof dt.search === 'function') {
+            dt.search(parts.join(' ')).draw();
+        }
+        updateActiveFilters();
+        toggleFilters(false);
+    }
+
+    function resetFilters() {
+        document.querySelectorAll('[data-filter-input="1"]').forEach(function (el) {
+            if (el.tagName === 'SELECT') { el.selectedIndex = 0; }
+            else { el.value = ''; }
+        });
+        if (dt && typeof dt.search === 'function') {
+            dt.search('').draw();
+        }
+        updateActiveFilters();
+    }
+
+    function initFilterPanel() {
+        if (filterPanelInit) return;
+        filterPanelInit = true;
+
+        var applyBtn = document.getElementById('filters-apply');
+        var resetBtn = document.getElementById('filters-reset');
+        var clearBtn = document.getElementById('active-filters-clear');
+        var body = document.getElementById('filters-body');
+
+        if (body) body.setAttribute('data-grova-filters-custom', '1');
+        if (applyBtn) applyBtn.addEventListener('click', applyFilters);
+        if (resetBtn) resetBtn.addEventListener('click', resetFilters);
+        if (clearBtn) clearBtn.addEventListener('click', resetFilters);
+        if (!body) return;
+
+        // Poblar selectores desde la tabla
+        var tenants = [];
+        var roles = [];
+        var tableEl = document.getElementById('users-table');
+        var tableBody = tableEl ? tableEl.querySelector('tbody') : null;
+        if (tableBody) {
+            var rows = tableBody.querySelectorAll('tr');
+            rows.forEach(function (row) {
+                {% if es_gestor_global %}
+                var tenantTd = row.cells[4];
+                if (tenantTd) {
+                    var badge = tenantTd.querySelector('.badge');
+                    var name = badge ? badge.textContent.trim() : '';
+                    if (name && tenants.indexOf(name) === -1) tenants.push(name);
+                }
+                {% endif %}
+                var roleTd = row.cells[row.cells.length - 1];
+                if (roleTd) {
+                    var badges = roleTd.querySelectorAll('.badge');
+                    badges.forEach(function (b) {
+                        var r = b.textContent.trim();
+                        if (r && roles.indexOf(r) === -1) roles.push(r);
+                    });
+                }
+            });
+            tenants.sort();
+            roles.sort();
+        }
+
+        var sections = [
+            {
+                title: 'B\u00fasqueda',
+                open: true,
+                fields: [
+                    { id: 'filter-user', label: 'Usuario / Email', type: 'text', placeholder: 'Nombre, email...' },
+                ]
+            }
+        ];
+        {% if es_gestor_global %}
+        if (tenants.length) {
+            sections.push({
+                title: 'Empresa',
+                fields: [
+                    { id: 'filter-tenant', label: 'Tenant', type: 'select', options: ['Todos'].concat(tenants) },
+                ]
+            });
+        }
+        {% endif %}
+        if (roles.length) {
+            sections.push({
+                title: 'Roles',
+                fields: [
+                    { id: 'filter-role', label: 'Rol', type: 'select', options: ['Todos'].concat(roles) },
+                ]
+            });
+        }
+
+        body.innerHTML = sections.map(function (section) {
+            var fieldsHtml = section.fields.map(function (f) {
+                if (f.type === 'select') {
+                    var opts = f.options.map(function (o) {
+                        return '<option value="' + o + '">' + o + '</option>';
+                    }).join('');
+                    return '<label class="form-label">' + f.label + '</label>' +
+                        '<select id="' + f.id + '" data-filter-input="1" data-label="' + f.label + '" class="form-select form-select-sm mb-2">' + opts + '</select>';
+                }
+                return '<label class="form-label">' + f.label + '</label>' +
+                    '<input id="' + f.id + '" data-filter-input="1" data-label="' + f.label + '" class="form-control form-control-sm mb-2" type="' + f.type + '" placeholder="' + (f.placeholder || '') + '">';
+            }).join('');
+            return '<div class="filter-section' + (section.open ? ' open' : '') + '">' +
+                '<button class="filter-section-btn" type="button">' + section.title +
+                '<span class="chev"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg></span></button>' +
+                '<div class="filter-section-content">' + fieldsHtml + '</div></div>';
+        }).join('');
+
+        if (window.GrovaFilters && typeof window.GrovaFilters.refreshSections === 'function') {
+            window.GrovaFilters.refreshSections(body);
+        }
+    }
+
+    // ── Inicializar filtros (siempre) ──
+    initFilterPanel();
+
+    // ── DataTable (si existe la tabla) ──
+    var tableEl = document.getElementById('users-table');
+    if (!tableEl || typeof DataTable === 'undefined') return;
+
+    var locale = {{ app.request.locale | json_encode | raw }};
+    var dtLang = locale === 'en'
+        ? 'https://cdn.datatables.net/plug-ins/2.1.8/i18n/en-GB.json'
+        : 'https://cdn.datatables.net/plug-ins/2.1.8/i18n/es-ES.json';
+
+    try {
+        var initDt = (window.GrovaDataTable && window.GrovaDataTable.init)
+            ? window.GrovaDataTable.init
+            : function (el, o) { return new DataTable(el, o); };
+
+        dt = initDt(tableEl, {
+            language: { url: dtLang },
+            pageLength: 25,
+            order: [[1, 'asc']],
+            columnDefs: [
+                { orderable: false, targets: 0 },
+                { searchable: false, targets: 0 },
+            ],
+            buttons: [
+                { extend: 'copy', text: '<i class="bi bi-clipboard"></i>' },
+                { extend: 'csv',  text: '<i class="bi bi-filetype-csv"></i>' },
+                { extend: 'pdf',  text: '<i class="bi bi-filetype-pdf"></i>' },
+                { extend: 'colvis', text: '<i class="bi bi-layout-sidebar"></i>' },
+            ],
+            dom:
+                '<"dt-toolbar"<"dt-toolbar-left"B><"dt-toolbar-right"f>>' +
+                '<"dt-wrapper"t>' +
+                '<"dt-bottom"<"dt-bottom-left"i><"dt-bottom-right"p>>',
+        });
+    } catch (e) {
+        console.error(e);
+    }
+})();
+</script>
+{% endblock %}

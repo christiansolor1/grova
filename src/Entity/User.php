@@ -4,12 +4,15 @@ namespace App\Entity;
 
 use App\Repository\UserRepository;
 use Doctrine\ORM\Mapping as ORM;
+use Scheb\TwoFactorBundle\Model\Totp\TotpConfiguration;
+use Scheb\TwoFactorBundle\Model\Totp\TotpConfigurationInterface;
+use Scheb\TwoFactorBundle\Model\Totp\TwoFactorInterface as TotpTwoFactorInterface;
 use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
 use Symfony\Component\Security\Core\User\UserInterface;
 
 #[ORM\Entity(repositoryClass: UserRepository::class)]
 #[ORM\UniqueConstraint(name: 'UNIQ_IDENTIFIER_EMAIL', fields: ['email'])]
-class User implements UserInterface, PasswordAuthenticatedUserInterface
+class User implements UserInterface, PasswordAuthenticatedUserInterface, TotpTwoFactorInterface
 {
     #[ORM\Id]
     #[ORM\GeneratedValue]
@@ -43,6 +46,15 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
 
     #[ORM\Column(length: 100, nullable: true)]
     private ?string $apellido = null;
+
+    #[ORM\Column]
+    private bool $emailVerificado = false;
+
+    #[ORM\Column(length: 100, nullable: true)]
+    private ?string $tokenVerificacion = null;
+
+    #[ORM\Column(nullable: true)]
+    private ?\DateTimeImmutable $tokenVerificaExpira = null;
 
     public function getId(): ?int
     {
@@ -154,6 +166,76 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
 
     public function getApellido(): ?string { return $this->apellido; }
     public function setApellido(?string $apellido): static { $this->apellido = $apellido; return $this; }
+
+    #[ORM\Column(length: 100, nullable: true)]
+    private ?string $resetToken = null;
+
+    #[ORM\Column(nullable: true)]
+    private ?\DateTimeImmutable $resetTokenExpira = null;
+
+    public function getResetToken(): ?string { return $this->resetToken; }
+    public function setResetToken(?string $token): static { $this->resetToken = $token; return $this; }
+
+    public function getResetTokenExpira(): ?\DateTimeImmutable { return $this->resetTokenExpira; }
+    public function setResetTokenExpira(?\DateTimeImmutable $expira): static { $this->resetTokenExpira = $expira; return $this; }
+
+    public function isEmailVerificado(): bool { return $this->emailVerificado; }
+    public function setEmailVerificado(bool $emailVerificado): static { $this->emailVerificado = $emailVerificado; return $this; }
+
+    public function getTokenVerificacion(): ?string { return $this->tokenVerificacion; }
+    public function setTokenVerificacion(?string $token): static { $this->tokenVerificacion = $token; return $this; }
+
+    public function getTokenVerificaExpira(): ?\DateTimeImmutable { return $this->tokenVerificaExpira; }
+    public function setTokenVerificaExpira(?\DateTimeImmutable $expira): static { $this->tokenVerificaExpira = $expira; return $this; }
+
+    #[ORM\Column(length: 255, nullable: true)]
+    private ?string $totpSecret = null;
+
+    #[ORM\Column]
+    private bool $webauthn2faEnabled = true;
+
+    #[ORM\Column]
+    private bool $pin2faEnabled = true;
+
+    #[ORM\Column]
+    private bool $totp2faEnabled = true;
+
+    #[ORM\Column(options: ['default' => false])]
+    private bool $email2faEnabled = false;
+
+    public function getTotpSecret(): ?string { return $this->totpSecret; }
+    public function setTotpSecret(?string $secret): static { $this->totpSecret = $secret; return $this; }
+
+    public function isTotpAuthenticationEnabled(): bool
+    {
+        return $this->totpSecret !== null;
+    }
+
+    public function getTotpAuthenticationUsername(): string
+    {
+        return $this->email ?? '';
+    }
+
+    public function getTotpAuthenticationConfiguration(): ?TotpConfigurationInterface
+    {
+        if ($this->totpSecret === null) {
+            return null;
+        }
+
+        return new TotpConfiguration($this->totpSecret, TotpConfiguration::ALGORITHM_SHA1, 30, 6);
+    }
+
+    public function isWebauthn2faEnabled(): bool { return $this->webauthn2faEnabled; }
+    public function setWebauthn2faEnabled(bool $v): static { $this->webauthn2faEnabled = $v; return $this; }
+
+    public function isPin2faEnabled(): bool { return $this->pin2faEnabled; }
+    public function setPin2faEnabled(bool $v): static { $this->pin2faEnabled = $v; return $this; }
+
+    public function isTotp2faEnabled(): bool { return $this->totp2faEnabled; }
+    public function setTotp2faEnabled(bool $v): static { $this->totp2faEnabled = $v; return $this; }
+
+    public function isEmail2faEnabled(): bool { return $this->email2faEnabled; }
+    public function setEmail2faEnabled(bool $v): static { $this->email2faEnabled = $v; return $this; }
 
     public function getNombreCompleto(): string
     {

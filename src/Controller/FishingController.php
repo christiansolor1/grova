@@ -53,7 +53,7 @@ final class FishingController extends AbstractController
         $trips  = $this->tripRepo->findLatest(10);
         $lures  = $this->lureRepo->findAllOrdered();
 
-        return $this->render('workspace/pages/fishing/index.html.twig', [
+        return $this->render('workspace/pages/fishing/indexPesca.html.twig', [
             'menu_tree'               => $tree,
             'active_menu_key'         => 'pesca',
             'workspace_home_menu_key' => MenuTreeBuilder::HOME_MENU_KEY,

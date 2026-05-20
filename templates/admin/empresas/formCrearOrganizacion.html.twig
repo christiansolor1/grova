@@ -1,0 +1,113 @@
+{% extends 'workspace/app_layout.html.twig' %}
+
+{% block page_title %}{{ 'admin.organizaciones.crear'|trans }}{% endblock %}
+
+{% block app_main %}
+<div class="content-card">
+    <div class="content-card-header d-flex flex-wrap align-items-center justify-content-between gap-2">
+        <span>{{ 'admin.organizaciones.crear'|trans }}</span>
+        <a href="{{ path('grova_admin_empresas') }}" class="btn btn-sm btn-outline-secondary">
+            <i class="bi bi-arrow-left me-1"></i>{{ 'admin.organizaciones.volver_listado'|trans }}
+        </a>
+    </div>
+    <div class="content-card-body">
+        {% for etiqueta, mensajes in app.flashes %}
+            {% for mensaje in mensajes %}
+                <div class="alert alert-{{ etiqueta == 'error' ? 'danger' : etiqueta }} alert-dismissible fade show py-2 px-3 mb-3" role="alert">
+                    {{ mensaje }}
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            {% endfor %}
+        {% endfor %}
+
+        <form action="{{ path('grova_admin_empresa_guardar') }}"
+              method="post"
+              class="row g-4"
+              style="max-width:720px;">
+            <input type="hidden" name="_token" value="{{ csrf_token('crear_empresa') }}">
+
+            <div class="col-12">
+                <h2 class="h6 text-muted text-uppercase mb-0" style="font-size:11px; letter-spacing:.08em;">
+                    {{ 'admin.organizaciones.form.seccion.datos'|trans }}
+                </h2>
+            </div>
+
+            <div class="col-12">
+                <label for="nombre" class="form-label">{{ 'admin.organizaciones.form.nombre'|trans }} *</label>
+                <input type="text" id="nombre" name="nombre" class="form-control form-control-sm" required maxlength="100">
+                <div class="form-text">{{ 'admin.organizaciones.form.slug_auto'|trans }}</div>
+            </div>
+
+            <div class="col-md-6">
+                <label for="plan_id" class="form-label">{{ 'admin.organizaciones.form.plan'|trans }} *</label>
+                <select id="plan_id" name="plan_id" class="form-select form-select-sm" required>
+                    {% if planes is empty %}
+                        <option value="">{{ 'admin.organizaciones.form.sin_planes'|trans }}</option>
+                    {% else %}
+                        {% for plan in planes %}
+                            <option value="{{ plan.id }}">{{ plan.nombre }}</option>
+                        {% endfor %}
+                    {% endif %}
+                </select>
+            </div>
+
+            <div class="col-md-6">
+                <label for="estado" class="form-label">{{ 'admin.organizaciones.col.estado'|trans }}</label>
+                <select id="estado" name="estado" class="form-select form-select-sm">
+                    <option value="activo" selected>{{ 'admin.organizaciones.estado.activa'|trans }}</option>
+                    <option value="suspendido">{{ 'admin.organizaciones.estado.inactiva'|trans }}</option>
+                </select>
+            </div>
+
+            <div class="col-md-6">
+                <label for="tipo_cliente" class="form-label">{{ 'admin.organizaciones.col.tipo'|trans }}</label>
+                <select id="tipo_cliente" name="tipo_cliente" class="form-select form-select-sm">
+                    <option value="">—</option>
+                    <option value="cortesia">{{ 'admin.organizaciones.tipo.cortesia'|trans }}</option>
+                    <option value="pago">{{ 'admin.organizaciones.tipo.pago'|trans }}</option>
+                </select>
+            </div>
+
+            <div class="col-12">
+                <hr class="my-1 border-secondary-subtle">
+                <h2 class="h6 text-muted text-uppercase mb-0" style="font-size:11px; letter-spacing:.08em;">
+                    {{ 'admin.organizaciones.form.seccion.admin'|trans }}
+                </h2>
+                <p class="text-muted small mb-0">{{ 'admin.organizaciones.form.admin_ayuda'|trans }}</p>
+            </div>
+
+            <div class="col-md-6">
+                <label for="admin_email" class="form-label">{{ 'admin.organizaciones.form.admin_email'|trans }}</label>
+                <input type="email" id="admin_email" name="admin_email" class="form-control form-control-sm" autocomplete="off">
+            </div>
+
+            <div class="col-md-6">
+                <label for="admin_username" class="form-label">{{ 'admin.organizaciones.form.admin_username'|trans }}</label>
+                <input type="text" id="admin_username" name="admin_username" class="form-control form-control-sm" autocomplete="off">
+            </div>
+
+            <div class="col-md-6">
+                <label for="admin_password" class="form-label">{{ 'admin.organizaciones.form.admin_password'|trans }}</label>
+                <input type="password" id="admin_password" name="admin_password" class="form-control form-control-sm" autocomplete="new-password">
+            </div>
+
+            <div class="col-md-6">
+                <label for="admin_nombre" class="form-label">{{ 'admin.organizaciones.form.admin_nombre'|trans }}</label>
+                <input type="text" id="admin_nombre" name="admin_nombre" class="form-control form-control-sm">
+            </div>
+
+            <div class="col-md-6">
+                <label for="admin_apellido" class="form-label">{{ 'admin.organizaciones.form.admin_apellido'|trans }}</label>
+                <input type="text" id="admin_apellido" name="admin_apellido" class="form-control form-control-sm">
+            </div>
+
+            <div class="col-12 d-flex flex-wrap gap-2 pt-2">
+                <button type="submit" class="btn btn-sm btn-primary" {{ planes is empty ? 'disabled' }}>
+                    <i class="bi bi-check-lg me-1"></i>{{ 'admin.organizaciones.crear'|trans }}
+                </button>
+                <a href="{{ path('grova_admin_empresas') }}" class="btn btn-sm btn-outline-secondary">{{ 'btn.cancel'|trans }}</a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

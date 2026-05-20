@@ -1,0 +1,75 @@
+{% extends 'base.html.twig' %}
+{% block title %}Recuperar contraseña — Grova{% endblock %}
+
+{% block stylesheets %}
+<style>
+    body { background:#0b1020; min-height:100vh; display:flex; align-items:center; justify-content:center; padding:16px; }
+    .card-auth { width:100%; max-width:460px; background:#111827; border:1px solid #1f2937; border-radius:12px; padding:40px 36px; }
+    .logo-box { width:40px; height:40px; background:#2563eb; border-radius:8px; display:flex; align-items:center; justify-content:center; font-weight:700; color:#fff; font-size:1.1rem; }
+    h1 { color:#f1f5f9; font-size:1.4rem; font-weight:700; margin:0 0 8px; }
+    p.sub { color:#9ca3af; font-size:.9rem; line-height:1.6; margin:0 0 24px; }
+    .form-label { color:#cbd5e1; font-size:.88rem; font-weight:600; margin-bottom:.4rem; }
+    .form-control { background:#0f172a; border-color:#1f2937; border-radius:8px; color:#f1f5f9; }
+    .form-control:focus { background:#0f172a; border-color:#2563eb; color:#f1f5f9; box-shadow:0 0 0 3px rgba(37,99,235,.2); }
+    .btn-grova { background:#2563eb; border:none; border-radius:8px; font-weight:600; padding:.75rem; width:100%; color:#fff; transition:background .2s; }
+    .btn-grova:hover { background:#1e40af; }
+    .btn-grova:disabled { background:#374151; cursor:not-allowed; opacity:.5; }
+    .alert-ok { background:rgba(34,197,94,.1); border:1px solid rgba(34,197,94,.3); color:#86efac; border-radius:8px; font-size:.88rem; padding:.75rem 1rem; }
+    .back-link { display:block; text-align:center; margin-top:20px; color:#93c5fd; font-size:.85rem; text-decoration:none; }
+    .back-link:hover { text-decoration:underline; }
+</style>
+<script src="https://www.google.com/recaptcha/api.js" async defer></script>
+{% endblock %}
+
+{% block body %}
+<div class="card-auth">
+    <div class="d-flex align-items-center gap-3 mb-4">
+        <div class="logo-box">G</div>
+        <h1 style="margin:0;">Recuperar contraseña</h1>
+    </div>
+
+    {% if enviado is defined and enviado %}
+        <div class="alert-ok mb-3">
+            <i class="bi bi-envelope-check me-2"></i>
+            Si el email existe en nuestro sistema, recibirás un enlace para restablecer tu contraseña en los próximos minutos.
+        </div>
+    {% else %}
+        <p class="sub">Ingresa tu email y te enviaremos un enlace para crear una nueva contraseña. Expira en 1 hora.</p>
+
+        <form method="post" action="{{ path('recuperar_contrasena_enviar') }}">
+            <input type="hidden" name="_token" value="{{ csrf_token('recuperar_contrasena') }}">
+
+            <div class="mb-4">
+                <label class="form-label" for="email">Email</label>
+                <div class="input-group">
+                    <span class="input-group-text" style="background:#0f172a;border-color:#1f2937;color:#64748b;"><i class="bi bi-envelope"></i></span>
+                    <input type="email" id="email" name="email" class="form-control"
+                           placeholder="tu@email.com" required autofocus autocomplete="email">
+                </div>
+            </div>
+
+            <div class="mb-4" style="display:flex;justify-content:center;">
+                <div class="g-recaptcha" data-sitekey="{{ recaptcha_site_key }}" data-theme="dark"
+                     data-callback="onRecaptchaSuccess" data-expired-callback="onRecaptchaExpired"></div>
+            </div>
+
+            <button type="submit" id="btn-enviar" class="btn-grova" disabled>Enviar enlace</button>
+        </form>
+    {% endif %}
+
+    <a href="{{ path('login') }}" class="back-link">
+        <i class="bi bi-arrow-left me-1"></i>Volver al login
+    </a>
+</div>
+{% endblock %}
+
+{% block javascripts %}
+<script>
+function onRecaptchaSuccess() {
+    document.getElementById('btn-enviar').disabled = false;
+}
+function onRecaptchaExpired() {
+    document.getElementById('btn-enviar').disabled = true;
+}
+</script>
+{% endblock %}

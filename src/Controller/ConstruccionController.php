@@ -51,7 +51,7 @@ final class ConstruccionController extends AbstractController
         $stats      = $this->obraRepo->countByEstado();
         $proveedores = $this->proveedorRepo->findActivos();
 
-        return $this->render('workspace/pages/construccion/index.html.twig', array_merge($this->treeVars(), [
+        return $this->render('workspace/pages/construccion/indexConstruccion.html.twig', array_merge($this->treeVars(), [
             'obras'       => $obras,
             'stats'       => $stats,
             'proveedores' => $proveedores,

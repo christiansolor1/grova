@@ -5,3 +5,21 @@ framework:
             policy: sliding_window
             limit: 5
             interval: '15 minutes'
+
+        # Máximo 3 registros por IP por hora
+        registro_attempt:
+            policy: fixed_window
+            limit: 3
+            interval: '1 hour'
+
+        # Máximo 3 solicitudes de recuperación de contraseña por IP por hora
+        recuperacion_attempt:
+            policy: fixed_window
+            limit: 3
+            interval: '1 hour'
+
+        # 3 intentos fallidos de 2FA (TOTP/PIN) cada 10 minutos por usuario
+        mfa_attempt:
+            policy: sliding_window
+            limit: 3
+            interval: '10 minutes'

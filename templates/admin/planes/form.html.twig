@@ -1,0 +1,84 @@
+{% extends 'admin/layout.html.twig' %}
+
+{% block title %}{{ plan is null ? 'admin.planes.crear'|trans : 'admin.planes.editar'|trans }} – {{ 'app.name'|trans }}{% endblock %}
+
+{% block admin_styles %}
+<style>
+    .form-plan input[type=text],
+    .form-plan input[type=number] {
+        background: #0f172a;
+        border: 1px solid #334155;
+        color: #e2e8f0;
+        border-radius: 6px;
+        font-size: 13px;
+    }
+    .form-plan input:focus {
+        background: #0f172a;
+        border-color: #2563eb;
+        color: #f1f5f9;
+        box-shadow: none;
+    }
+    .modulo-check label { color: #94a3b8; font-size: 13px; cursor: pointer; }
+    .modulo-check input { accent-color: #2563eb; }
+</style>
+{% endblock %}
+
+{% block admin_main %}
+{# Breadcrumb #}
+<div class="d-flex align-items-center gap-2 mb-3" style="font-size:13px; color:#64748b;">
+    <a href="{{ path('grova_admin_planes_index') }}" style="color:#64748b; text-decoration:none;">
+        <i class="bi bi-box-seam me-1"></i>{{ 'admin.planes.titulo'|trans }}
+    </a>
+    <i class="bi bi-chevron-right" style="font-size:10px;"></i>
+    <span style="color:#cbd5e1;">{{ plan is null ? 'admin.planes.crear'|trans : 'admin.planes.editar'|trans }}</span>
+</div>
+
+<div class="admin-content-card">
+    <div class="admin-content-header">
+        <i class="bi {{ plan is null ? 'bi-plus-lg' : 'bi-pencil' }} me-2"></i>
+        {{ plan is null ? 'admin.planes.crear'|trans : ('admin.planes.editar'|trans ~ ': ' ~ plan.nombre) }}
+    </div>
+    <div class="admin-content-body form-plan">
+        <form method="post"
+              action="{{ plan is null ? path('grova_admin_planes_guardar') : path('grova_admin_planes_actualizar', {id: plan.id}) }}"
+              style="max-width:600px;">
+            <input type="hidden" name="_token" value="{{ csrf_token(plan is null ? 'crear_plan' : 'editar_plan_' ~ plan.id) }}">
+
+            <div class="mb-3">
+                <label class="form-label" style="color:#94a3b8; font-size:12px;">{{ 'admin.planes.form.nombre'|trans }}</label>
+                <input type="text" name="nombre" class="form-control form-control-sm"
+                       value="{{ plan.nombre ?? '' }}" required maxlength="80">
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label" style="color:#94a3b8; font-size:12px;">{{ 'admin.planes.form.precio'|trans }}</label>
+                <input type="number" name="precio_mensual" class="form-control form-control-sm"
+                       value="{{ plan.precioMensual ?? '0.00' }}" step="0.01" min="0" required>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label" style="color:#94a3b8; font-size:12px;">{{ 'admin.planes.form.modulos'|trans }}</label>
+                <div class="d-flex flex-column gap-1 modulo-check">
+                    {% for modulo in modulosDisponibles %}
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="modulos[]"
+                                   id="mod_{{ modulo }}" value="{{ modulo }}"
+                                   {{ plan and plan.hasModulo(modulo) ? 'checked' }}>
+                            <label class="form-check-label" for="mod_{{ modulo }}">{{ modulo }}</label>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <div class="d-flex gap-2">
+                <button type="submit" class="btn btn-primary btn-sm">
+                    <i class="bi bi-check-lg me-1"></i>{{ plan is null ? 'btn.save'|trans : 'admin.planes.editar'|trans }}
+                </button>
+                <a href="{{ path('grova_admin_planes_index') }}" class="btn btn-sm btn-admin-outline">
+                    <i class="bi bi-x-lg me-1"></i>{{ 'btn.cancel'|trans }}
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

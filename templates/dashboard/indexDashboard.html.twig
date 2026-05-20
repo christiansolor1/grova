@@ -2934,15 +2934,8 @@ function initFilterPanel() {
     if (filterPanelInitialized) return;
     filterPanelInitialized = true;
 
-    const toggleBtn = document.getElementById('filters-toggle');
-    const closeBtn = document.getElementById('filters-close');
-    const overlay = document.getElementById('filters-overlay');
     const applyBtn = document.getElementById('filters-apply');
     const resetBtn = document.getElementById('filters-reset');
-
-    if (toggleBtn) toggleBtn.addEventListener('click', () => toggleFilters());
-    if (closeBtn) closeBtn.addEventListener('click', () => toggleFilters(false));
-    if (overlay) overlay.addEventListener('click', () => toggleFilters(false));
 
     if (applyBtn) {
         applyBtn.addEventListener('click', () => {

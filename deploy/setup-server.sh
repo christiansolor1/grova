@@ -235,6 +235,8 @@ CORS_ALLOW_ORIGIN='^https://${DOMAIN}$'
 
 STORMGLASS_API_KEY=PENDIENTE_CONFIGURAR
 
+# Zoho SMTP — actualizar manualmente en .env.local tras la instalación:
+# smtp://noreply%40${DOMAIN}:PASSWORD@smtppro.zoho.com:465?encryption=ssl
 MAILER_DSN=null://null
 MAILER_FROM_EMAIL=noreply@${DOMAIN}
 

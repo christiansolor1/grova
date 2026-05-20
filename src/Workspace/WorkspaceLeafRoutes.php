@@ -49,6 +49,13 @@ final class WorkspaceLeafRoutes
         'ui-api-reference'     => 'grova_page_ui_api_reference',
         'ui-loading-states'    => 'grova_page_ui_loading_states',
         'menu-manager'         => 'grova_page_menu_manager',
+        'usuarios'             => 'grova_usuarios_index',
+        'tenants'              => 'grova_admin_empresas',
+        'clientes'             => 'grova_clientes_index',
+        'subclientes'          => 'grova_subclientes_index',
+        'proveedores'          => 'grova_proveedores_index',
+        'sucursales'           => 'grova_sucursales_index',
+        'respaldo'             => 'grova_respaldo_index',
     ];
 
     /** @var array<string, string> route name => menu_key */
@@ -91,6 +98,13 @@ final class WorkspaceLeafRoutes
         'grova_page_ui_api_reference'      => 'ui-api-reference',
         'grova_page_ui_loading_states'     => 'ui-loading-states',
         'grova_page_menu_manager'           => 'menu-manager',
+        'grova_usuarios_index'              => 'usuarios',
+        'grova_admin_empresas'              => 'tenants',
+        'grova_clientes_index'              => 'clientes',
+        'grova_subclientes_index'           => 'subclientes',
+        'grova_proveedores_index'           => 'proveedores',
+        'grova_sucursales_index'            => 'sucursales',
+        'grova_respaldo_index'              => 'respaldo',
     ];
 
     public static function routeNameForMenuKey(string $menuKey): string

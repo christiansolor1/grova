@@ -1,0 +1,44 @@
+---
+description: Convenciones Grova — si piden «calidad de desarrollo», aplicar doc + UI homogénea con shell
+globs: "**/*.{twig,css,js,php}"
+alwaysApply: false
+---
+
+# Grova — convenciones (resumen para el agente)
+
+Documentación **completa**: **`docs/desarrollo/convenciones-grova.md`** (incluye **«Aplicar calidad de desarrollo»**, UI, **responsivo**, **traducciones**, coherencia visual con **sidebar/navbar/cards**, refactor, commits `KAN-*`, Jira, Select2/teclado). Detalle i18n: **`docs/traducciones/README.md`**.
+
+## Orden: «aplicar calidad de desarrollo» / «calidad de código» (o equivalente)
+
+Si el usuario pide **aplicar calidad de desarrollo**, **calidad de código**, **revisar calidad**, **pasar checklist Grova**, etc.: aplicar **todas las reglas que correspondan** (doc: *Aplicar calidad de desarrollo*). Incluye **modo claro/oscuro**, **responsivo**, **traducciones**, **homogeneidad** con shell, refactor PHP si aplica, **no** commit sin confirmar (`.cursor/rules/grova-git-sin-autonomia.mdc`).
+
+**Si además incluye una URL** (p. ej. `… calidad de código: http://grova.localhost/es/config-menu-builder`): **resolver la ruta Symfony**, inventariar **Twig + CSS + JS + controller/servicios + YAML de traducción** de esa pantalla, y aplicar el checklist **a ese conjunto**, no solo a un archivo.
+
+## Checklist UI al cerrar una vista (workspace)
+
+- **Homogeneidad:** nuevos bloques alineados al **shell** (sidebar, navbar, `#main`): mismas ideas de card, espaciado, botones y tipografía que el resto del workspace; evitar CSS “one-off” que rompa simetría o ritmo vertical.
+- **Simetría y proporción:** el maquetado final no puede quedar “mini”, desbalanceado o con aire muerto excesivo respecto al viewport; si pasa, **no cumple calidad** y se ajusta antes de cerrar.
+- Probar **`body.light-mode`** y modo noche (sin esa clase).
+- **`.text-muted`**: no dejarlo solo de Bootstrap sobre oscuro; usar tono legible (p. ej. `#94a3b8`) o patrón de `_styles.html.twig`.
+- **Labels / ayudas**: contraste suficiente en cards oscuras.
+- **Inputs** (search, text, textarea, select, Select2): texto, placeholder, focus, autofill en **ambos** modos. Buscadores en noche: alinear con **`.navbar-search input`** en `_styles.html.twig`.
+- **Select2**: caja + dropdown + búsqueda interna; si hay modal, considerar `body.grova-modal-open` para estilos.
+- **btn-outline-*, btn-close, hr, .border**: visibles en ambos temas.
+- Recarga dura y pase en la ruta tocada (noche + claro).
+- **Responsivo:** nuevo Twig/CSS/JS de layout — probar **~375px**, **~768px** y escritorio; sin scroll horizontal basura; grid Bootstrap (`col-*` / breakpoints); modales con altura útil; textos largos con `text-break` o truncado según patrón del proyecto. Ver **`docs/desarrollo/convenciones-grova.md`** (sección *Diseño responsivo*).
+
+**Paleta:** `docs/design/color-palette.md` · **Cromo:** `_styles.html.twig`.
+
+## Traducciones al cerrar un cambio
+
+- Revisar **Twig** (`| trans` + dominio si es módulo), **PHP** (`->trans(..., dominio)`), **JS** (`traducir('clave')`) según lo tocado.
+- Cada clave en **`translations/*.es.yaml` y el par `.en.yaml`**; módulo nuevo → nuevo par de archivos; si no, **extender** el YAML del módulo existente.
+- **No** editar a mano `public/js/translations/translations.*.js`; tras YAML: `php bin/console grova:trans:build` y `grova:trans:audit`.
+
+## Git
+
+**Nunca** `git commit` / `git push` (ni `git_write`) sin que el usuario lo pida y **confirme**. Preguntar antes. Regla global: `.cursor/rules/grova-git-sin-autonomia.mdc`.
+
+## Refactor (PHP): código familiar
+
+No renombrar variables ni cambiar **firmas de métodos públicos** ni la **estructura de control** salvo acuerdo; sustituir acceso directo al repositorio por **servicio** manteniendo comportamiento (salvo filtros explícitos p. ej. activos). **Si hace falta cambiar una firma pública, preguntar antes.**

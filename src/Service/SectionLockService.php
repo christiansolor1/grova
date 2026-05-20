@@ -100,20 +100,4 @@ final class SectionLockService
         $lock->setWebauthnAutoPrompt($autoPrompt);
         $this->em->flush();
     }
-
-    public function saveWebAuthn(UserLock $lock, string $credentialId, string $publicKey): void
-    {
-        $lock->setWebauthnCredentialId($credentialId);
-        $lock->setWebauthnPublicKey($publicKey);
-        $lock->setWebauthnEnabled(true);
-        $this->em->flush();
-    }
-
-    public function removeWebAuthn(UserLock $lock): void
-    {
-        $lock->setWebauthnCredentialId(null);
-        $lock->setWebauthnPublicKey(null);
-        $lock->setWebauthnEnabled(false);
-        $this->em->flush();
-    }
 }

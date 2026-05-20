@@ -1,0 +1,31 @@
+{# Idioma + tema (misma lógica que navbar / chrome del workspace). #}
+{% set flags = {'es': '🇪🇸', 'en': '🇺🇸'} %}
+{% set current_flag = flags[app.request.locale] ?? '🌐' %}
+<div class="login-toolbar" role="toolbar" aria-label="{{ 'auth.login.toolbar'|trans }}">
+    <button type="button" class="login-toolbar-btn" id="login-theme-toggle" title="{{ 'navbar.theme_toggle'|trans }}" aria-label="{{ 'navbar.theme_toggle'|trans }}">
+        <svg id="login-icon-sun" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:none" aria-hidden="true"><path d="M12 3v1M12 20v1M4.22 4.22l.7.7M18.36 18.36l.7.7M3 12H4M20 12h1M4.22 19.78l.7-.7M18.36 5.64l.7-.7M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8z"/></svg>
+        <svg id="login-icon-moon" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+    </button>
+    <div class="lang-combo lang-combo--login" id="lang-combo-login">
+        <button type="button" class="lang-combo-trigger" onclick="toggleLangCombo('login', event)" aria-haspopup="listbox" aria-expanded="false">
+            <span class="lc-flag" aria-hidden="true">{{ current_flag }}</span>
+            <span class="lc-code">{{ app.request.locale|upper }}</span>
+            <svg class="lc-chevron" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
+        </button>
+        <div class="lang-combo-list" role="listbox">
+            {% for locale, flag in flags %}
+            <a href="{{ path('login', {_locale: locale}) }}"
+               onclick="setCookie('grova_locale','{{ locale }}',365)"
+               class="lang-combo-option {{ app.request.locale == locale ? 'active' : '' }}"
+               role="option"
+               aria-selected="{{ app.request.locale == locale ? 'true' : 'false' }}">
+                <span style="font-size:15px;" aria-hidden="true">{{ flag }}</span>
+                <span>{{ locale|upper }}</span>
+                {% if app.request.locale == locale %}
+                <svg class="lc-check" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6L9 17l-5-5"/></svg>
+                {% endif %}
+            </a>
+            {% endfor %}
+        </div>
+    </div>
+</div>

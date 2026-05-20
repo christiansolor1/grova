@@ -44,7 +44,7 @@ final class WalletController extends AbstractController
         $ingresosMes    = $this->entryRepo->getSumByTipoAndMonth('ingreso', $year, $month);
         $gastosMes      = $this->entryRepo->getSumByTipoAndMonth('gasto',   $year, $month);
 
-        return $this->render('workspace/pages/wallet/index.html.twig', [
+        return $this->render('workspace/pages/wallet/indexWallet.html.twig', [
             'menu_tree'               => $tree,
             'active_menu_key'         => 'wallet',
             'workspace_home_menu_key' => MenuTreeBuilder::HOME_MENU_KEY,

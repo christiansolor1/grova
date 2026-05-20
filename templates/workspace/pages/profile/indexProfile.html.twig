@@ -1,0 +1,502 @@
+{% extends 'workspace/app_layout.html.twig' %}
+{% block page_title %}{{ 'profile.title' | trans({}, 'profile') }}{% endblock %}
+{% block app_page_subtitle %}{{ 'profile.subtitle' | trans({}, 'profile') }}{% endblock %}
+
+{% block page_styles %}
+<style>
+.profile-avatar-card { border-color:#334155 !important; }
+body.light-mode .profile-avatar-card { border-color:#e2e8f0 !important; }
+.lock-section-check { background:#0f172a; border:1px solid #1e293b; border-radius:8px; padding:.6rem .85rem; }
+body.light-mode .lock-section-check { background:#f8fafc; border-color:#e2e8f0; }
+.lock-pin-input { background:#0f172a; border-color:#1e293b; color:#f1f5f9; letter-spacing:.35em; font-size:15px; }
+body.light-mode .lock-pin-input { background:#fff; border-color:#cbd5e1; color:#0f172a; }
+.lock-ttl-select { background:#0f172a; border-color:#1e293b; color:#f1f5f9; }
+body.light-mode .lock-ttl-select { background:#fff; border-color:#cbd5e1; color:#0f172a; }
+.lock-section-sep { border-top:1px solid #1e293b; }
+body.light-mode .lock-section-sep { border-top-color:#e2e8f0; }
+</style>
+{% endblock %}
+
+{% block app_main %}
+<div class="content-card">
+    <div class="content-card-header">{{ 'profile.form_title' | trans({}, 'profile') }}</div>
+    <div class="content-card-body">
+        <div class="row g-4">
+            <div class="col-xl-4">
+                <div class="text-center p-3 border rounded-3 profile-avatar-card">
+                    <div class="mx-auto mb-3 d-flex align-items-center justify-content-center rounded-circle" style="width:110px;height:110px;background:#2563eb;color:#fff;font-size:36px;font-weight:700;">
+                        {{ app.user.username|first|upper }}
+                    </div>
+                    <h6 class="mb-1">{{ app.user.username }}</h6>
+                    <p class="text-muted mb-3" style="font-size:12px;">{{ app.user.email }}</p>
+                    <button type="button" class="btn btn-sm btn-outline-secondary">{{ 'profile.change_photo' | trans({}, 'profile') }}</button>
+                </div>
+            </div>
+            <div class="col-xl-8">
+                <form>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label">{{ 'profile.first_name' | trans({}, 'profile') }}</label>
+                            <input type="text" class="form-control" placeholder="{{ 'profile.first_name_ph' | trans({}, 'profile') }}">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">{{ 'profile.last_name' | trans({}, 'profile') }}</label>
+                            <input type="text" class="form-control" placeholder="{{ 'profile.last_name_ph' | trans({}, 'profile') }}">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">{{ 'profile.email' | trans({}, 'profile') }}</label>
+                            <input type="email" class="form-control" value="{{ app.user.email }}">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">{{ 'profile.phone' | trans({}, 'profile') }}</label>
+                            <input type="text" class="form-control" placeholder="+34 600 123 456">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">{{ 'profile.company' | trans({}, 'profile') }}</label>
+                            <input type="text" class="form-control" placeholder="Grova">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">{{ 'profile.position' | trans({}, 'profile') }}</label>
+                            <input type="text" class="form-control" placeholder="{{ 'profile.position_ph' | trans({}, 'profile') }}">
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label">{{ 'profile.bio' | trans({}, 'profile') }}</label>
+                            <textarea class="form-control" rows="4" placeholder="{{ 'profile.bio_ph' | trans({}, 'profile') }}"></textarea>
+                        </div>
+                        <div class="col-12 d-flex gap-2 justify-content-end">
+                            <button type="button" class="btn btn-outline-secondary">{{ 'profile.cancel' | trans({}, 'profile') }}</button>
+                            <button type="button" class="btn btn-primary">{{ 'profile.save' | trans({}, 'profile') }}</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+{# ── Seguridad ── #}
+{% set tiene_credenciales = credenciales_biometricas is not empty %}
+{% set tiene_pin_config = user_lock is not null and user_lock.hasPin %}
+<div class="content-card mt-4">
+    <div class="content-card-header">
+        <span><i class="bi bi-shield-lock me-2"></i>{{ 'profile.security_title' | trans({}, 'profile') }}</span>
+    </div>
+    <div class="content-card-body">
+
+        {# ── Sección: Métodos de verificación (2FA) ── #}
+        <div style="font-size:11px;color:#64748b;text-transform:uppercase;letter-spacing:.06em;margin-bottom:.75rem;">
+            <i class="bi bi-shield-check me-1"></i>Métodos de verificación al iniciar sesión
+        </div>
+        <p style="color:#64748b;font-size:.82rem;margin-bottom:1rem;">
+            Elige qué métodos usar al iniciar sesión. Si desmarcas todos, solo entrarás con usuario y contraseña.
+        </p>
+        <form method="post" action="{{ path('2fa_preferencias') }}" style="margin-bottom:1.5rem;">
+            <input type="hidden" name="_token" value="{{ csrf_token('2fa_preferencias') }}">
+            <div class="d-flex flex-column gap-2 mb-3">
+
+                {# TOTP #}
+                <div class="form-check" style="background:#0f172a;border:1px solid #1f2937;border-radius:8px;padding:10px 14px;{{ not app.user.totpAuthenticationEnabled ? 'opacity:.5;' : '' }}">
+                    <input class="form-check-input" type="checkbox" name="totp_2fa" id="chk_totp" value="1"
+                           {{ app.user.totp2faEnabled and app.user.totpAuthenticationEnabled ? 'checked' : '' }}
+                           {{ not app.user.totpAuthenticationEnabled ? 'disabled' : '' }}>
+                    <label class="form-check-label" for="chk_totp" style="color:#f1f5f9;font-size:13px;font-weight:600;cursor:{{ app.user.totpAuthenticationEnabled ? 'pointer' : 'default' }};">
+                        <i class="bi bi-phone me-1" style="color:#2563eb;"></i>App de autenticación
+                        <span style="color:#475569;font-weight:400;margin-left:.5rem;">
+                            {% if app.user.totpAuthenticationEnabled %}
+                                <span style="color:#22c55e;">Configurado</span>
+                            {% else %}
+                                <a href="{{ path('2fa_setup') }}" style="color:#93c5fd;text-decoration:none;">Configurar</a>
+                            {% endif %}
+                        </span>
+                    </label>
+                </div>
+
+                {# WebAuthn #}
+                <div class="form-check" style="background:#0f172a;border:1px solid #1f2937;border-radius:8px;padding:10px 14px;{{ not tiene_credenciales ? 'opacity:.5;' : '' }}">
+                    <input class="form-check-input" type="checkbox" name="webauthn_2fa" id="chk_webauthn" value="1"
+                           {{ app.user.webauthn2faEnabled and tiene_credenciales ? 'checked' : '' }}
+                           {{ not tiene_credenciales ? 'disabled' : '' }}>
+                    <label class="form-check-label" for="chk_webauthn" style="color:#f1f5f9;font-size:13px;font-weight:600;cursor:{{ tiene_credenciales ? 'pointer' : 'default' }};">
+                        <i class="bi bi-fingerprint me-1" style="color:#6366f1;"></i>Huella / Face ID
+                        <span style="color:#475569;font-weight:400;margin-left:.5rem;">
+                            {% if tiene_credenciales %}
+                                {{ credenciales_biometricas|length }} dispositivo{{ credenciales_biometricas|length > 1 ? 's' : '' }}
+                            {% else %}
+                                <a href="#btn-register-biometric" style="color:#93c5fd;text-decoration:none;" onclick="document.getElementById('device-name-input')?.focus();return false;">Agregar dispositivo</a>
+                            {% endif %}
+                        </span>
+                    </label>
+                </div>
+
+                {# PIN #}
+                <div class="form-check" style="background:#0f172a;border:1px solid #1f2937;border-radius:8px;padding:10px 14px;{{ not tiene_pin_config ? 'opacity:.5;' : '' }}">
+                    <input class="form-check-input" type="checkbox" name="pin_2fa" id="chk_pin" value="1"
+                           {{ app.user.pin2faEnabled and tiene_pin_config ? 'checked' : '' }}
+                           {{ not tiene_pin_config ? 'disabled' : '' }}>
+                    <label class="form-check-label" for="chk_pin" style="color:#f1f5f9;font-size:13px;font-weight:600;cursor:{{ tiene_pin_config ? 'pointer' : 'default' }};">
+                        <i class="bi bi-lock me-1" style="color:#f59e0b;"></i>PIN de seguridad
+                        <span style="color:#475569;font-weight:400;margin-left:.5rem;">
+                            {% if tiene_pin_config %}
+                                {{ 'profile.pin_configured'|trans({}, 'profile') }}
+                            {% else %}
+                                Configura un PIN abajo
+                            {% endif %}
+                        </span>
+                    </label>
+                </div>
+
+                {# Email #}
+                <div class="form-check" style="background:#0f172a;border:1px solid #1f2937;border-radius:8px;padding:10px 14px;">
+                    <input class="form-check-input" type="checkbox" name="email_2fa" id="chk_email" value="1"
+                           {{ app.user.email2faEnabled ? 'checked' : '' }}>
+                    <label class="form-check-label" for="chk_email" style="color:#f1f5f9;font-size:13px;font-weight:600;cursor:pointer;">
+                        <i class="bi bi-envelope me-1" style="color:#84cc16;"></i>Código por email
+                        <span style="color:#475569;font-weight:400;margin-left:.5rem;">Recibir código al iniciar sesión</span>
+                    </label>
+                </div>
+
+            </div>
+            <button type="submit" class="btn btn-outline-secondary btn-sm">
+                <i class="bi bi-check-lg me-1"></i>Guardar preferencias
+            </button>
+        </form>
+
+        <div class="lock-section-sep" style="margin-bottom:1.25rem;"></div>
+
+        {# ── Sección: Bloqueo de secciones + PIN + TTL ── #}
+        <form method="post" action="{{ path('grova_lock_setup', {_locale: app.request.locale}) }}">
+            <input type="hidden" name="_token" value="{{ csrf_token('lock_setup') }}">
+            <div class="row g-4">
+
+                <div class="col-md-6">
+                    <div style="font-size:11px;color:#64748b;text-transform:uppercase;letter-spacing:.06em;margin-bottom:.75rem;">{{ 'profile.locked_sections' | trans({}, 'profile') }}</div>
+                    <div class="d-flex flex-column gap-2">
+                        {% set locked = user_lock ? user_lock.lockedSections : [] %}
+                        {% for key, label in lock_sections %}
+                        <div class="form-check lock-section-check">
+                            <input class="form-check-input" type="checkbox" name="sections[]" value="{{ key }}"
+                                   id="lock_{{ key }}" {{ key in locked ? 'checked' : '' }}>
+                            <label class="form-check-label" for="lock_{{ key }}" style="font-size:13px;font-weight:600;">
+                                <i class="bi bi-lock me-2" style="color:#6366f1;"></i>{{ label }}
+                            </label>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <div class="col-md-6">
+                    {# PIN #}
+                    <div style="font-size:11px;color:#64748b;text-transform:uppercase;letter-spacing:.06em;margin-bottom:.5rem;">
+                        {{ user_lock and user_lock.hasPin ? 'profile.change_pin'|trans({}, 'profile') : 'profile.set_pin'|trans({}, 'profile') }}
+                        {% if user_lock and user_lock.hasPin %}
+                        <span style="color:#22c55e;font-size:10px;margin-left:.5rem;"><i class="bi bi-check-circle-fill"></i> {{ 'profile.pin_configured'|trans({}, 'profile') }}</span>
+                        {% endif %}
+                    </div>
+                    <input type="tel" class="form-control form-control-sm mb-1 lock-pin-input" name="pin"
+                           placeholder="{{ 'profile.pin_placeholder'|trans({}, 'profile') }}"
+                           maxlength="8" inputmode="numeric" autocomplete="off">
+                    <div style="font-size:11px;color:#475569;margin-bottom:1.25rem;">{{ 'profile.pin_hint'|trans({}, 'profile') }}</div>
+
+                    {# TTL #}
+                    <div style="font-size:11px;color:#64748b;text-transform:uppercase;letter-spacing:.06em;margin-bottom:.5rem;">{{ 'profile.relock_after'|trans({}, 'profile') }}</div>
+                    <select class="form-select form-select-sm lock-ttl-select" name="ttl">
+                        {% set ttl = user_lock ? user_lock.unlockTtlMinutes : 30 %}
+                        {% set ttl_options = {
+                            1:   'profile.ttl_1min',
+                            2:   'profile.ttl_2min',
+                            5:   'profile.ttl_5min',
+                            10:  'profile.ttl_10min',
+                            15:  'profile.ttl_15min',
+                            30:  'profile.ttl_30min',
+                            60:  'profile.ttl_1h',
+                            120: 'profile.ttl_2h',
+                            480: 'profile.ttl_8h'
+                        } %}
+                        {% for val, key in ttl_options %}
+                        <option value="{{ val }}" {{ val == ttl ? 'selected' : '' }}>{{ key|trans({}, 'profile') }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+            </div>
+
+            <div style="margin-top:1.5rem;padding-top:1rem;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem;">
+                <button type="submit" class="btn btn-primary btn-sm"><i class="bi bi-check-lg me-1"></i>{{ 'profile.btn_save_security'|trans({}, 'profile') }}</button>
+            </div>
+        </form>
+
+        <div class="lock-section-sep" style="margin:1.5rem 0;"></div>
+
+        {# ── Sección: Dispositivos biométricos ── #}
+        <div>
+            <div style="font-size:11px;color:#64748b;text-transform:uppercase;letter-spacing:.06em;margin-bottom:.75rem;">
+                <i class="bi bi-fingerprint me-1"></i>Dispositivos biométricos
+            </div>
+
+            {% if credenciales_biometricas is not empty %}
+            <div class="d-flex flex-column gap-2 mb-3">
+                {% for cred in credenciales_biometricas %}
+                <div style="display:flex;align-items:center;justify-content:space-between;background:#0f172a;border:1px solid #1f2937;border-radius:8px;padding:8px 12px;">
+                    <div>
+                        <span style="color:#f1f5f9;font-size:13px;font-weight:600;">
+                            <i class="bi bi-phone me-1" style="color:#6366f1;"></i>
+                            {{ cred.nombreDispositivo ?? 'Dispositivo' }}
+                        </span>
+                        <span style="color:#475569;font-size:11px;margin-left:.5rem;">
+                            Registrado {{ cred.creadoEn|date('d/m/Y') }}
+                            {% if cred.ultimoUsoEn %}· Último uso {{ cred.ultimoUsoEn|date('d/m/Y') }}{% endif %}
+                        </span>
+                    </div>
+                    <form method="post" action="{{ path('grova_lock_webauthn_remove', {_locale: app.request.locale, id: cred.id}) }}"
+                          onsubmit="return confirm('¿Eliminar {{ cred.nombreDispositivo ?? 'este dispositivo' }}?')">
+                        <input type="hidden" name="_token" value="{{ csrf_token('lock_webauthn_remove_' ~ cred.id) }}">
+                        <button type="submit" class="btn btn-outline-danger btn-sm" style="padding:2px 8px;font-size:11px;">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </form>
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            <div style="display:flex;align-items:center;gap:.75rem;flex-wrap:wrap;">
+                <input type="text" id="device-name-input" placeholder="Nombre del dispositivo (opcional)"
+                       style="background:#0f172a;border:1px solid #1f2937;border-radius:8px;color:#f1f5f9;font-size:13px;padding:6px 10px;width:220px;">
+                <button type="button" id="btn-register-biometric" class="btn btn-sm btn-outline-secondary">
+                    <i class="bi bi-fingerprint me-1"></i>Agregar dispositivo
+                </button>
+                <span id="bio-register-status" style="font-size:11px;color:#64748b;display:none;"></span>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+{# ── Dispositivos conectados ── #}
+<div class="content-card" style="margin-top:1.25rem;">
+    <div class="content-card-header">
+        <i class="bi bi-laptop me-2"></i>Dispositivos conectados
+        <span style="color:#64748b;font-size:12px;font-weight:400;margin-left:6px;">(últimos 90 días)</span>
+    </div>
+    <div class="content-card-body">
+        {% if sesiones is empty %}
+        <p style="color:#64748b;font-size:13px;margin:0;">Aún no hay actividad registrada.</p>
+        {% else %}
+        <div style="overflow-x:auto;">
+            <table style="width:100%;border-collapse:collapse;font-size:13px;">
+                <thead>
+                    <tr style="border-bottom:1px solid #1e293b;">
+                        <th style="padding:8px 12px;text-align:left;color:#94a3b8;font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:.3px;">Dispositivo</th>
+                        <th style="padding:8px 12px;text-align:left;color:#94a3b8;font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:.3px;">IP</th>
+                        <th style="padding:8px 12px;text-align:left;color:#94a3b8;font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:.3px;">Ubicación</th>
+                        <th style="padding:8px 12px;text-align:right;color:#94a3b8;font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:.3px;">Último acceso</th>
+                        <th style="padding:8px 12px;text-align:center;color:#94a3b8;font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:.3px;">Veces</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for sesion in sesiones %}
+                    <tr style="border-bottom:1px solid #1e293b;">
+                        <td style="padding:12px;vertical-align:middle;">
+                            <div style="display:flex;align-items:center;gap:8px;">
+                                <span style="font-size:1.1rem;color:#64748b;">
+                                    {% if 'iphone' in sesion.userAgent|lower or 'ipad' in sesion.userAgent|lower %}
+                                    <i class="bi bi-tablet"></i>
+                                    {% elseif 'android' in sesion.userAgent|lower %}
+                                    <i class="bi bi-phone"></i>
+                                    {% elseif 'mac os' in sesion.userAgent|lower or 'windows' in sesion.userAgent|lower or 'linux' in sesion.userAgent|lower %}
+                                    <i class="bi bi-laptop"></i>
+                                    {% else %}
+                                    <i class="bi bi-question-circle"></i>
+                                    {% endif %}
+                                </span>
+                                <div>
+                                    <span style="color:#f1f5f9;font-weight:600;font-size:12px;">
+                                        {% if 'iphone' in sesion.userAgent|lower %}iPhone
+                                        {% elseif 'ipad' in sesion.userAgent|lower %}iPad
+                                        {% elseif 'mac os' in sesion.userAgent|lower %}Mac
+                                        {% elseif 'windows' in sesion.userAgent|lower %}Windows
+                                        {% elseif 'android' in sesion.userAgent|lower %}Android
+                                        {% elseif 'linux' in sesion.userAgent|lower %}Linux
+                                        {% else %}Desconocido{% endif %}
+                                    </span>
+                                    <span style="color:#475569;font-size:10px;display:block;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="{{ sesion.userAgent }}">
+                                        {{ sesion.userAgent|length > 60 ? sesion.userAgent|slice(0,60) ~ '…' : sesion.userAgent }}
+                                    </span>
+                                </div>
+                            </div>
+                        </td>
+                        <td style="padding:12px;vertical-align:middle;color:#94a3b8;font-size:12px;font-family:monospace;">{{ sesion.ip }}</td>
+                        <td style="padding:12px;vertical-align:middle;">
+                            {% if sesion.ubicacion is defined and sesion.ubicacion is not null %}
+                                <span style="color:#94a3b8;font-size:12px;">
+                                    {{ sesion.ubicacion.ciudad }}{{ sesion.ubicacion.pais != 'Red local' ? ', ' ~ sesion.ubicacion.pais }}
+                                </span>
+                            {% else %}
+                                <span style="color:#475569;font-size:12px;">—</span>
+                            {% endif %}
+                        </td>
+                        <td style="padding:12px;vertical-align:middle;text-align:right;color:#94a3b8;font-size:12px;white-space:nowrap;">
+                            {{ sesion.ultimaVez|date('d/m/Y H:i') }}
+                        </td>
+                        <td style="padding:12px;vertical-align:middle;text-align:center;">
+                            <span style="background:#2563eb20;color:#93c5fd;border-radius:999px;padding:2px 10px;font-size:11px;font-weight:600;">{{ sesion.count }}</span>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+{% endblock %}
+
+{% block app_page_scripts %}
+{# ── Modal de consentimiento biométrico ── #}
+<div class="modal fade" id="modal-consentimiento-biometrico" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content" style="background:#111827;border:1px solid #1f2937;border-radius:12px;">
+
+            <div class="modal-header" style="border-bottom:1px solid #1f2937;padding:20px 24px;">
+                <h5 class="modal-title" style="color:#f1f5f9;font-weight:700;">
+                    <i class="bi bi-shield-check me-2" style="color:#2563eb;"></i>
+                    Autorización para datos biométricos
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+
+            <div class="modal-body" style="padding:24px;color:#cbd5e1;font-size:.9rem;line-height:1.7;">
+                <p style="margin:0 0 16px;">
+                    Al registrar tu huella digital o reconocimiento facial, autorizas a <strong style="color:#f1f5f9;">Grova</strong> a:
+                </p>
+
+                <ul style="padding-left:20px;margin:0 0 16px;">
+                    <li style="margin-bottom:8px;">
+                        <strong style="color:#f1f5f9;">Recolectar y almacenar</strong> un template biométrico cifrado generado por tu dispositivo. No almacenamos imágenes de huellas ni rostros.
+                    </li>
+                    <li style="margin-bottom:8px;">
+                        <strong style="color:#f1f5f9;">Usar este template</strong> exclusivamente para verificar tu identidad al iniciar sesión o acceder a secciones protegidas.
+                    </li>
+                    <li style="margin-bottom:8px;">
+                        <strong style="color:#f1f5f9;">Conservarlo</strong> mientras tu cuenta esté activa o hasta que elimines el dispositivo.
+                    </li>
+                </ul>
+
+                <div style="background:#0f172a;border:1px solid #1f2937;border-radius:8px;padding:16px;margin:0 0 16px;">
+                    <p style="margin:0;font-size:.82rem;color:#94a3b8;">
+                        <i class="bi bi-info-circle me-1" style="color:#2563eb;"></i>
+                        Tus datos biométricos nunca serán compartidos, vendidos ni transferidos a terceros.
+                        Puedes eliminar este dispositivo y revocar esta autorización en cualquier momento desde tu perfil.
+                    </p>
+                </div>
+
+                <p style="margin:0;font-size:.82rem;color:#64748b;">
+                    Al hacer clic en <strong>"Acepto y continuar"</strong> confirmas que has leído y entiendes lo anterior.
+                </p>
+            </div>
+
+            <div class="modal-footer" style="border-top:1px solid #1f2937;padding:16px 24px;">
+                <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal" style="font-size:.85rem;">
+                    Cancelar
+                </button>
+                <button type="button" class="btn btn-primary btn-sm" id="btn-aceptar-biometrico" style="font-size:.85rem;background:#2563eb;border:none;">
+                    <i class="bi bi-check-lg me-1"></i>Acepto y continuar
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+const locale = '{{ app.request.locale }}';
+function b64url(buf) {
+    return btoa(String.fromCharCode(...new Uint8Array(buf))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+}
+function fromB64(s) {
+    s = s.replace(/-/g,'+').replace(/_/g,'/');
+    while (s.length % 4) s += '=';
+    return Uint8Array.from(atob(s), c => c.charCodeAt(0));
+}
+const btnReg       = document.getElementById('btn-register-biometric');
+const statusEl     = document.getElementById('bio-register-status');
+const deviceInput  = document.getElementById('device-name-input');
+const consentModal = document.getElementById('modal-consentimiento-biometrico');
+let consentId      = null;
+
+// Guardar consentimiento
+async function guardarConsentimiento() {
+    try {
+        const res = await fetch(`/${locale}/lock/biometrico/consentir`, { method: 'POST' });
+        const data = await res.json();
+        if (data.ok) { consentId = data.id; return true; }
+        throw new Error(data.error || 'Error');
+    } catch(e) {
+        statusEl.style.color = '#fca5a5';
+        statusEl.textContent = 'Error al guardar autorización. Intenta de nuevo.';
+        btnReg.disabled = false;
+        return false;
+    }
+}
+
+// Registrar dispositivo WebAuthn
+async function iniciarRegistro() {
+    btnReg.disabled = true; statusEl.style.display = 'inline'; statusEl.style.color = '#94a3b8';
+    statusEl.textContent = 'Iniciando…';
+    try {
+        const res  = await fetch(`/${locale}/lock/webauthn/register/start`, { method:'POST' });
+        const args = await res.json();
+        if (args.error) throw new Error(args.error);
+        args.publicKey.challenge = fromB64(args.publicKey.challenge);
+        args.publicKey.user.id   = fromB64(args.publicKey.user.id);
+        if (args.publicKey.excludeCredentials) {
+            args.publicKey.excludeCredentials = args.publicKey.excludeCredentials.map(c => ({...c, id: fromB64(c.id)}));
+        }
+        statusEl.textContent = 'Coloca tu dedo / activa Face ID…';
+        const cred = await navigator.credentials.create({ publicKey: args.publicKey });
+        const payload = {
+            clientDataJSON:    b64url(cred.response.clientDataJSON),
+            attestationObject: b64url(cred.response.attestationObject),
+            deviceName:        deviceInput ? deviceInput.value.trim() : '',
+        };
+        const fin = await fetch(`/${locale}/lock/webauthn/register/finish`, {
+            method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload)
+        });
+        const finData = await fin.json();
+        if (finData.ok) {
+            statusEl.style.color = '#22c55e'; statusEl.textContent = '¡Registrado!';
+            setTimeout(() => window.location.reload(), 800);
+        } else { throw new Error(finData.error || 'Error'); }
+    } catch(e) {
+        statusEl.style.color = '#fca5a5';
+        statusEl.textContent = e.name === 'NotAllowedError' ? 'Cancelado' : (e.message || 'Error');
+        btnReg.disabled = false;
+    }
+}
+
+if (btnReg) {
+    if (!window.PublicKeyCredential) { btnReg.disabled = true; btnReg.textContent = 'No disponible en este navegador'; }
+
+    // Botón "Acepto y continuar" en el modal
+    document.getElementById('btn-aceptar-biometrico')?.addEventListener('click', async function() {
+        this.disabled = true;
+        this.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
+        const ok = await guardarConsentimiento();
+        if (ok) {
+            var modal = bootstrap.Modal.getInstance(consentModal);
+            if (modal) modal.hide();
+            await iniciarRegistro();
+        } else {
+            this.disabled = false;
+            this.innerHTML = '<i class="bi bi-check-lg me-1"></i>Acepto y continuar';
+        }
+    });
+
+    btnReg.addEventListener('click', () => {
+        // Mostrar modal de consentimiento primero
+        var modal = new bootstrap.Modal(consentModal);
+        modal.show();
+    });
+}
+</script>
+{% endblock app_page_scripts %}

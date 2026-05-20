@@ -1,5 +1,45 @@
 # yaml-language-server: $schema=../vendor/symfony/routing/Loader/schema/routing.schema.json
 
+# ── Super Admin (solo /es/admin) ────────────────────────────────────────────
+web_admin:
+    resource: '../src/Controller/Admin/'
+    type: attribute
+    prefix: /{_locale}
+    requirements:
+        _locale: es
+    defaults:
+        _locale: es
+
+# ── Recuperación de contraseña (sin locale) ──────────────────────────────────
+web_recuperacion:
+    resource: '../src/Controller/ControladorRecuperacion.php'
+    type: attribute
+
+# ── Doble factor (sin locale) ────────────────────────────────────────────────
+web_dos_factores:
+    resource: '../src/Controller/ControladorDosFactores.php'
+    type: attribute
+
+# ── Registro público (sin locale) ────────────────────────────────────────────
+web_registro:
+    resource: '../src/Controller/ControladorRegistro.php'
+    type: attribute
+
+# ── Google OAuth (sin locale) ─────────────────────────────────────────────────
+web_google:
+    resource: '../src/Controller/ControladorGoogle.php'
+    type: attribute
+
+# ── Instalador web (sin locale) ───────────────────────────────────────────────
+web_setup:
+    resource: '../src/Controller/ControladorInstalacion.php'
+    type: attribute
+
+# ── Suscripción (sin locale — accesible aunque la suscripción haya vencido) ───
+web_subscripcion:
+    resource: '../src/Controller/ControladorSubscripcion.php'
+    type: attribute
+
 # ── API — sin prefijo de locale ───────────────────────────────────────────────
 api_controllers:
     resource: '../src/Controller/Api/'
@@ -136,6 +176,11 @@ web_construccion:
     defaults:
         _locale: es
 
+# ── Generador de contraseñas (sin locale) ─────────────────────────────────────
+web_generador_contrasenas:
+    resource: '../src/Controller/ControladorGeneradorContrasenas.php'
+    type: attribute
+
 # ── Raíz → redirige a /es/login ───────────────────────────────────────────────
 root:
     path: /
@@ -144,6 +189,26 @@ root:
 
 web_notifications:
     resource: '../src/Controller/NotificationController.php'
+    type: attribute
+    prefix: /{_locale}
+    name_prefix: ''
+    requirements:
+        _locale: es|en
+    defaults:
+        _locale: es
+
+web_respaldo:
+    resource: '../src/Controller/RespaldoController.php'
+    type: attribute
+    prefix: /{_locale}
+    name_prefix: ''
+    requirements:
+        _locale: es|en
+    defaults:
+        _locale: es
+
+web_usuarios:
+    resource: '../src/Controller/Admin/ControladorUsuariosAdmin.php'
     type: attribute
     prefix: /{_locale}
     name_prefix: ''
@@ -161,3 +226,8 @@ web_lock:
         _locale: es|en
     defaults:
         _locale: es
+
+# ── Logout (sin locale — el firewall intercepta /logout) ───────────────────
+logout:
+    path: /logout
+    controller: App\Controller\LoginController::logout

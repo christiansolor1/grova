@@ -18,9 +18,4 @@ class UserLockRepository extends ServiceEntityRepository
     {
         parent::__construct($registry, UserLock::class);
     }
-
-    public function findByCredentialId(string $credentialId): ?UserLock
-    {
-        return $this->findOneBy(['webauthnCredentialId' => $credentialId]);
-    }
 }

@@ -1,0 +1,108 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Suscripción vencida – Grova{% endblock %}
+
+{% block stylesheets %}
+<style>
+    body {
+        background-color: #0f172a;
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 16px;
+    }
+    .lapsed-card {
+        width: 100%;
+        max-width: 480px;
+        background: #1e293b;
+        border: 1px solid #334155;
+        border-radius: 12px;
+        padding: 2.5rem 2rem;
+        text-align: center;
+    }
+    .lapsed-icon {
+        width: 56px;
+        height: 56px;
+        background: rgba(239, 68, 68, .15);
+        border: 1px solid rgba(239, 68, 68, .3);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 1.25rem;
+        font-size: 1.5rem;
+        color: #f87171;
+    }
+    .lapsed-title {
+        color: #f1f5f9;
+        font-weight: 700;
+        font-size: 1.35rem;
+        margin-bottom: .5rem;
+    }
+    .lapsed-body {
+        color: #94a3b8;
+        font-size: .92rem;
+        line-height: 1.6;
+        margin-bottom: 2rem;
+    }
+    .lapsed-body strong {
+        color: #cbd5e1;
+    }
+    .btn-logout {
+        display: inline-flex;
+        align-items: center;
+        gap: .4rem;
+        padding: .55rem 1.25rem;
+        border-radius: 8px;
+        font-size: .875rem;
+        font-weight: 500;
+        background: #1e293b;
+        border: 1px solid #334155;
+        color: #94a3b8;
+        text-decoration: none;
+        transition: background .15s, border-color .15s, color .15s;
+    }
+    .btn-logout:hover {
+        background: #0f172a;
+        border-color: #475569;
+        color: #f1f5f9;
+    }
+    .lapsed-logo {
+        width: 32px;
+        height: 32px;
+        background: #2563eb;
+        border-radius: 6px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+        color: #fff;
+        font-size: .9rem;
+        margin: 0 auto 2rem;
+    }
+</style>
+{% endblock %}
+
+{% block body %}
+<div class="lapsed-card">
+    <div class="lapsed-logo">G</div>
+
+    <div class="lapsed-icon">
+        <i class="bi bi-lock-fill"></i>
+    </div>
+
+    <h1 class="lapsed-title">Suscripción vencida</h1>
+
+    <p class="lapsed-body">
+        El acceso a tu cuenta está temporalmente suspendido.<br>
+        Contacta a <strong>soporte@grovaapp.com</strong> para renovar tu plan
+        y recuperar el acceso.
+    </p>
+
+    <a href="{{ path('logout') }}" class="btn-logout">
+        <i class="bi bi-box-arrow-left"></i>
+        Cerrar sesión
+    </a>
+</div>
+{% endblock %}

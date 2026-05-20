@@ -2,6 +2,7 @@
 
 namespace App\Repository;
 
+use App\Entity\Tenant;
 use App\Entity\User;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
@@ -33,28 +34,29 @@ class UserRepository extends ServiceEntityRepository implements PasswordUpgrader
         $this->getEntityManager()->flush();
     }
 
-    //    /**
-    //     * @return User[] Returns an array of User objects
-    //     */
-    //    public function findByExampleField($value): array
-    //    {
-    //        return $this->createQueryBuilder('u')
-    //            ->andWhere('u.exampleField = :val')
-    //            ->setParameter('val', $value)
-    //            ->orderBy('u.id', 'ASC')
-    //            ->setMaxResults(10)
-    //            ->getQuery()
-    //            ->getResult()
-    //        ;
-    //    }
+    /**
+     * @return User[]
+     */
+    public function findAllOrdered(): array
+    {
+        return $this->createQueryBuilder('u')
+            ->leftJoin('u.tenant', 't')
+            ->addOrderBy('t.nombre', 'ASC')
+            ->addOrderBy('u.username', 'ASC')
+            ->getQuery()
+            ->getResult();
+    }
 
-    //    public function findOneBySomeField($value): ?User
-    //    {
-    //        return $this->createQueryBuilder('u')
-    //            ->andWhere('u.exampleField = :val')
-    //            ->setParameter('val', $value)
-    //            ->getQuery()
-    //            ->getOneOrNullResult()
-    //        ;
-    //    }
+    /**
+     * @return User[]
+     */
+    public function findByTenant(Tenant $tenant): array
+    {
+        return $this->createQueryBuilder('u')
+            ->andWhere('u.tenant = :tenant')
+            ->setParameter('tenant', $tenant)
+            ->orderBy('u.username', 'ASC')
+            ->getQuery()
+            ->getResult();
+    }
 }

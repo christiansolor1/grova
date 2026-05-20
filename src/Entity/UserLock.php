@@ -32,17 +32,6 @@ class UserLock
     #[ORM\Column]
     private int $unlockTtlMinutes = 30;
 
-    /** ID de la credencial WebAuthn (base64url) */
-    #[ORM\Column(type: 'text', nullable: true)]
-    private ?string $webauthnCredentialId = null;
-
-    /** Clave pública WebAuthn (PEM) */
-    #[ORM\Column(type: 'text', nullable: true)]
-    private ?string $webauthnPublicKey = null;
-
-    #[ORM\Column]
-    private bool $webauthnEnabled = false;
-
     /** Solicitar huella/Face ID automáticamente al entrar a una sección bloqueada */
     #[ORM\Column]
     private bool $webauthnAutoPrompt = true;
@@ -60,15 +49,6 @@ class UserLock
 
     public function getUnlockTtlMinutes(): int { return $this->unlockTtlMinutes; }
     public function setUnlockTtlMinutes(int $unlockTtlMinutes): static { $this->unlockTtlMinutes = $unlockTtlMinutes; return $this; }
-
-    public function getWebauthnCredentialId(): ?string { return $this->webauthnCredentialId; }
-    public function setWebauthnCredentialId(?string $id): static { $this->webauthnCredentialId = $id; return $this; }
-
-    public function getWebauthnPublicKey(): ?string { return $this->webauthnPublicKey; }
-    public function setWebauthnPublicKey(?string $key): static { $this->webauthnPublicKey = $key; return $this; }
-
-    public function isWebauthnEnabled(): bool { return $this->webauthnEnabled; }
-    public function setWebauthnEnabled(bool $webauthnEnabled): static { $this->webauthnEnabled = $webauthnEnabled; return $this; }
 
     public function isWebauthnAutoPrompt(): bool { return $this->webauthnAutoPrompt; }
     public function setWebauthnAutoPrompt(bool $v): static { $this->webauthnAutoPrompt = $v; return $this; }

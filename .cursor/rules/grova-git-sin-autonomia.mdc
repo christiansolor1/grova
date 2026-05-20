@@ -1,0 +1,10 @@
+---
+description: Prohibido hacer commit o push sin confirmación explícita del usuario
+alwaysApply: true
+---
+
+# Git — Grova (confirmación obligatoria)
+
+- **Nunca** ejecutar `git commit`, `git merge`, `git push`, `git rebase` ni otra operación que escriba historial o remoto **sin** que el usuario lo pida **explícitamente** y **confirme** (mensaje, alcance, rama).
+- Antes de cualquier `git_write`: **preguntar** y esperar confirmación. Si no confirma, limitarse a cambios en archivos sin commit.
+- Documentación del formato de mensaje: `docs/desarrollo/convenciones-grova.md` (sección Commits).

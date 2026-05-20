@@ -174,13 +174,38 @@ Donde gestionas grova como negocio. No es solo el panel técnico, es el módulo 
 - Symfony 7.4
 - Doctrine ORM 3.x
 - JWT Auth (lexik)
-- PostgreSQL
+- MariaDB (MySQL)
 - n8n para automatizaciones e integraciones de IA (igual que en authemis)
 
 ## Reglas de desarrollo
 
 - No aplicar cambios sin consultarlo primero — solo diseñar y proponer
 - El núcleo no tiene pantallas de negocio, solo administración del sistema
-- Cada módulo se autoregistra vía ModuleInterface — no editar archivos centrales
+- No existe ModuleInterface — los módulos se registran por convención en la BD (plan.modulos JSON + modulo_tenant)
 - Cada módulo es independiente y puede activarse/desactivarse por tenant
 - No mezclar lógica de módulos en el núcleo
+- Pool de reglas de IA: este archivo + `contexto-proyecto.md` en grova-docs-privados
+- Convención spanglish: variables/funciones/clases en español, palabras reservadas y métodos del framework en inglés
+
+## Estado actual del proyecto (2026-05-17)
+
+### Últimas acciones completadas
+1. Seguridad: `.env.dev` eliminado del historial de git (filter-repo), APP_SECRET rotado
+2. Repositorio GitHub: remote cambiado a SSH, deploy key agregada al servidor
+3. Producción: código actualizado en grovaapp.com, deploy key configurada
+4. Usuarios: `grova@grova.com` ahora login con username `grova`, Christian con username `csolorzano`
+5. Contributors en GitHub: se removió Co-Authored-By de Claude, ahora solo Christian aparece
+
+### Próximo feature: Sistema de Licencias y Suscripciones (en planificación)
+
+Se está diseñando un sistema para:
+1. **Super Admin perpetuo** — Christian (ROLE_SUPER_ADMIN) sin restricciones
+2. **Validación automática de suscripciones** — detectar vencimientos y bloquear acceso
+3. **Licencias on-premise** — para clientes que instalen grova en su propio servidor
+4. **Panel de administración** — gestionar suscripciones, planes y licencias
+
+### Pendientes
+- [ ] Fase 1: SubscriptionGuardService + SubscriptionCheckListener + bypass Super Admin
+- [ ] Fase 2: Sistema de licencias con sodium crypto (LicenseGeneratorService + LicenseValidatorService)
+- [ ] Fase 3: Gestión de planes/suscripciones (admin CRUD)
+- Ver plan detallado en: `/Users/christiansolorzano/.claude/plans/joyful-roaming-flamingo.md`

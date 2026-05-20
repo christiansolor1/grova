@@ -1,0 +1,143 @@
+{% extends 'workspace/app_layout.html.twig' %}
+
+{% block page_title %}{{ 'admin.organizaciones.editar'|trans }}{% endblock %}
+
+{% block app_main %}
+<div class="content-card">
+    <div class="content-card-header d-flex flex-wrap align-items-center justify-content-between gap-2">
+        <span>{{ 'admin.organizaciones.editar'|trans }}: {{ inquilino.nombre }}</span>
+        <a href="{{ path('grova_admin_empresas') }}" class="btn btn-sm btn-outline-secondary">
+            <i class="bi bi-arrow-left me-1"></i>{{ 'admin.organizaciones.volver_listado'|trans }}
+        </a>
+    </div>
+    <div class="content-card-body">
+        {% for etiqueta, mensajes in app.flashes %}
+            {% for mensaje in mensajes %}
+                <div class="alert alert-{{ etiqueta == 'error' ? 'danger' : etiqueta }} alert-dismissible fade show py-2 px-3 mb-3" role="alert">
+                    {{ mensaje }}
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            {% endfor %}
+        {% endfor %}
+
+        <div class="row g-4">
+            <div class="col-lg-7">
+                <form action="{{ path('grova_admin_empresa_actualizar', {id: inquilino.id}) }}"
+                      method="post"
+                      class="row g-3">
+                    <input type="hidden" name="_token" value="{{ csrf_token('editar_empresa_' ~ inquilino.id) }}">
+
+                    <div class="col-12">
+                        <h2 class="h6 text-muted text-uppercase mb-0" style="font-size:11px; letter-spacing:.08em;">
+                            {{ 'admin.organizaciones.form.seccion.datos'|trans }}
+                        </h2>
+                    </div>
+
+                    <div class="col-12">
+                        <label for="nombre" class="form-label">{{ 'admin.organizaciones.form.nombre'|trans }}</label>
+                        <input type="text"
+                               id="nombre"
+                               name="nombre"
+                               class="form-control form-control-sm"
+                               required
+                               maxlength="100"
+                               value="{{ inquilino.nombre }}">
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="form-label">{{ 'admin.organizaciones.form.slug'|trans }}</label>
+                        <input type="text" class="form-control form-control-sm" value="{{ inquilino.slug }}" readonly disabled>
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="form-label">{{ 'admin.organizaciones.form.db'|trans }}</label>
+                        <input type="text" class="form-control form-control-sm" value="{{ inquilino.dbName }}" readonly disabled>
+                    </div>
+
+                    <div class="col-12">
+                        <hr class="my-1 border-secondary-subtle">
+                        <h2 class="h6 text-muted text-uppercase mb-0" style="font-size:11px; letter-spacing:.08em;">
+                            {{ 'admin.organizaciones.form.seccion.estado'|trans }}
+                        </h2>
+                    </div>
+
+                    <div class="col-md-6">
+                        <label for="estado" class="form-label">{{ 'admin.organizaciones.col.estado'|trans }}</label>
+                        <select id="estado" name="estado" class="form-select form-select-sm">
+                            <option value="activo" {{ inquilino.isActivo ? 'selected' }}>
+                                {{ 'admin.organizaciones.estado.activa'|trans }}
+                            </option>
+                            <option value="suspendido" {{ not inquilino.isActivo ? 'selected' }}>
+                                {{ 'admin.organizaciones.estado.inactiva'|trans }}
+                            </option>
+                        </select>
+                        <div class="form-text">{{ 'admin.organizaciones.form.estado_ayuda'|trans }}</div>
+                    </div>
+
+                    {% if suscripcionActiva %}
+                    <div class="col-md-6">
+                        <label for="tipo_cliente" class="form-label">{{ 'admin.organizaciones.col.tipo'|trans }}</label>
+                        <select id="tipo_cliente" name="tipo_cliente" class="form-select form-select-sm">
+                            <option value="" {{ suscripcionActiva.tipoCliente is null ? 'selected' }}>—</option>
+                            <option value="cortesia" {{ suscripcionActiva.tipoCliente == 'cortesia' ? 'selected' }}>
+                                {{ 'admin.organizaciones.tipo.cortesia'|trans }}
+                            </option>
+                            <option value="pago" {{ suscripcionActiva.tipoCliente == 'pago' ? 'selected' }}>
+                                {{ 'admin.organizaciones.tipo.pago'|trans }}
+                            </option>
+                        </select>
+                    </div>
+
+                    <div class="col-12">
+                        <div class="rounded border border-secondary-subtle p-3" style="font-size:13px;">
+                            <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-2">
+                                <span class="text-muted">{{ 'admin.organizaciones.form.plan_actual'|trans }}</span>
+                                <span class="badge bg-primary">{{ suscripcionActiva.plan.nombre }}</span>
+                            </div>
+                            <div class="text-muted small">
+                                {{ 'admin.organizaciones.form.vence'|trans }}:
+                                {{ suscripcionActiva.fechaVencimiento|date('d/m/Y') }}
+                                · {{ 'admin.organizaciones.form.estado_suscripcion'|trans }}:
+                                <span class="{{ suscripcionActiva.isActiva ? 'text-success' : 'text-warning' }}">
+                                    {{ suscripcionActiva.estado }}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                    {% else %}
+                    <div class="col-12">
+                        <p class="text-muted small mb-0">{{ 'admin.organizaciones.form.sin_suscripcion'|trans }}</p>
+                    </div>
+                    {% endif %}
+
+                    <div class="col-12 d-flex flex-wrap gap-2 pt-2">
+                        <button type="submit" class="btn btn-sm btn-primary">
+                            <i class="bi bi-check-lg me-1"></i>{{ 'btn.save'|trans }}
+                        </button>
+                        <a href="{{ path('grova_admin_empresas') }}" class="btn btn-sm btn-outline-secondary">{{ 'btn.cancel'|trans }}</a>
+                    </div>
+                </form>
+            </div>
+
+            <div class="col-lg-5">
+                <div class="rounded border border-secondary-subtle p-3 h-100">
+                    <h2 class="h6 mb-3">{{ 'admin.organizaciones.form.seccion.gestion'|trans }}</h2>
+                    <div class="d-grid gap-2">
+                        <a href="{{ path('grova_admin_suscripciones_index', {id: inquilino.id}) }}"
+                           class="btn btn-sm btn-outline-secondary text-start">
+                            <i class="bi bi-credit-card me-2"></i>{{ 'admin.organizaciones.accion.suscripcion'|trans }}
+                        </a>
+                        <a href="{{ path('grova_admin_licencias_index', {id: inquilino.id}) }}"
+                           class="btn btn-sm btn-outline-secondary text-start">
+                            <i class="bi bi-key me-2"></i>{{ 'admin.organizaciones.accion.licencias'|trans }}
+                        </a>
+                    </div>
+                    <p class="text-muted small mt-3 mb-0">
+                        {{ 'admin.organizaciones.form.gestion_ayuda'|trans }}
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

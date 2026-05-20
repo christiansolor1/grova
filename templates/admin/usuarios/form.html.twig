@@ -1,0 +1,114 @@
+{% extends 'workspace/app_layout.html.twig' %}
+
+{% block page_title %}{{ usuario ? 'usuarios.editar'|trans : 'usuarios.crear'|trans }}{% endblock %}
+
+{% block app_main %}
+<div class="content-card">
+    <div class="content-card-header">
+        {{ usuario ? 'usuarios.editar'|trans : 'usuarios.crear'|trans }}
+    </div>
+    <div class="content-card-body">
+        <form action="{{ usuario
+            ? path('grova_usuarios_actualizar', {id: usuario.id, _locale: app.request.locale})
+            : path('grova_usuarios_guardar', {_locale: app.request.locale})
+        }}" method="post" class="row g-3" style="max-width:600px;">
+
+            <input type="hidden" name="_token" value="{{ csrf_token(usuario ? 'editar_usuario_' ~ usuario.id : 'crear_usuario') }}">
+
+            {# Email #}
+            <div class="col-12">
+                <label for="email" class="form-label">{{ 'usuarios.form.email'|trans }}</label>
+                <input type="email" id="email" name="email" class="form-control form-control-sm" required
+                       value="{{ usuario ? usuario.email : '' }}">
+            </div>
+
+            {# Username #}
+            <div class="col-12">
+                <label for="username" class="form-label">{{ 'usuarios.form.username'|trans }}</label>
+                <input type="text" id="username" name="username" class="form-control form-control-sm" required
+                       value="{{ usuario ? usuario.username : '' }}">
+            </div>
+
+            {# Nombre #}
+            <div class="col-6">
+                <label for="nombre" class="form-label">{{ 'usuarios.form.nombre'|trans }}</label>
+                <input type="text" id="nombre" name="nombre" class="form-control form-control-sm"
+                       value="{{ usuario ? usuario.nombre : '' }}">
+            </div>
+
+            {# Apellido #}
+            <div class="col-6">
+                <label for="apellido" class="form-label">{{ 'usuarios.form.apellido'|trans }}</label>
+                <input type="text" id="apellido" name="apellido" class="form-control form-control-sm"
+                       value="{{ usuario ? usuario.apellido : '' }}">
+            </div>
+
+            {# Contraseña #}
+            <div class="col-12">
+                <label for="password" class="form-label">
+                    {{ 'usuarios.form.password'|trans }}
+                    {% if usuario %}<small class="text-muted">({{ 'usuarios.form.password_optional'|trans }})</small>{% endif %}
+                </label>
+                <input type="password" id="password" name="password" class="form-control form-control-sm"
+                       {{ usuario is null ? 'required' : '' }}
+                       autocomplete="new-password">
+            </div>
+
+            {# Tenant (solo gestor global) #}
+            {% if es_gestor_global %}
+            <div class="col-12">
+                <label for="tenant_id" class="form-label">{{ 'usuarios.form.tenant'|trans }}</label>
+                <select id="tenant_id" name="tenant_id" class="form-select form-select-sm">
+                    <option value="0">— {{ 'usuarios.form.sin_tenant'|trans }} —</option>
+                    {% for tenant in tenants %}
+                    <option value="{{ tenant.id }}" {{ usuario and usuario.tenant and usuario.tenant.id == tenant.id ? 'selected' : '' }}>
+                        {{ tenant.nombre }} ({{ tenant.slug }})
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            {# Roles (solo gestor global) #}
+            <div class="col-12">
+                <label class="form-label">{{ 'usuarios.form.roles'|trans }}</label>
+                <div class="d-flex flex-wrap gap-3">
+                    {% for role_key, role_label in roles_disponibles %}
+                    <div class="form-check">
+                        <input type="checkbox"
+                               id="role_{{ role_key }}"
+                               name="roles[]"
+                               value="{{ role_key }}"
+                               class="form-check-input"
+                               {{ usuario and role_key in usuario.roles ? 'checked' : '' }}>
+                        <label class="form-check-label" for="role_{{ role_key }}">{{ role_label }}</label>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+
+            {# Acciones #}
+            <div class="col-12 mt-4">
+                <div class="d-flex gap-2 flex-wrap">
+                    <button type="submit" class="btn btn-primary btn-sm">
+                        <i class="bi bi-check-lg"></i>
+                        {{ 'btn.save'|trans }}
+                    </button>
+                    <a href="{{ path('grova_usuarios_index', {_locale: app.request.locale}) }}" class="btn btn-outline-secondary btn-sm">
+                        {{ 'btn.cancel'|trans }}
+                    </a>
+                    {% if usuario and is_granted('ROLE_ALLOWED_TO_SWITCH') and not is_granted('IS_IMPERSONATOR') %}
+                    <span class="ms-auto"></span>
+                    <a href="{{ path('grova_page_dashboard', {_locale: app.request.locale, _switch_user: usuario.username}) }}"
+                       class="btn btn-outline-warning btn-sm"
+                       title="Iniciar sesión como este usuario">
+                        <i class="bi bi-person-fill-x"></i>
+                        Impersonar
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

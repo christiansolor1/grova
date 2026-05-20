@@ -294,7 +294,7 @@ final class WorkController extends AbstractController
 
         $holidaysClipboardText = $this->buildHolidaysClipboardText($holidaysCard, $holidayYear, $locale);
 
-        return $this->render('workspace/pages/work/index.html.twig', [
+        return $this->render('workspace/pages/work/indexWork.html.twig', [
             'menu_tree'               => $tree,
             'active_menu_key'         => 'work',
             'workspace_home_menu_key' => MenuTreeBuilder::HOME_MENU_KEY,

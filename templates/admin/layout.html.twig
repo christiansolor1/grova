@@ -1,0 +1,158 @@
+{% extends 'base.html.twig' %}
+
+{% block stylesheets %}
+<style>
+    body {
+        background: #0b1020;
+        min-height: 100vh;
+    }
+    .admin-shell {
+        max-width: 1100px;
+        margin: 0 auto;
+        padding: 1.5rem 1rem 2.5rem;
+    }
+    .admin-topbar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+        margin-bottom: 1.25rem;
+        flex-wrap: wrap;
+    }
+    .admin-brand {
+        display: flex;
+        align-items: center;
+        gap: .75rem;
+    }
+    .admin-logo {
+        width: 40px;
+        height: 40px;
+        background: #2563eb;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+        color: #fff;
+    }
+    .admin-title {
+        color: #f1f5f9;
+        font-weight: 700;
+        font-size: 1.25rem;
+        margin: 0;
+    }
+    .admin-subtitle {
+        color: #94a3b8;
+        font-size: .82rem;
+        margin: 0;
+    }
+    .admin-content-card {
+        background: #111827;
+        border: 1px solid #1f2937;
+        border-radius: 12px;
+        overflow: hidden;
+    }
+    .admin-content-header {
+        padding: 1rem 1.25rem;
+        border-bottom: 1px solid #1f2937;
+        color: #e2e8f0;
+        font-weight: 600;
+        font-size: .95rem;
+    }
+    .admin-content-body {
+        padding: 1rem 1.25rem 1.25rem;
+    }
+    .admin-table {
+        --bs-table-bg: transparent;
+        --bs-table-color: #e2e8f0;
+        --bs-table-border-color: #1f2937;
+        margin-bottom: 0;
+    }
+    .admin-table thead th {
+        font-size: 11px;
+        color: #64748b;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: .04em;
+        border-bottom-color: #1f2937;
+    }
+    .admin-table tbody td {
+        vertical-align: middle;
+        font-size: 13px;
+    }
+    .admin-empresa-nombre {
+        font-weight: 500;
+        color: #e2e8f0;
+    }
+    .admin-empresa-slug {
+        font-size: 11px;
+        color: #64748b;
+    }
+    .admin-empresa-slug code {
+        color: #94a3b8;
+    }
+    .admin-flash-success {
+        background: rgba(34, 197, 94, .1);
+        border: 1px solid rgba(34, 197, 94, .3);
+        color: #86efac;
+        border-radius: 8px;
+        font-size: .85rem;
+    }
+    .admin-flash-error {
+        background: rgba(239, 68, 68, .1);
+        border: 1px solid rgba(239, 68, 68, .3);
+        color: #fca5a5;
+        border-radius: 8px;
+        font-size: .85rem;
+    }
+    .btn-admin-outline {
+        border-color: #334155;
+        color: #cbd5e1;
+        font-size: 12px;
+    }
+    .btn-admin-outline:hover {
+        background: #1e293b;
+        border-color: #475569;
+        color: #f1f5f9;
+    }
+</style>
+{% block admin_styles %}{% endblock %}
+{% endblock %}
+
+{% block body %}
+<div class="admin-shell">
+    <header class="admin-topbar">
+        <div class="admin-brand">
+            <div class="admin-logo">G</div>
+            <div>
+                <h1 class="admin-title">{{ 'admin.titulo'|trans }}</h1>
+                <p class="admin-subtitle">{{ 'admin.subtitulo'|trans }}</p>
+            </div>
+        </div>
+        <div class="d-flex gap-2">
+            <a href="{{ path('workspace', {_locale: 'es'}) }}" class="btn btn-sm btn-admin-outline">
+                <i class="bi bi-arrow-left me-1"></i>{{ 'admin.volver_workspace'|trans }}
+            </a>
+        </div>
+    </header>
+
+    <nav class="d-flex gap-3 mb-3" style="font-size:13px;">
+        <a href="{{ path('grova_admin_empresas') }}" class="text-decoration-none" style="color:#94a3b8;">
+            <i class="bi bi-building me-1"></i>Empresas
+        </a>
+        <a href="{{ path('grova_admin_planes_index') }}" class="text-decoration-none" style="color:#94a3b8;">
+            <i class="bi bi-box-seam me-1"></i>Planes
+        </a>
+    </nav>
+
+    {% for etiqueta, mensajes in app.flashes %}
+        {% for mensaje in mensajes %}
+            <div class="alert mb-3 px-3 py-2 {{ etiqueta == 'success' ? 'admin-flash-success' : 'admin-flash-error' }}">
+                <i class="bi {{ etiqueta == 'success' ? 'bi-check-circle' : 'bi-exclamation-triangle' }} me-2"></i>{{ mensaje }}
+            </div>
+        {% endfor %}
+    {% endfor %}
+
+    {% block admin_main %}{% endblock %}
+</div>
+{% endblock %}

@@ -1,0 +1,425 @@
+{% extends 'workspace/app_layout.html.twig' %}
+
+{% block page_title %}{{ 'admin.organizaciones.titulo'|trans }}{% endblock %}
+
+{% block main_attributes %} data-grova-filter-schema="filter-clientes"{% endblock %}
+
+{% block app_filters_row %}{% include 'workspace/partials/_filters_active_row.html.twig' %}{% endblock %}
+{% block app_filters_drawer %}{% include 'workspace/partials/_filters_drawer.html.twig' %}{% endblock %}
+
+{% block page_styles %}
+<style>
+    .badge-cortesia {
+        background: rgba(234, 179, 8, .15);
+        border: 1px solid rgba(234, 179, 8, .3);
+        color: #fde047;
+        font-size: 10px;
+        font-weight: 600;
+        padding: 2px 7px;
+        border-radius: 20px;
+    }
+    .badge-pago {
+        background: rgba(34, 197, 94, .15);
+        border: 1px solid rgba(34, 197, 94, .3);
+        color: #86efac;
+        font-size: 10px;
+        font-weight: 600;
+        padding: 2px 7px;
+        border-radius: 20px;
+    }
+    .suscripcion-activa { color: #86efac; }
+    .suscripcion-vencida { color: #f87171; }
+    .suscripcion-sin { color: #64748b; }
+    .fecha-vencimiento { font-size: 11px; color: #64748b; }
+    .fecha-vencimiento.pronto { color: #fbbf24; }
+    .select-tipo-cliente {
+        background: #1e293b;
+        border: 1px solid #334155;
+        color: #cbd5e1;
+        font-size: 11px;
+        border-radius: 6px;
+        padding: 3px 6px;
+        cursor: pointer;
+    }
+    .select-tipo-cliente:focus { outline: none; border-color: #475569; }
+    .admin-empresa-nombre { font-weight: 500; color: #e2e8f0; }
+    .admin-empresa-slug { font-size: 11px; color: #64748b; }
+    .admin-empresa-slug code { color: #94a3b8; }
+    .clientes-nav {
+        display: flex;
+        gap: 1rem;
+        margin-bottom: 1rem;
+        font-size: 13px;
+    }
+    .clientes-nav a {
+        color: #94a3b8;
+        text-decoration: none;
+        padding: 4px 0;
+        border-bottom: 2px solid transparent;
+    }
+    .clientes-nav a:hover,
+    .clientes-nav a.active {
+        color: #e2e8f0;
+        border-bottom-color: #3b82f6;
+    }
+</style>
+{% endblock %}
+
+{% block app_main %}
+<div class="content-card">
+    <div class="content-card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
+        <span>
+            <i class="bi bi-globe me-2"></i>{{ 'admin.organizaciones.titulo'|trans }}
+            <span class="text-muted fw-normal ms-2" style="font-size:.8rem;">({{ empresas|length }})</span>
+        </span>
+        <a href="{{ path('grova_admin_empresa_crear') }}" class="btn btn-sm btn-primary">
+            <i class="bi bi-plus-lg me-1"></i>{{ 'admin.organizaciones.crear'|trans }}
+        </a>
+    </div>
+    <div class="content-card-body p-0">
+        <div class="px-3 pt-3">
+        {# Flash messages #}
+        {% for etiqueta, mensajes in app.flashes %}
+            {% for mensaje in mensajes %}
+                <div class="alert alert-{{ etiqueta == 'error' ? 'danger' : etiqueta }} alert-dismissible fade show py-2 px-3 mb-3" role="alert">
+                    <i class="bi {{ etiqueta == 'success' ? 'bi-check-circle' : 'bi-exclamation-triangle' }} me-2"></i>{{ mensaje }}
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            {% endfor %}
+        {% endfor %}
+
+        {% if empresas is empty %}
+            <p class="text-muted mb-0 pb-3">{{ 'admin.organizaciones.vacio'|trans }}</p>
+        </div>
+        {% else %}
+            </div>
+            <div class="table-responsive">
+                <table id="clientes-table" class="table table-hover align-middle mb-0" style="color:inherit;">
+                    <thead>
+                        <tr>
+                            <th class="text-nowrap">{{ 'admin.organizaciones.col.acciones'|trans }}</th>
+                            <th>{{ 'admin.organizaciones.col.organizacion'|trans }}</th>
+                            <th>{{ 'admin.organizaciones.col.plan'|trans }}</th>
+                            <th>{{ 'admin.organizaciones.col.suscripcion'|trans }}</th>
+                            <th class="text-center">{{ 'admin.organizaciones.col.usuarios'|trans }}</th>
+                            <th>{{ 'admin.organizaciones.col.estado'|trans }}</th>
+                            <th>{{ 'admin.organizaciones.col.tipo'|trans }}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for empresa in empresas %}
+                        <tr>
+                            <td>
+                                <div class="d-flex gap-1 flex-nowrap">
+                                    <a href="{{ path('grova_admin_empresa_editar', {id: empresa.id}) }}"
+                                       class="btn btn-sm btn-outline-primary"
+                                       title="{{ 'btn.edit'|trans }}">
+                                        <i class="bi bi-pencil"></i>
+                                    </a>
+                                    <a href="{{ path('grova_admin_suscripciones_index', {id: empresa.id}) }}"
+                                       class="btn btn-sm btn-outline-secondary"
+                                       title="{{ 'admin.organizaciones.accion.suscripcion'|trans }}">
+                                        <i class="bi bi-credit-card"></i>
+                                    </a>
+                                    <a href="{{ path('grova_admin_licencias_index', {id: empresa.id}) }}"
+                                       class="btn btn-sm btn-outline-secondary"
+                                       title="{{ 'admin.organizaciones.accion.licencias'|trans }}">
+                                        <i class="bi bi-key"></i>
+                                    </a>
+                                    <form method="post"
+                                          action="{{ path('grova_admin_empresa_estado', {id: empresa.id}) }}"
+                                          class="d-inline"
+                                          onsubmit="return confirm('{{ (empresa.estaActiva ? 'admin.organizaciones.confirm.desactivar' : 'admin.organizaciones.confirm.activar')|trans({'%nombre%': empresa.nombre})|e('js') }}');">
+                                        <input type="hidden" name="_token" value="{{ csrf_token('admin_empresa_estado_' ~ empresa.id) }}">
+                                        <button type="submit"
+                                                class="btn btn-sm {{ empresa.estaActiva ? 'btn-outline-warning' : 'btn-outline-success' }}"
+                                                title="{{ empresa.estaActiva ? 'admin.organizaciones.accion.desactivar'|trans : 'admin.organizaciones.accion.activar'|trans }}">
+                                            <i class="bi {{ empresa.estaActiva ? 'bi-pause-circle' : 'bi-play-circle' }}"></i>
+                                        </button>
+                                    </form>
+                                </div>
+                            </td>
+                            <td>
+                                <div class="admin-empresa-nombre">
+                                    {{ empresa.nombre }}
+                                    {% if empresa.esCortesia %}
+                                        <span class="badge-cortesia ms-1">cortesía</span>
+                                    {% elseif empresa.tipoCliente == 'pago' %}
+                                        <span class="badge-pago ms-1">pago</span>
+                                    {% endif %}
+                                </div>
+                                <div class="admin-empresa-slug"><code>{{ empresa.slug }}</code></div>
+                            </td>
+                            <td>
+                                {% if empresa.nombrePlan %}
+                                    <span class="badge bg-primary" style="font-size:11px;">{{ empresa.nombrePlan }}</span>
+                                {% else %}
+                                    <span class="text-muted">—</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if empresa.estadoSuscripcion == 'activa' and not empresa.suscripcionVencida %}
+                                    <span class="suscripcion-activa">
+                                        <i class="bi bi-check-circle-fill me-1" style="font-size:11px;"></i>Activa
+                                    </span>
+                                    {% if empresa.fechaVencimiento %}
+                                        {% set diasRestantes = (empresa.fechaVencimiento.timestamp - "now"|date('U')) / 86400 %}
+                                        <div class="fecha-vencimiento {{ diasRestantes < 30 ? 'pronto' }}">
+                                            vence {{ empresa.fechaVencimiento|date('d/m/Y') }}
+                                            {% if diasRestantes < 30 %}<i class="bi bi-exclamation-triangle-fill ms-1"></i>{% endif %}
+                                        </div>
+                                    {% endif %}
+                                {% elseif empresa.suscripcionVencida %}
+                                    <span class="suscripcion-vencida">
+                                        <i class="bi bi-x-circle-fill me-1" style="font-size:11px;"></i>Vencida
+                                    </span>
+                                    {% if empresa.fechaVencimiento %}
+                                        <div class="fecha-vencimiento">{{ empresa.fechaVencimiento|date('d/m/Y') }}</div>
+                                    {% endif %}
+                                {% else %}
+                                    <span class="suscripcion-sin">
+                                        <i class="bi bi-dash-circle me-1" style="font-size:11px;"></i>Sin suscripción
+                                    </span>
+                                {% endif %}
+                            </td>
+                            <td class="text-center">
+                                <span class="badge bg-secondary" style="font-size:11px;">
+                                    <i class="bi bi-people me-1"></i>{{ empresa.totalUsuarios }}
+                                </span>
+                            </td>
+                            <td>
+                                {% if empresa.estaActiva %}
+                                    <span class="badge bg-success">{{ 'admin.organizaciones.estado.activa'|trans }}</span>
+                                {% else %}
+                                    <span class="badge bg-secondary">{{ 'admin.organizaciones.estado.inactiva'|trans }}</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if empresa.estadoSuscripcion is not null %}
+                                <form method="post"
+                                      action="{{ path('grova_admin_empresa_tipo_cliente', {id: empresa.id}) }}"
+                                      class="d-inline">
+                                    <input type="hidden" name="_token" value="{{ csrf_token('admin_tipo_cliente_' ~ empresa.id) }}">
+                                    <select name="tipo_cliente"
+                                            class="select-tipo-cliente"
+                                            onchange="this.form.submit()"
+                                            title="{{ 'admin.organizaciones.col.tipo'|trans }}">
+                                        <option value="" {{ empresa.tipoCliente is null ? 'selected' }}>—</option>
+                                        <option value="cortesia" {{ empresa.tipoCliente == 'cortesia' ? 'selected' }}>{{ 'admin.organizaciones.tipo.cortesia'|trans }}</option>
+                                        <option value="pago" {{ empresa.tipoCliente == 'pago' ? 'selected' }}>{{ 'admin.organizaciones.tipo.pago'|trans }}</option>
+                                    </select>
+                                </form>
+                                {% else %}
+                                    <span class="text-muted">—</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block app_page_scripts %}
+{{ parent() }}
+<script>
+(function () {
+    var filterPanelInit = false;
+    var dt = null;
+
+    function toggleFilters(force) {
+        var open = force === undefined ? !document.body.classList.contains('filters-open') : !!force;
+        document.body.classList.toggle('filters-open', open);
+    }
+
+    function getFilterSummary() {
+        var parts = [];
+        document.querySelectorAll('[data-filter-input="1"]').forEach(function (el) {
+            if (!('value' in el)) return;
+            var raw = (el.value || '').trim();
+            if (!raw) return;
+            var label = el.dataset.label || el.id || 'Filtro';
+            if (el.tagName === 'SELECT') {
+                var txt = el.options && el.selectedIndex >= 0 ? el.options[el.selectedIndex].text : raw;
+                var norm = (txt || '').trim().toLowerCase();
+                if (['todos', 'todas', '-seleccionar-', 'all'].includes(norm)) return;
+                parts.push(label + ': ' + txt);
+            } else {
+                parts.push(label + ': ' + raw);
+            }
+        });
+        return parts;
+    }
+
+    function updateActiveFilters() {
+        var row = document.getElementById('active-filters-row');
+        var text = document.getElementById('active-filters-text');
+        if (!row || !text) return;
+        var parts = getFilterSummary();
+        if (!parts.length) {
+            row.classList.remove('show');
+            text.textContent = '';
+            return;
+        }
+        var preview = parts.slice(0, 3).join(' ; ');
+        if (parts.length > 3) preview += ' ; +' + (parts.length - 3) + ' m\u00e1s';
+        text.textContent = ' ' + preview;
+        row.classList.add('show');
+    }
+
+    function applyFilters() {
+        var parts = [];
+        document.querySelectorAll('[data-filter-input="1"]').forEach(function (el) {
+            if (!('value' in el)) return;
+            var raw = (el.value || '').trim();
+            if (!raw) return;
+            if (el.tagName === 'SELECT') {
+                var txt = el.options && el.selectedIndex >= 0 ? el.options[el.selectedIndex].text : raw;
+                var norm = (txt || '').trim().toLowerCase();
+                if (['todos', 'todas', '-seleccionar-', 'all'].includes(norm)) return;
+                parts.push(raw);
+            } else {
+                parts.push(raw);
+            }
+        });
+
+        if (dt && typeof dt.search === 'function') {
+            dt.search(parts.join(' ')).draw();
+        }
+        updateActiveFilters();
+        toggleFilters(false);
+    }
+
+    function resetFilters() {
+        document.querySelectorAll('[data-filter-input="1"]').forEach(function (el) {
+            if (el.tagName === 'SELECT') { el.selectedIndex = 0; }
+            else { el.value = ''; }
+        });
+        if (dt && typeof dt.search === 'function') {
+            dt.search('').draw();
+        }
+        updateActiveFilters();
+    }
+
+    function initFilterPanel() {
+        if (filterPanelInit) return;
+        filterPanelInit = true;
+
+        var applyBtn = document.getElementById('filters-apply');
+        var resetBtn = document.getElementById('filters-reset');
+        var clearBtn = document.getElementById('active-filters-clear');
+        var body = document.getElementById('filters-body');
+
+        if (body) body.setAttribute('data-grova-filters-custom', '1');
+        if (applyBtn) applyBtn.addEventListener('click', applyFilters);
+        if (resetBtn) resetBtn.addEventListener('click', resetFilters);
+        if (clearBtn) clearBtn.addEventListener('click', resetFilters);
+        if (!body) return;
+
+        // Poblar selectores desde la tabla
+        var planes = [];
+        var tableEl = document.getElementById('clientes-table');
+        var tableBody = tableEl ? tableEl.querySelector('tbody') : null;
+        if (tableBody) {
+            var rows = tableBody.querySelectorAll('tr');
+            rows.forEach(function (row) {
+                var planTd = row.cells[2];
+                if (planTd) {
+                    var badge = planTd.querySelector('.badge');
+                    var name = badge ? badge.textContent.trim() : '';
+                    if (name && planes.indexOf(name) === -1) planes.push(name);
+                }
+            });
+            planes.sort();
+        }
+
+        var sections = [
+            {
+                title: 'B\u00fasqueda',
+                open: true,
+                fields: [
+                    { id: 'filter-cliente', label: 'Cliente / Slug', type: 'text', placeholder: 'Nombre, slug...' },
+                ]
+            }
+        ];
+        if (planes.length) {
+            sections.push({
+                title: 'Plan',
+                fields: [
+                    { id: 'filter-plan', label: 'Plan', type: 'select', options: ['Todos'].concat(planes) },
+                ]
+            });
+        }
+        sections.push({
+            title: 'Estado',
+            fields: [
+                { id: 'filter-estado', label: 'Tipo', type: 'select', options: ['Todos', 'Cortes\u00eda', 'Pago'] },
+                { id: 'filter-status', label: 'Estado', type: 'select', options: ['Todos', 'Activa', 'Inactiva'] },
+            ]
+        });
+
+        body.innerHTML = sections.map(function (section) {
+            var fieldsHtml = section.fields.map(function (f) {
+                if (f.type === 'select') {
+                    var opts = f.options.map(function (o) {
+                        return '<option value="' + o + '">' + o + '</option>';
+                    }).join('');
+                    return '<label class="form-label">' + f.label + '</label>' +
+                        '<select id="' + f.id + '" data-filter-input="1" data-label="' + f.label + '" class="form-select form-select-sm mb-2">' + opts + '</select>';
+                }
+                return '<label class="form-label">' + f.label + '</label>' +
+                    '<input id="' + f.id + '" data-filter-input="1" data-label="' + f.label + '" class="form-control form-control-sm mb-2" type="' + f.type + '" placeholder="' + (f.placeholder || '') + '">';
+            }).join('');
+            return '<div class="filter-section' + (section.open ? ' open' : '') + '">' +
+                '<button class="filter-section-btn" type="button">' + section.title +
+                '<span class="chev"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg></span></button>' +
+                '<div class="filter-section-content">' + fieldsHtml + '</div></div>';
+        }).join('');
+
+        if (window.GrovaFilters && typeof window.GrovaFilters.refreshSections === 'function') {
+            window.GrovaFilters.refreshSections(body);
+        }
+    }
+
+    // ── Inicializar filtros (siempre) ──
+    initFilterPanel();
+
+    // ── DataTable ──
+    var tableEl = document.getElementById('clientes-table');
+    if (!tableEl || typeof DataTable === 'undefined') return;
+
+    var locale = {{ app.request.locale | json_encode | raw }};
+    var dtLang = locale === 'en'
+        ? 'https://cdn.datatables.net/plug-ins/2.1.8/i18n/en-GB.json'
+        : 'https://cdn.datatables.net/plug-ins/2.1.8/i18n/es-ES.json';
+
+    try {
+        var initDt = (window.GrovaDataTable && window.GrovaDataTable.init)
+            ? window.GrovaDataTable.init
+            : function (el, o) { return new DataTable(el, o); };
+
+        dt = initDt(tableEl, {
+            language: { url: dtLang },
+            pageLength: 25,
+            order: [[1, 'asc']],
+            columnDefs: [
+                { orderable: false, targets: [0, 6] },
+                { searchable: false, targets: [0, 6] },
+            ],
+            layout: {
+                topEnd: {
+                    search: {
+                        placeholder: locale === 'en' ? 'Search…' : 'Buscar…',
+                    },
+                },
+            },
+        });
+    } catch (e) {
+        console.error(e);
+    }
+})();
+</script>
+{% endblock %}

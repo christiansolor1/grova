@@ -5,7 +5,10 @@ declare(strict_types=1);
 namespace App\Controller;
 
 use App\Entity\User;
+use App\Repository\LogActividadRepository;
+use App\Repository\UserCredencialBiometricaRepository;
 use App\Repository\UserLockRepository;
+use App\Service\Auth\ServicioGeolocalizacion;
 use App\Service\MenuTreeBuilder;
 use App\Service\SectionLockService;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -20,6 +23,9 @@ final class ProfileController extends AbstractController
     public function __construct(
         private readonly MenuTreeBuilder $menuTreeBuilder,
         private readonly UserLockRepository $userLockRepo,
+        private readonly UserCredencialBiometricaRepository $credencialRepo,
+        private readonly LogActividadRepository $logRepo,
+        private readonly ServicioGeolocalizacion $geo,
     ) {
     }
 
@@ -32,12 +38,22 @@ final class ProfileController extends AbstractController
         $user     = $this->getUser();
         $userLock = $this->userLockRepo->findOneBy(['user' => $user]);
 
-        return $this->render('workspace/pages/profile/index.html.twig', [
+        $credenciales = $this->credencialRepo->findByUser($user);
+
+        $sesiones = $this->logRepo->findSesionesRecientes($user);
+        foreach ($sesiones as &$sesion) {
+            $sesion['ubicacion'] = $this->geo->localizar($sesion['ip']);
+        }
+        unset($sesion);
+
+        return $this->render('workspace/pages/profile/indexProfile.html.twig', [
             'menu_tree'               => $tree,
             'active_menu_key'         => 'profile-user',
             'workspace_home_menu_key' => MenuTreeBuilder::HOME_MENU_KEY,
             'user_lock'               => $userLock,
             'lock_sections'           => SectionLockService::SECTIONS,
+            'credenciales_biometricas' => $credenciales,
+            'sesiones'                => $sesiones,
         ]);
     }
 }

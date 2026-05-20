@@ -1,0 +1,442 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}{{ 'app.name' | trans }} – Crear cuenta{% endblock %}
+
+{% block stylesheets %}
+<style>
+    body {
+        background: #0b1020;
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 16px;
+    }
+    .reg-wrapper { width: 100%; max-width: 560px; }
+    .reg-card {
+        background: #111827;
+        border: 1px solid #1f2937;
+        border-radius: 12px;
+    }
+    .reg-logo-box {
+        width: 40px; height: 40px;
+        background: #2563eb;
+        border-radius: 8px;
+        display: flex; align-items: center; justify-content: center;
+        font-weight: 700; color: #fff; font-size: 1.1rem;
+    }
+    .reg-title  { color: #f1f5f9; font-weight: 700; font-size: 1.55rem; letter-spacing: -0.3px; }
+    .reg-subtitle { color: #9ca3af; font-size: .95rem; }
+    .form-label { color: #cbd5e1; font-size: .9rem; font-weight: 600; margin-bottom: .45rem; }
+    .form-control, .input-group-text {
+        background: #0f172a;
+        border-color: #1f2937;
+        border-radius: 8px;
+        color: #f1f5f9;
+    }
+    .form-control:focus {
+        background: #0f172a;
+        border-color: #2563eb;
+        color: #f1f5f9;
+        box-shadow: 0 0 0 3px rgba(37,99,235,.2);
+    }
+    .form-control::placeholder { color: #475569; }
+    .input-group-text { color: #64748b; }
+    .is-invalid-custom { border-color: #ef4444 !important; }
+    .is-valid-custom   { border-color: #22c55e !important; }
+    .error-msg  { color: #fca5a5; font-size: .78rem; margin-top: .25rem; }
+    .slug-preview {
+        font-size: .78rem;
+        margin-top: .35rem;
+        min-height: 18px;
+        transition: color .2s;
+    }
+    .slug-preview.disponible { color: #4ade80; }
+    .slug-preview.ocupado    { color: #f87171; }
+    .slug-preview.revisando  { color: #94a3b8; }
+    .btn-grova {
+        background: #2563eb;
+        border: none;
+        border-radius: 8px;
+        font-weight: 600;
+        padding: .78rem;
+        font-size: .98rem;
+        transition: background .2s;
+    }
+    .btn-grova:hover    { background: #1e40af; }
+    .btn-grova:disabled { background: #1e40af; opacity: .7; cursor: not-allowed; }
+    .alert-error {
+        background: rgba(239,68,68,.1);
+        border: 1px solid rgba(239,68,68,.3);
+        color: #fca5a5;
+        border-radius: 8px;
+        font-size: .85rem;
+    }
+    .link-login { color: #93c5fd; text-decoration: none; font-weight: 500; }
+    .link-login:hover { text-decoration: underline; }
+    .trial-badge {
+        background: rgba(37,99,235,.12);
+        border: 1px solid rgba(37,99,235,.3);
+        border-radius: 8px;
+        color: #93c5fd;
+        font-size: .82rem;
+        padding: .6rem .9rem;
+    }
+    .divider-line { flex: 1; height: 1px; background: #1f2937; }
+</style>
+{% endblock %}
+
+{% block body %}
+<div class="reg-wrapper">
+    <div class="card reg-card p-4 shadow-lg">
+        <div class="card-body px-2">
+
+            <div class="d-flex align-items-center gap-3 mb-4">
+                <div class="reg-logo-box">G</div>
+                <div>
+                    <div class="reg-title">Crear cuenta</div>
+                    <div class="reg-subtitle">{{ 'app.name' | trans }} — prueba gratuita 30 días</div>
+                </div>
+            </div>
+
+            <div class="trial-badge mb-4 d-flex align-items-center gap-2">
+                <i class="bi bi-gift"></i>
+                <span>Sin tarjeta de crédito. Acceso completo durante 30 días.</span>
+            </div>
+
+            {% if errors.general is defined %}
+                <div class="alert alert-error mb-3 px-3 py-2">
+                    <i class="bi bi-exclamation-triangle me-2"></i>{{ errors.general }}
+                </div>
+            {% endif %}
+
+            {# Google OAuth #}
+            <div style="margin-bottom:1rem;">
+                <a href="{{ path('connect_google') }}"
+                   style="display:flex;align-items:center;justify-content:center;gap:.6rem;width:100%;padding:.7rem;background:#111827;border:1px solid #1f2937;color:#f1f5f9;border-radius:8px;font-size:.95rem;font-weight:600;text-decoration:none;transition:background .2s,border-color .2s;"
+                   onmouseover="this.style.background='#0f172a';this.style.borderColor='#374151'"
+                   onmouseout="this.style.background='#111827';this.style.borderColor='#1f2937'">
+                    <svg width="20" height="20" viewBox="0 0 48 48" style="flex-shrink:0;"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59A14.5 14.5 0 0 1 9.5 24c0-1.59.28-3.14.76-4.59l-7.98-6.19A23.99 23.99 0 0 0 0 24c0 3.77.87 7.35 2.56 10.56l7.97-5.97z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 5.97C6.51 42.62 14.62 48 24 48z"/></svg>
+                    Registrarse con Google
+                </a>
+            </div>
+
+            <div class="d-flex align-items-center gap-3 mb-3">
+                <div class="divider-line"></div>
+                <span style="color:#475569;font-size:.78rem;white-space:nowrap;">O regístrate con email</span>
+                <div class="divider-line"></div>
+            </div>
+
+            <form method="post" action="{{ path('registro_crear') }}" id="reg-form" novalidate>
+                <input type="hidden" name="_token" value="{{ csrf_token('grova_registro') }}">
+
+                {# Empresa #}
+                <div class="mb-3">
+                    <label for="empresa" class="form-label">Empresa o workspace</label>
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="bi bi-building"></i></span>
+                        <input type="text"
+                               class="form-control {% if errors.empresa is defined %}is-invalid-custom{% endif %}"
+                               id="empresa" name="empresa"
+                               value="{{ form.empresa ?? '' }}"
+                               placeholder="Mi empresa S.A."
+                               required autofocus autocomplete="organization">
+                    </div>
+                    {% if errors.empresa is defined %}
+                        <div class="error-msg">{{ errors.empresa }}</div>
+                    {% endif %}
+                </div>
+
+                {# Slug del workspace #}
+                <div class="mb-3">
+                    <label for="slug" class="form-label">Nombre de tu workspace</label>
+                    <div class="input-group">
+                        <span class="input-group-text" style="font-size:.78rem;color:#475569;white-space:nowrap;">grovaapp.com/</span>
+                        <input type="text"
+                               class="form-control {% if errors.slug is defined %}is-invalid-custom{% endif %}"
+                               id="slug" name="slug"
+                               value="{{ form.slug ?? '' }}"
+                               placeholder="mi-empresa"
+                               required autocomplete="off"
+                               maxlength="40">
+                    </div>
+                    <div id="slug-preview" class="slug-preview"></div>
+                    {% if errors.slug is defined %}
+                        <div class="error-msg">{{ errors.slug }}</div>
+                    {% endif %}
+                </div>
+
+                {# Nombre y apellido #}
+                <div class="row g-3 mb-3">
+                    <div class="col-6">
+                        <label for="nombre" class="form-label">Nombre</label>
+                        <input type="text"
+                               class="form-control {% if errors.nombre is defined %}is-invalid-custom{% endif %}"
+                               id="nombre" name="nombre"
+                               value="{{ form.nombre ?? '' }}"
+                               placeholder="Juan"
+                               required autocomplete="given-name">
+                        {% if errors.nombre is defined %}
+                            <div class="error-msg">{{ errors.nombre }}</div>
+                        {% endif %}
+                    </div>
+                    <div class="col-6">
+                        <label for="apellido" class="form-label">Apellido</label>
+                        <input type="text"
+                               class="form-control"
+                               id="apellido" name="apellido"
+                               value="{{ form.apellido ?? '' }}"
+                               placeholder="García"
+                               autocomplete="family-name">
+                    </div>
+                </div>
+
+                {# Email #}
+                <div class="mb-3">
+                    <label for="email" class="form-label">Email</label>
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="bi bi-envelope"></i></span>
+                        <input type="email"
+                               class="form-control {% if errors.email is defined %}is-invalid-custom{% endif %}"
+                               id="email" name="email"
+                               value="{{ form.email ?? '' }}"
+                               placeholder="juan@miempresa.com"
+                               required autocomplete="email">
+                    </div>
+                    {% if errors.email is defined %}
+                        <div class="error-msg">{{ errors.email }}</div>
+                    {% endif %}
+                </div>
+
+                {# Contraseña #}
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                        <label for="contrasena" class="form-label" style="margin:0;">Contraseña</label>
+                        <button type="button" class="btn-gen" onclick="generarContrasena()" style="background:transparent;border:1px solid #374151;border-radius:6px;color:#9ca3af;font-size:.78rem;padding:.25rem .75rem;cursor:pointer;transition:.2s;white-space:nowrap;">
+                            <i class="bi bi-magic"></i> Sugerir
+                        </button>
+                    </div>
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="bi bi-lock"></i></span>
+                        <input type="password"
+                               class="form-control {% if errors.contrasena is defined %}is-invalid-custom{% endif %}"
+                               id="contrasena" name="contrasena"
+                               placeholder="Mínimo 8 caracteres"
+                               required autocomplete="new-password"
+                               oninput="medirFortaleza(this.value)">
+                        <button type="button" onclick="togglePassword()" style="background:transparent;border:1px solid #1f2937;border-left:none;border-radius:0 8px 8px 0;color:#64748b;padding:0 12px;cursor:pointer;" tabindex="-1">
+                            <i class="bi bi-eye" id="pw-icon"></i>
+                        </button>
+                    </div>
+                    <!-- Barra de fortaleza -->
+                    <div style="height:4px;border-radius:2px;margin-top:6px;background:#374151;">
+                        <div style="height:100%;border-radius:2px;transition:all .3s ease;width:0;" id="strength-fill"></div>
+                    </div>
+                    <div style="font-size:.72rem;margin-top:2px;min-height:1.2em;" id="strength-label"></div>
+                    {% if errors.contrasena is defined %}
+                        <div class="error-msg">{{ errors.contrasena }}</div>
+                    {% endif %}
+                </div>
+
+                <div class="mb-4">
+                    <label for="contrasena_confirmar" class="form-label">Confirmar contraseña</label>
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="bi bi-lock-fill"></i></span>
+                        <input type="password"
+                               class="form-control {% if errors.contrasena_confirmar is defined %}is-invalid-custom{% endif %}"
+                               id="contrasena_confirmar" name="contrasena_confirmar"
+                               placeholder="Repite la contraseña"
+                               required autocomplete="new-password"
+                               oninput="medirCoincidencia()">
+                    </div>
+                    <div style="font-size:.72rem;margin-top:2px;min-height:1.2em;" id="match-label"></div>
+                    {% if errors.contrasena_confirmar is defined %}
+                        <div class="error-msg">{{ errors.contrasena_confirmar }}</div>
+                    {% endif %}
+                </div>
+
+                <button type="submit" class="btn btn-grova btn-primary w-100 mb-3" id="btn-submit">
+                    <span id="btn-text">Crear cuenta gratis</span>
+                    <span id="btn-spinner" class="spinner-border spinner-border-sm d-none ms-2" role="status"></span>
+                </button>
+            </form>
+
+            <div class="d-flex align-items-center gap-3 my-3">
+                <div class="divider-line"></div>
+                <span style="color:#475569;font-size:.78rem;white-space:nowrap;">¿Ya tienes cuenta?</span>
+                <div class="divider-line"></div>
+            </div>
+
+            <div class="text-center">
+                <a href="{{ path('login') }}" class="link-login">Iniciar sesión</a>
+            </div>
+
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block javascripts %}
+<script>
+const slugInput   = document.getElementById('slug');
+const preview     = document.getElementById('slug-preview');
+const empresaInput = document.getElementById('empresa');
+const slugUrl     = {{ path('registro_slug_disponible') | json_encode | raw }};
+
+let debounceTimer = null;
+
+function verificarSlug(valor) {
+    if (!valor) {
+        preview.textContent = '';
+        preview.className   = 'slug-preview';
+        return;
+    }
+
+    preview.textContent = 'Verificando disponibilidad…';
+    preview.className   = 'slug-preview revisando';
+
+    clearTimeout(debounceTimer);
+    debounceTimer = setTimeout(async () => {
+        try {
+            const res  = await fetch(`${slugUrl}?slug=${encodeURIComponent(valor)}`);
+            const data = await res.json();
+
+            if (data.disponible) {
+                preview.textContent = `✓ "${data.slug}" está disponible`;
+                preview.className   = 'slug-preview disponible';
+                slugInput.classList.remove('is-invalid-custom');
+                slugInput.classList.add('is-valid-custom');
+            } else {
+                preview.textContent = data.slug
+                    ? `✗ "${data.slug}" ya está en uso`
+                    : '✗ Nombre inválido — solo letras, números y guiones';
+                preview.className   = 'slug-preview ocupado';
+                slugInput.classList.add('is-invalid-custom');
+                slugInput.classList.remove('is-valid-custom');
+            }
+        } catch {
+            preview.textContent = '';
+        }
+    }, 400);
+}
+
+slugInput.addEventListener('input', () => verificarSlug(slugInput.value.trim()));
+
+// Auto-sugerir slug desde el nombre de empresa
+empresaInput.addEventListener('blur', () => {
+    if (slugInput.value.trim() !== '') return;
+    const sugerido = empresaInput.value
+        .toLowerCase()
+        .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-|-$/g, '')
+        .substring(0, 40);
+    if (sugerido) {
+        slugInput.value = sugerido;
+        verificarSlug(sugerido);
+    }
+});
+
+// Verificar al cargar si hay valor previo (error de validación)
+if (slugInput.value.trim()) {
+    verificarSlug(slugInput.value.trim());
+}
+
+document.getElementById('reg-form').addEventListener('submit', function () {
+    const btn    = document.getElementById('btn-submit');
+    const text   = document.getElementById('btn-text');
+    const spinner = document.getElementById('btn-spinner');
+    btn.disabled = true;
+    text.textContent = 'Creando cuenta…';
+    spinner.classList.remove('d-none');
+});
+
+// ─── Medidor de fortaleza y generador ──────────────────────────────────────
+function medirFortaleza(pw) {
+    var fill = document.getElementById('strength-fill');
+    var label = document.getElementById('strength-label');
+    if (!fill || !label) return;
+    if (pw.length === 0) {
+        fill.style.width = '0';
+        label.textContent = '';
+        return;
+    }
+    var score = 0;
+    score += Math.min(40, pw.length * 2.5);
+    var tieneMin = /[a-z]/.test(pw) ? 1 : 0;
+    var tieneMay = /[A-Z]/.test(pw) ? 1 : 0;
+    var tieneNum = /[0-9]/.test(pw) ? 1 : 0;
+    var tieneSim = /[^a-zA-Z0-9]/.test(pw) ? 1 : 0;
+    var tipos = tieneMin + tieneMay + tieneNum + tieneSim;
+    score += tipos * 5;
+    if (tipos >= 3) score += 10;
+    var reps = 0;
+    for (var i = 0; i < pw.length - 2; i++) {
+        if (pw[i] === pw[i+1] && pw[i] === pw[i+2]) reps++;
+    }
+    score -= reps * 5;
+    var secuencias = ['123', 'abc', 'qwerty', 'asdf', 'zxcv', '000', '111', 'password', 'contrasena', 'admin'];
+    var lower = pw.toLowerCase();
+    for (var s = 0; s < secuencias.length; s++) {
+        if (lower.indexOf(secuencias[s]) !== -1) score -= 20;
+    }
+    score = Math.max(0, Math.min(100, score));
+    var color, texto;
+    if (score >= 80) { color = '#22c55e'; texto = 'Excelente'; }
+    else if (score >= 60) { color = '#84cc16'; texto = 'Buena'; }
+    else if (score >= 40) { color = '#eab308'; texto = 'Regular'; }
+    else if (score >= 20) { color = '#f97316'; texto = 'Débil'; }
+    else { color = '#ef4444'; texto = 'Muy débil'; }
+    fill.style.width = score + '%';
+    fill.style.background = color;
+    label.textContent = 'Fortaleza: ' + texto;
+    label.style.color = color;
+}
+
+function medirCoincidencia() {
+    var pw = document.getElementById('contrasena').value;
+    var conf = document.getElementById('contrasena_confirmar').value;
+    var label = document.getElementById('match-label');
+    if (!label) return;
+    if (conf.length === 0) { label.textContent = ''; return; }
+    if (pw === conf) { label.textContent = '✓ Coinciden'; label.style.color = '#22c55e'; }
+    else { label.textContent = '✗ No coinciden'; label.style.color = '#f87171'; }
+}
+
+function togglePassword() {
+    var input = document.getElementById('contrasena');
+    var icon = document.getElementById('pw-icon');
+    if (!input || !icon) return;
+    if (input.type === 'password') {
+        input.type = 'text';
+        icon.className = 'bi bi-eye-slash';
+    } else {
+        input.type = 'password';
+        icon.className = 'bi bi-eye';
+    }
+}
+
+function generarContrasena() {
+    var btn = event.target;
+    if (btn.tagName !== 'BUTTON') btn = btn.closest('button');
+    var orig = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
+    fetch('/generar-contrasena?tipo=frase')
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            document.getElementById('contrasena').value = data.contrasena;
+            document.getElementById('contrasena_confirmar').value = '';
+            medirFortaleza(data.contrasena);
+            var ml = document.getElementById('match-label');
+            if (ml) ml.textContent = '';
+            btn.innerHTML = orig;
+            btn.disabled = false;
+        })
+        .catch(function() {
+            btn.innerHTML = orig;
+            btn.disabled = false;
+        });
+}
+</script>
+{% endblock %}

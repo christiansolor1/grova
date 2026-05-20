@@ -11,7 +11,101 @@
         align-items: center;
         justify-content: center;
         padding: 16px;
+        padding-top: 56px;
     }
+    .login-toolbar {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        z-index: 100;
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+        gap: 8px;
+        padding: 10px 14px;
+        pointer-events: none;
+    }
+    .login-toolbar > * {
+        pointer-events: auto;
+    }
+    .login-toolbar-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 36px;
+        height: 36px;
+        border-radius: 8px;
+        border: 1px solid #334155;
+        background: #1e293b;
+        color: #94a3b8;
+        cursor: pointer;
+        transition: background .15s, border-color .15s, color .15s;
+    }
+    .login-toolbar-btn:hover {
+        background: #0f172a;
+        border-color: #475569;
+        color: #e2e8f0;
+    }
+    .lang-combo--login .lang-combo-trigger {
+        background: #1e293b;
+        border-color: #334155;
+        color: #94a3b8;
+    }
+    .lang-combo--login .lang-combo-list {
+        z-index: 200;
+    }
+    body.light-mode .login-toolbar-btn {
+        background: #fff;
+        border-color: #e2e8f0;
+        color: #64748b;
+    }
+    body.light-mode .login-toolbar-btn:hover {
+        background: #f8fafc;
+        border-color: #cbd5e1;
+        color: #1e293b;
+    }
+    body.light-mode .lang-combo--login .lang-combo-trigger {
+        background: #fff;
+        border-color: #e2e8f0;
+        color: #64748b;
+    }
+    .lang-combo { position: relative; }
+    .lang-combo-trigger {
+        display: flex; align-items: center; gap: 6px;
+        padding: 5px 10px; border-radius: 7px; border: 1px solid #334155;
+        background: #0f172a; color: #94a3b8;
+        font-size: 12px; font-weight: 500; cursor: pointer;
+        transition: border-color .15s, color .15s; white-space: nowrap;
+    }
+    .lang-combo-trigger:hover { border-color: #475569; color: #e2e8f0; }
+    .lang-combo-trigger .lc-flag { font-size: 15px; line-height: 1; }
+    .lang-combo-trigger .lc-code { font-size: 11px; letter-spacing: .4px; }
+    .lang-combo-trigger .lc-chevron { color: #475569; transition: transform .2s; }
+    .lang-combo.open .lc-chevron { transform: rotate(180deg); }
+    body.light-mode .lang-combo-trigger { background: #f8fafc; border-color: #e2e8f0; color: #64748b; }
+    body.light-mode .lang-combo-trigger:hover { border-color: #94a3b8; color: #1e293b; }
+    .lang-combo-list {
+        position: absolute; top: calc(100% + 6px); right: 0;
+        min-width: 130px; background: #1e293b; border: 1px solid #334155;
+        border-radius: 8px; box-shadow: 0 8px 20px rgba(0,0,0,.4);
+        z-index: 300; overflow: hidden; display: none;
+    }
+    .lang-combo.open .lang-combo-list { display: block; }
+    body.light-mode .lang-combo-list { background: #fff; border-color: #e2e8f0; box-shadow: 0 8px 20px rgba(0,0,0,.1); }
+    .lang-combo-option {
+        display: flex; align-items: center; gap: 8px;
+        padding: 9px 12px; text-decoration: none;
+        font-size: 12px; font-weight: 500; color: #94a3b8;
+        transition: background .12s, color .12s;
+    }
+    .lang-combo-option:hover { background: #0f172a; color: #e2e8f0; }
+    .lang-combo-option.active { color: #60a5fa; }
+    .lang-combo-option .lc-check { margin-left: auto; color: #3b82f6; }
+    body.light-mode .lang-combo-option { color: #64748b; }
+    body.light-mode .lang-combo-option:hover { background: #f8fafc; color: #1e293b; }
+    body.light-mode .lang-combo-option.active { color: #2563eb; }
+    body.light-mode .lang-combo-option .lc-check { color: #2563eb; }
     .login-card {
         width: 100%;
         max-width: 560px;
@@ -234,10 +328,41 @@
     body.light-mode .login-footer-copy a {
         color: #2563eb;
     }
+    body.light-mode #webauthn-section .login-webauthn-divider {
+        color: #94a3b8;
+    }
+    body.light-mode #webauthn-section .login-webauthn-divider::before,
+    body.light-mode #webauthn-section .login-webauthn-divider::after {
+        background: #e5e7eb;
+    }
+    body.light-mode #btn-webauthn {
+        background: #f8fafc;
+        border-color: #d1d5db;
+        color: #1e293b;
+    }
+    body.light-mode #btn-webauthn:hover {
+        background: #f1f5f9;
+    }
+    #webauthn-section .login-webauthn-divider {
+        display: flex;
+        align-items: center;
+        gap: .75rem;
+        margin-bottom: .85rem;
+        font-size: .78rem;
+        color: #475569;
+    }
+    #webauthn-section .login-webauthn-divider::before,
+    #webauthn-section .login-webauthn-divider::after {
+        content: '';
+        flex: 1;
+        height: 1px;
+        background: #1f2937;
+    }
 </style>
 {% endblock %}
 
 {% block body %}
+{% include 'login/partials/_login_toolbar.html.twig' %}
 <div class="login-wrapper">
     <div class="card login-card p-4 shadow-lg">
         <div class="card-body px-2">
@@ -249,6 +374,14 @@
                 <div class="login-subtitle">{{ 'auth.login.subtitle' | trans }}</div>
             </div>
         </div>
+
+        {% for label, messages in app.flashes %}
+            {% for message in messages %}
+                <div class="alert {{ label == 'success' ? 'alert-success' : 'alert-dark-error' }} mb-3 px-3 py-2" style="{{ label == 'success' ? 'background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.3);color:#86efac;' : '' }}">
+                    <i class="bi {{ label == 'success' ? 'bi-check-circle' : 'bi-exclamation-triangle' }} me-2"></i>{{ message }}
+                </div>
+            {% endfor %}
+        {% endfor %}
 
         {# Error de autenticación #}
         {% if error %}
@@ -274,6 +407,24 @@
             </div>
         {% endif %}
 
+        {# ── Google OAuth ── #}
+        <div style="margin-bottom:1rem;">
+            <a href="{{ path('connect_google') }}"
+               style="display:flex;align-items:center;justify-content:center;gap:.6rem;width:100%;padding:.7rem;background:#1e293b;border:1px solid #334155;color:#f1f5f9;border-radius:8px;font-size:.95rem;font-weight:600;text-decoration:none;transition:background .2s,border-color .2s;"
+               onmouseover="this.style.background='#0f172a';this.style.borderColor='#475569'"
+               onmouseout="this.style.background='#1e293b';this.style.borderColor='#334155'">
+                <svg width="20" height="20" viewBox="0 0 48 48" style="flex-shrink:0;"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59A14.5 14.5 0 0 1 9.5 24c0-1.59.28-3.14.76-4.59l-7.98-6.19A23.99 23.99 0 0 0 0 24c0 3.77.87 7.35 2.56 10.56l7.97-5.97z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 5.97C6.51 42.62 14.62 48 24 48z"/></svg>
+                Continuar con Google
+            </a>
+        </div>
+
+        {# ── Divisor ── #}
+        <div style="display:flex;align-items:center;gap:.75rem;margin-bottom:1rem;">
+            <div style="flex:1;height:1px;background:#1f2937;"></div>
+            <span style="color:#475569;font-size:.78rem;white-space:nowrap;">{{ 'auth.login.or' | trans | default('O inicia con email') }}</span>
+            <div style="flex:1;height:1px;background:#1f2937;"></div>
+        </div>
+
         <form method="post" action="{{ path('login_check', {'_locale': app.request.locale}) }}" id="login-form">
             <input type="hidden" name="_csrf_token" value="{{ csrf_token('authenticate') }}">
             {% if post_login_path is defined %}
@@ -288,8 +439,8 @@
                            class="form-control"
                            id="username"
                            name="username"
-                           value="{{ last_username }}"
-                           placeholder="{{ 'auth.login.username_placeholder' | trans }}"
+                           value="{{ last_username ?: app.request.query.get('_username', '') }}"
+                           placeholder="Email o nombre de workspace"
                            required
                            autofocus
                            autocomplete="username"
@@ -321,14 +472,25 @@
                 <span id="btn-text">{{ 'auth.login.submit' | trans }}</span>
                 <span id="btn-spinner" class="spinner-border spinner-border-sm d-none ms-2" role="status"></span>
             </button>
+
+            <div class="text-end mt-2">
+                <a href="{{ path('recuperar_contrasena') }}"
+                   style="color:#64748b;font-size:.8rem;text-decoration:none;">
+                    ¿Olvidaste tu contraseña?
+                </a>
+            </div>
         </form>
+
+        {# ── Crear cuenta ── #}
+        <div class="text-center mt-3" style="font-size:.85rem;color:#64748b;">
+            ¿No tienes cuenta?
+            <a href="{{ path('registro') }}" style="color:#93c5fd;text-decoration:none;font-weight:500;">Pruébalo gratis 30 días</a>
+        </div>
 
         {# ── Biométrico ── #}
         <div id="webauthn-section" style="display:none;margin-top:1.25rem;">
-            <div style="display:flex;align-items:center;gap:.75rem;margin-bottom:.85rem;color:#334155;font-size:.78rem;">
-                <div style="flex:1;height:1px;background:#1f2937;"></div>
-                <span style="color:#475569;white-space:nowrap;">o accede sin contraseña</span>
-                <div style="flex:1;height:1px;background:#1f2937;"></div>
+            <div class="login-webauthn-divider">
+                <span style="white-space:nowrap;">{{ 'auth.login.webauthn_or'|trans }}</span>
             </div>
             <button type="button" id="btn-webauthn" style="width:100%;padding:.78rem;background:#1e293b;border:1px solid #334155;color:#f1f5f9;border-radius:8px;font-size:.95rem;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:.6rem;transition:background .2s,border-color .2s;">
                 <i class="bi bi-fingerprint" style="font-size:22px;color:#6366f1;"></i>
@@ -373,6 +535,63 @@
 
 {% block javascripts %}
 <script>
+(function () {
+    function getCookie(name) {
+        return document.cookie.split('; ').reduce(function (acc, c) {
+            var p = c.split('=');
+            return p[0] === name ? decodeURIComponent(p[1] || '') : acc;
+        }, null);
+    }
+    window.setCookie = function (name, value, days) {
+        var expires = new Date(Date.now() + days * 864e5).toUTCString();
+        document.cookie = name + '=' + encodeURIComponent(value) + ';expires=' + expires + ';path=/;SameSite=Lax';
+    };
+    window.toggleLangCombo = function (id, e) {
+        if (e) e.stopPropagation();
+        var combo = document.getElementById('lang-combo-' + id);
+        if (!combo) return;
+        var isOpen = combo.classList.contains('open');
+        document.querySelectorAll('.lang-combo.open').forEach(function (el) { el.classList.remove('open'); });
+        if (!isOpen) combo.classList.add('open');
+    };
+
+    var cookieTheme = getCookie('grova_theme');
+    var darkMode = cookieTheme
+        ? cookieTheme !== 'light'
+        : !document.body.classList.contains('light-mode');
+
+    function applyTheme() {
+        var sun = document.getElementById('login-icon-sun');
+        var moon = document.getElementById('login-icon-moon');
+        if (darkMode) {
+            document.body.classList.remove('light-mode');
+            document.body.setAttribute('data-bs-theme', 'dark');
+            if (sun) sun.style.display = 'block';
+            if (moon) moon.style.display = 'none';
+        } else {
+            document.body.classList.add('light-mode');
+            document.body.setAttribute('data-bs-theme', 'light');
+            if (sun) sun.style.display = 'none';
+            if (moon) moon.style.display = 'block';
+        }
+    }
+
+    applyTheme();
+
+    var themeBtn = document.getElementById('login-theme-toggle');
+    if (themeBtn) {
+        themeBtn.addEventListener('click', function () {
+            darkMode = !darkMode;
+            setCookie('grova_theme', darkMode ? 'dark' : 'light', 365);
+            applyTheme();
+        });
+    }
+
+    document.addEventListener('click', function () {
+        document.querySelectorAll('.lang-combo.open').forEach(function (el) { el.classList.remove('open'); });
+    });
+})();
+
 document.getElementById('login-form').addEventListener('submit', function() {
     const btn    = document.getElementById('btn-submit');
     const text   = document.getElementById('btn-text');

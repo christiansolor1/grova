@@ -10,6 +10,7 @@ parameters:
     app.version: '%env(APP_VERSION)%'
     app.git_sha: '%env(APP_GIT_SHA)%'
     mailer_from_email: '%env(MAILER_FROM_EMAIL)%'
+    default_license_key: ''
 
 services:
     # default configuration for services in *this* file
@@ -21,6 +22,26 @@ services:
     # this creates a service per class whose id is the fully-qualified class name
     App\:
         resource: '../src/'
+
+    App\Service\Setup\EstadoInstalacion:
+        arguments:
+            $directorioProyecto: '%kernel.project_dir%'
+
+    App\Service\Setup\InstaladorGrova:
+        arguments:
+            $directorioProyecto: '%kernel.project_dir%'
+
+    App\Service\GuardiaSubscripcion:
+        arguments:
+            $licenseKey: '%env(default:default_license_key:LICENSE_KEY)%'
+
+    App\Service\GeneradorLicencias:
+        arguments:
+            $keypairBase64: '%env(default::LICENSE_KEYPAIR)%'
+
+    App\Service\ValidadorLicencias:
+        arguments:
+            $clavePublicaBase64: '%env(default::LICENSE_PUBLIC_KEY)%'
 
     App\Service\BuildInfoProvider:
         arguments:
@@ -40,6 +61,31 @@ services:
         arguments:
             $projectDir: '%kernel.project_dir%'
 
+    App\Service\Respaldo\RespaldoWork:
+        arguments:
+            $projectDir: '%kernel.project_dir%'
+
+    App\Service\Respaldo\RespaldoModuloService:
+        arguments:
+            $projectDir: '%kernel.project_dir%'
+
+    App\Service\Tenant\RegistradorTenant:
+        arguments:
+            $emCore: '@doctrine.orm.core_entity_manager'
+            $conexionCore: '@doctrine.dbal.core_connection'
+
+    App\Security\ProveedorUsuario:
+        arguments:
+            $emCore: '@doctrine.orm.core_entity_manager'
+
+    App\Service\Auth\ServicioVerificacionEmail:
+        arguments:
+            $emCore: '@doctrine.orm.core_entity_manager'
+
+    App\Service\Auth\ServicioRecuperacionContrasena:
+        arguments:
+            $emCore: '@doctrine.orm.core_entity_manager'
+
     App\Doctrine\TenantSwitchMiddleware:
         tags:
             - { name: doctrine.dbal.middleware, connection: tenant }
@@ -47,6 +93,19 @@ services:
     App\EventListener\JWTCreatedListener:
         tags:
             - { name: kernel.event_listener, event: lexik_jwt_authentication.on_jwt_created, method: onJWTCreated }
+
+    App\Security\TwoFactor\ProveedorMFA:
+        tags:
+            - { name: scheb_two_factor.provider, alias: grova_mfa }
+
+    App\Service\Auth\ServicioGeolocalizacion:
+        arguments:
+            $cacheDir: '%kernel.cache_dir%'
+
+    App\Controller\ControladorRecuperacion:
+        arguments:
+            $recaptchaSiteKey: '%env(RECAPTCHA_SITE_KEY)%'
+            $recaptchaSecretKey: '%env(RECAPTCHA_SECRET_KEY)%'
 
     # add more service definitions when explicit configuration is needed
     # please note that last definitions always *replace* previous ones

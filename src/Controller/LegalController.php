@@ -43,7 +43,7 @@ final class LegalController extends AbstractController
         $audiencias = $this->followUpRepo->findProximasAudiencias();
         $pendiente = $this->caseRepo->getTotalHonorariosPendientes();
 
-        return $this->render('workspace/pages/legal/index.html.twig', [
+        return $this->render('workspace/pages/legal/indexLegal.html.twig', [
             'menu_tree'               => $tree,
             'active_menu_key'         => 'legal',
             'workspace_home_menu_key' => MenuTreeBuilder::HOME_MENU_KEY,

@@ -27,3 +27,11 @@
 /deploy/env.production
 /deploy/env.*.local
 ###< Deploy ###
+
+###> SSL local (certificados de desarrollo) ###
+/ssl/
+###< SSL local ###
+
+###> Desarrollo local ###
+/public/rootCA.pem
+###< Desarrollo local ###
