@@ -176,6 +176,11 @@ web_construccion:
     defaults:
         _locale: es
 
+# ── Tasas de cambio pública (con locale en la ruta del controller) ─────────────
+web_tasas_cambio:
+    resource: '../src/Controller/ControladorTasasCambio.php'
+    type: attribute
+
 # ── Generador de contraseñas (sin locale) ─────────────────────────────────────
 web_generador_contrasenas:
     resource: '../src/Controller/ControladorGeneradorContrasenas.php'

@@ -18,16 +18,7 @@ final class ExchangeRateService
     private const URL_JSON_ATLANTIDA = 'https://basa-static.s3.amazonaws.com/tasa-de-cambio.json';
 
     /** Clave de caché; subir versión al cambiar fuentes/parsers para no servir datos viejos. */
-    private const CACHE_KEY = 'exchange_rates_multi_v6';
-
-    /**
-     * BAC Credomatic — JSON público (HN + LPS en arrays USD/EUR).
-     * @see https://www.sucursalelectronica.com/ebac/common/GetExchangeRateInfo.go
-     */
-    private const URL_JSON_BAC = 'https://www.sucursalelectronica.com/ebac/common/GetExchangeRateInfo.go';
-
-    /** Login BAC: tasas visibles en el header (mismo dato que el JSON, en HTML). */
-    private const URL_LOGIN_BAC = 'https://www.sucursalelectronica.com/redir/showLogin.go';
+    private const CACHE_KEY = 'exchange_rates_multi_v8';
 
     private const BANCOS_ESPERADOS = ['Atlántida', 'Ficohsa', 'Occidente'];
 
@@ -76,7 +67,6 @@ final class ExchangeRateService
             $banks['Ficohsa']   = $this->fetchFicohsa();
             $banks['Occidente'] = $this->fetchOccidente();
             $banks['BAC']       = $this->fetchBAC();
-
             // Filtrar bancos que fallaron
             $banks = array_filter($banks, fn($b) => $b !== null);
             if (empty($banks)) {
@@ -180,143 +170,21 @@ final class ExchangeRateService
     /** @return array{usd:float,usd_venta:float,eur:float,eur_venta:float,url:string}|null */
     private function fetchBAC(): ?array
     {
-        return $this->fetchBACDesdeJson() ?? $this->fetchBACDesdeLoginHtml();
-    }
-
-    /** @return array{usd:float,usd_venta:float,eur:float,eur_venta:float,url:string}|null */
-    private function fetchBACDesdeJson(): ?array
-    {
         try {
-            $json = $this->fetchRespuestaBac(self::URL_JSON_BAC, 'application/json, */*', 8);
-            $data = json_decode($json, true, 512, JSON_THROW_ON_ERROR);
-            if (!is_array($data)) {
-                return null;
+            $xml = $this->fetch('https://www.sucursalelectronica.com/exchangerate/showXmlExchangeRate.do');
+            $doc = new \SimpleXMLElement($xml);
+            foreach ($doc->country as $country) {
+                if (strtolower(trim((string) $country->name)) === 'honduras') {
+                    $buyUsd  = (float) $country->buyRateUSD;
+                    $saleUsd = (float) $country->saleRateUSD;
+                    $buyEur  = (float) $country->buyRateEUR;
+                    $saleEur = (float) $country->saleRateEUR;
+                    if ($buyUsd <= 0) return null;
+                    return ['usd' => $buyUsd, 'usd_venta' => $saleUsd, 'eur' => $buyEur, 'eur_venta' => $saleEur, 'url' => 'baccredomatic.com'];
+                }
             }
-
-            $usdHn = $this->buscarTasaBacHonduras($data['USD'] ?? []);
-            $eurHn = $this->buscarTasaBacHonduras($data['EUR'] ?? []);
-            if ($usdHn === null || (float) ($usdHn['buy'] ?? 0) <= 0) {
-                return null;
-            }
-
-            return $this->armarTasasBac(
-                (float) $usdHn['buy'],
-                (float) ($usdHn['sell'] ?? $usdHn['buy']),
-                $eurHn !== null ? (float) ($eurHn['buy'] ?? 0) : 0.0,
-                $eurHn !== null ? (float) ($eurHn['sell'] ?? 0) : 0.0,
-            );
-        } catch (\Throwable) {
             return null;
-        }
-    }
-
-    /**
-     * Tasas del header en showLogin.go: "Dólares: Compra L… Venta L…" / "Euros: …".
-     * @return array{usd:float,usd_venta:float,eur:float,eur_venta:float,url:string}|null
-     */
-    private function fetchBACDesdeLoginHtml(): ?array
-    {
-        try {
-            $html = $this->fetchRespuestaBac(self::URL_LOGIN_BAC, 'text/html, */*', 12);
-            if ($html === '' || !str_contains($html, 'Compra')) {
-                return null;
-            }
-
-            preg_match(
-                '/D[oó]lares?\s*:?\s*Compra\s*L?\s*([\d.]+)\s*Venta\s*L?\s*([\d.]+)/iu',
-                $html,
-                $usd,
-            );
-            preg_match(
-                '/Euros?\s*:?\s*Compra\s*L?\s*([\d.]+)\s*Venta\s*L?\s*([\d.]+)/iu',
-                $html,
-                $eur,
-            );
-            if (empty($usd[1])) {
-                return null;
-            }
-
-            return $this->armarTasasBac(
-                (float) $usd[1],
-                (float) ($usd[2] ?? $usd[1]),
-                !empty($eur[1]) ? (float) $eur[1] : 0.0,
-                !empty($eur[2]) ? (float) $eur[2] : 0.0,
-            );
-        } catch (\Throwable) {
-            return null;
-        }
-    }
-
-    /** @return array{usd:float,usd_venta:float,eur:float,eur_venta:float,url:string} */
-    private function armarTasasBac(float $compraUsd, float $ventaUsd, float $compraEur, float $ventaEur): array
-    {
-        return [
-            'usd'       => $compraUsd,
-            'usd_venta' => $ventaUsd > 0 ? $ventaUsd : $compraUsd,
-            'eur'       => $compraEur > 0 ? $compraEur : 0.0,
-            'eur_venta' => $ventaEur > 0 ? $ventaEur : 0.0,
-            'url'       => 'sucursalelectronica.com',
-        ];
-    }
-
-    /**
-     * @param list<array<string, mixed>> $filas
-     * @return array{buy: float|int, sell: float|int}|null
-     */
-    private function buscarTasaBacHonduras(array $filas): ?array
-    {
-        foreach ($filas as $fila) {
-            if (!is_array($fila)) {
-                continue;
-            }
-            if (strtoupper(trim((string) ($fila['country_code'] ?? ''))) !== 'HN') {
-                continue;
-            }
-            if (strtoupper(trim((string) ($fila['currency_code'] ?? ''))) !== 'LPS') {
-                continue;
-            }
-
-            return $fila;
-        }
-
-        return null;
-    }
-
-    private function fetchRespuestaBac(string $url, string $accept, int $segundos): string
-    {
-        $cabeceras = [
-            'User-Agent'      => 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-            'Accept'          => $accept,
-            'Accept-Language' => 'es-HN,es;q=0.9',
-            'Referer'         => 'https://www.sucursalelectronica.com/',
-        ];
-
-        try {
-            return $this->httpClient->request('GET', $url, [
-                'timeout' => $segundos,
-                'headers' => $cabeceras,
-            ])->getContent();
-        } catch (\Throwable) {
-            $headerLine = "Accept: {$accept}\r\nAccept-Language: es-HN,es;q=0.9\r\nReferer: https://www.sucursalelectronica.com/\r\n";
-            $contexto = stream_context_create([
-                'http' => [
-                    'timeout'       => $segundos,
-                    'user_agent'    => $cabeceras['User-Agent'],
-                    'header'        => $headerLine,
-                    'ignore_errors' => true,
-                ],
-                'ssl' => [
-                    'verify_peer'      => true,
-                    'verify_peer_name' => true,
-                ],
-            ]);
-            $cuerpo = @file_get_contents($url, false, $contexto);
-            if ($cuerpo === false || $cuerpo === '') {
-                throw new \RuntimeException('BAC no respondió: ' . $url);
-            }
-
-            return $cuerpo;
-        }
+        } catch (\Throwable) { return null; }
     }
 
     private function fetch(string $url): string
@@ -367,7 +235,6 @@ final class ExchangeRateService
             'Atlántida' => ['usd' => 26.6151, 'usd_venta' => 26.7482, 'eur' => 29.4971, 'eur_venta' => 33.5528, 'url' => 'bancatlan.hn'],
             'Ficohsa'   => ['usd' => 26.6151, 'usd_venta' => 26.7482, 'eur' => 29.1089, 'eur_venta' => 33.5690, 'url' => 'ficohsa.hn'],
             'Occidente' => ['usd' => 26.6151, 'usd_venta' => 26.7482, 'eur' => 0.0,     'eur_venta' => 0.0,     'url' => 'bancodeoccidente.hn'],
-            'BAC'       => ['usd' => 26.6282, 'usd_venta' => 26.7613, 'eur' => 30.3561, 'eur_venta' => 32.6488, 'url' => 'sucursalelectronica.com'],
         ];
         return [
             'banks' => $banks, 'best_eur' => 'Atlántida', 'best_usd' => 'Atlántida',
