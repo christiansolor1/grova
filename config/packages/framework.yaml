@@ -23,6 +23,8 @@ when@dev:
         profiler:
             enabled: true
             collect: true
+        session:
+            cookie_domain: '.localhost'
 
 when@test:
     framework:

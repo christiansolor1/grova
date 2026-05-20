@@ -22,7 +22,6 @@ use App\Module\Personal\Work\PublicHolidayEntry;
 use App\Module\Personal\Work\WorkMonthLabel;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
-use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Symfony\Component\HttpFoundation\HeaderUtils;
@@ -362,7 +361,6 @@ final class WorkController extends AbstractController
     #[Route('/day/create', name: 'day_create', methods: ['POST'])]
     public function createDay(
         Request $request,
-        #[Autowire(service: 'doctrine.orm.tenant_entity_manager')]
         EntityManagerInterface $em,
     ): Response {
         if (!$this->isCsrfTokenValid('work_day', (string) $request->request->get('_token'))) {
@@ -425,7 +423,6 @@ final class WorkController extends AbstractController
     public function editDay(
         int $id,
         Request $request,
-        #[Autowire(service: 'doctrine.orm.tenant_entity_manager')]
         EntityManagerInterface $em,
     ): Response {
         if (!$this->isCsrfTokenValid('work_day_edit_' . $id, (string) $request->request->get('_token'))) {
@@ -478,7 +475,6 @@ final class WorkController extends AbstractController
     public function deleteDay(
         int $id,
         Request $request,
-        #[Autowire(service: 'doctrine.orm.tenant_entity_manager')]
         EntityManagerInterface $em,
     ): Response {
         if (!$this->isCsrfTokenValid('work_day_delete_' . $id, (string) $request->request->get('_token'))) {
@@ -523,7 +519,6 @@ final class WorkController extends AbstractController
     #[Route('/client/create', name: 'client_create', methods: ['POST'])]
     public function createClient(
         Request $request,
-        #[Autowire(service: 'doctrine.orm.tenant_entity_manager')]
         EntityManagerInterface $em,
     ): Response {
         if (!$this->isCsrfTokenValid('work_client', (string) $request->request->get('_token'))) {
@@ -545,7 +540,6 @@ final class WorkController extends AbstractController
     public function editClient(
         int $id,
         Request $request,
-        #[Autowire(service: 'doctrine.orm.tenant_entity_manager')]
         EntityManagerInterface $em,
     ): Response {
         if (!$this->isCsrfTokenValid('work_client_' . $id, (string) $request->request->get('_token'))) {
@@ -574,7 +568,6 @@ final class WorkController extends AbstractController
     public function activateClient(
         int $id,
         Request $request,
-        #[Autowire(service: 'doctrine.orm.tenant_entity_manager')]
         EntityManagerInterface $em,
     ): Response {
         if (!$this->isCsrfTokenValid('work_client_activate_' . $id, (string) $request->request->get('_token'))) {
@@ -805,7 +798,6 @@ final class WorkController extends AbstractController
     public function deleteInvoice(
         int $id,
         Request $request,
-        #[Autowire(service: 'doctrine.orm.tenant_entity_manager')]
         EntityManagerInterface $em,
     ): Response {
         if (!$this->isCsrfTokenValid('work_invoice_delete_' . $id, (string) $request->request->get('_token'))) {
@@ -900,7 +892,6 @@ final class WorkController extends AbstractController
     public function toggleInvoicePaid(
         int $id,
         Request $request,
-        #[Autowire(service: 'doctrine.orm.tenant_entity_manager')]
         EntityManagerInterface $em,
     ): Response {
         if (!$this->isCsrfTokenValid('work_invoice_paid_' . $id, (string) $request->request->get('_token'))) {
@@ -976,7 +967,6 @@ final class WorkController extends AbstractController
     public function updateInvoiceBankCommission(
         int $id,
         Request $request,
-        #[Autowire(service: 'doctrine.orm.tenant_entity_manager')]
         EntityManagerInterface $em,
     ): Response {
         if (!$this->isCsrfTokenValid('work_invoice_commission_' . $id, (string) $request->request->get('_token'))) {
@@ -1036,7 +1026,6 @@ final class WorkController extends AbstractController
     public function invoicePaymentProof(
         int $id,
         Request $request,
-        #[Autowire(service: 'doctrine.orm.tenant_entity_manager')]
         EntityManagerInterface $em,
     ): Response {
         $invoice = $this->invoiceRepo->find($id);
@@ -1142,7 +1131,6 @@ final class WorkController extends AbstractController
     public function deleteInvoicePaymentProof(
         int $id,
         Request $request,
-        #[Autowire(service: 'doctrine.orm.tenant_entity_manager')]
         EntityManagerInterface $em,
     ): Response {
         $wantsJson = $this->wantsWorkPaymentProofJson($request);
@@ -1554,7 +1542,6 @@ final class WorkController extends AbstractController
     #[Route('/vacation/create', name: 'vacation_create', methods: ['POST'])]
     public function createVacation(
         Request $request,
-        #[Autowire(service: 'doctrine.orm.tenant_entity_manager')]
         EntityManagerInterface $em,
     ): Response {
         if (!$this->isCsrfTokenValid('work_vacation', (string) $request->request->get('_token'))) {

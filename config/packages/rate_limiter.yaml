@@ -23,3 +23,15 @@ framework:
             policy: sliding_window
             limit: 3
             interval: '10 minutes'
+
+        # 60 requests por IP por minuto para la API
+        api_global:
+            policy: sliding_window
+            limit: 60
+            interval: '1 minute'
+
+        # 10 requests por IP por minuto para login API
+        api_login:
+            policy: sliding_window
+            limit: 10
+            interval: '1 minute'

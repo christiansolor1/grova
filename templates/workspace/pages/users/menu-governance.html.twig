@@ -476,7 +476,9 @@ body.light-mode .editor-shell { background: #f8fafc; border-color: #dbe3ee; }
                 confirmButtonText: 'Entendido'
             });
         }
-        window.alert((title ? title + '\n\n' : '') + (text || ''));
+        if (window.Swal) {
+            return window.Swal.fire({ icon: icon || 'info', title: title || 'Información', text: text || '', confirmButtonText: 'Entendido' });
+        }
         return Promise.resolve();
     }
 
@@ -492,7 +494,18 @@ body.light-mode .editor-shell { background: #f8fafc; border-color: #dbe3ee; }
                 reverseButtons: true
             }).then(function (result) { return !!result.isConfirmed; });
         }
-        return Promise.resolve(window.confirm((title ? title + '\n\n' : '') + (text || '')));
+        if (window.Swal) {
+            return window.Swal.fire({
+                icon: 'question',
+                title: title || '¿Confirmar?',
+                text: text || '',
+                showCancelButton: true,
+                confirmButtonText: confirmText || 'Confirmar',
+                cancelButtonText: cancelText || 'Cancelar',
+                reverseButtons: true
+            }).then(function (result) { return !!result.isConfirmed; });
+        }
+        return Promise.resolve(false);
     }
 
     function clearValidationState() {

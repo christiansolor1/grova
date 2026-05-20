@@ -60,11 +60,13 @@
             </div>
 
             <div class="col-md-6">
-                <label for="tipo_cliente" class="form-label">{{ 'admin.organizaciones.col.tipo'|trans }}</label>
-                <select id="tipo_cliente" name="tipo_cliente" class="form-select form-select-sm">
+                <label for="tipo" class="form-label">{{ 'admin.organizaciones.col.tipo'|trans }}</label>
+                <select id="tipo" name="tipo" class="form-select form-select-sm">
                     <option value="">—</option>
                     <option value="cortesia">{{ 'admin.organizaciones.tipo.cortesia'|trans }}</option>
                     <option value="pago">{{ 'admin.organizaciones.tipo.pago'|trans }}</option>
+                    <option value="trial">Prueba</option>
+                    <option value="staff">Staff</option>
                 </select>
             </div>
 

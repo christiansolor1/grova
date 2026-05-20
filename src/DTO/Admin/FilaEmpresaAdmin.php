@@ -14,11 +14,11 @@ final readonly class FilaEmpresaAdmin
         public string $nombre,
         public string $slug,
         public string $estado,
+        public ?string $tipo,
         public int $totalUsuarios,
         public ?string $nombrePlan,
         public ?string $estadoSuscripcion,
         public ?\DateTimeImmutable $fechaVencimiento,
-        public ?string $tipoCliente,
     ) {
     }
 
@@ -40,6 +40,32 @@ final readonly class FilaEmpresaAdmin
 
     public function esCortesia(): bool
     {
-        return $this->tipoCliente === 'cortesia';
+        return $this->tipo === 'cortesia';
+    }
+
+    public function esStaff(): bool
+    {
+        return $this->tipo === 'staff';
+    }
+
+    public function esTrial(): bool
+    {
+        return $this->tipo === 'trial';
+    }
+
+    public function esPago(): bool
+    {
+        return $this->tipo === 'pago';
+    }
+
+    public function etiquetaTipo(): string
+    {
+        return match ($this->tipo) {
+            'staff'    => 'Staff',
+            'trial'    => 'Prueba',
+            'cortesia' => 'Cortesía',
+            'pago'     => 'Pago',
+            default    => '—',
+        };
     }
 }

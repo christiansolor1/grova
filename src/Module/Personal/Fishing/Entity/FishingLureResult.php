@@ -16,6 +16,9 @@ class FishingLureResult
     #[ORM\Column]
     private ?int $id = null;
 
+    #[ORM\Column]
+    private int $tenantId;
+
     #[ORM\ManyToOne(targetEntity: FishingLure::class)]
     #[ORM\JoinColumn(nullable: false, onDelete: 'CASCADE')]
     private FishingLure $lure;
@@ -61,4 +64,7 @@ class FishingLureResult
     public function setRegistradoPorUserId(?int $id): static { $this->registradoPorUserId = $id; return $this; }
 
     public function getCreatedAt(): \DateTimeImmutable { return $this->createdAt; }
+
+    public function getTenantId(): int { return $this->tenantId; }
+    public function setTenantId(int $tenantId): static { $this->tenantId = $tenantId; return $this; }
 }

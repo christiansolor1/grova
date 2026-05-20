@@ -16,6 +16,9 @@ class LegalDocument
     #[ORM\Column]
     private ?int $id = null;
 
+    #[ORM\Column]
+    private int $tenantId;
+
     #[ORM\ManyToOne(targetEntity: LegalCase::class, inversedBy: 'documents')]
     #[ORM\JoinColumn(nullable: false, onDelete: 'CASCADE')]
     private LegalCase $case;
@@ -55,4 +58,7 @@ class LegalDocument
     public function setExtension(?string $extension): static { $this->extension = $extension; return $this; }
 
     public function getCreatedAt(): \DateTimeImmutable { return $this->createdAt; }
+
+    public function getTenantId(): int { return $this->tenantId; }
+    public function setTenantId(int $tenantId): static { $this->tenantId = $tenantId; return $this; }
 }

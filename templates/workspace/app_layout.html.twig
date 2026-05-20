@@ -142,4 +142,29 @@
 </script>
 {% endif %}
 {% endif %}
+
+{# ── Global SweetAlert2 confirm handler: data-swal-confirm="Message" en <form> ── #}
+<script>
+document.addEventListener('submit', function(e) {
+    var form = e.target;
+    var msg = form.getAttribute('data-swal-confirm');
+    if (!msg) return;
+    e.preventDefault();
+    if (typeof Swal === 'undefined') return;
+    Swal.fire({
+        title: 'Confirmar',
+        text: msg,
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonText: 'Sí',
+        cancelButtonText: 'Cancelar',
+        reverseButtons: true
+    }).then(function (result) {
+        if (result.isConfirmed) {
+            form.removeAttribute('data-swal-confirm');
+            form.submit();
+        }
+    });
+});
+</script>
 {% endblock %}

@@ -18,6 +18,9 @@ class WalletEntry
     #[ORM\Column]
     private ?int $id = null;
 
+    #[ORM\Column]
+    private int $tenantId;
+
     #[ORM\ManyToOne(targetEntity: WalletCategory::class)]
     #[ORM\JoinColumn(nullable: true, onDelete: 'SET NULL')]
     private ?WalletCategory $category = null;
@@ -71,4 +74,7 @@ class WalletEntry
     {
         return $this->isGasto() ? -abs($this->getMontoFloat()) : abs($this->getMontoFloat());
     }
+
+    public function getTenantId(): int { return $this->tenantId; }
+    public function setTenantId(int $tenantId): static { $this->tenantId = $tenantId; return $this; }
 }

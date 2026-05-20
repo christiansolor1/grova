@@ -19,6 +19,9 @@ class FishingTrip
     #[ORM\Column]
     private ?int $id = null;
 
+    #[ORM\Column]
+    private int $tenantId;
+
     #[ORM\ManyToOne(targetEntity: FishingFinca::class)]
     #[ORM\JoinColumn(nullable: false)]
     private FishingFinca $finca;
@@ -87,4 +90,7 @@ class FishingTrip
         $count = $this->getMemberCount();
         return $count > 0 ? round($this->getTotalGastos() / $count, 2) : 0.0;
     }
+
+    public function getTenantId(): int { return $this->tenantId; }
+    public function setTenantId(int $tenantId): static { $this->tenantId = $tenantId; return $this; }
 }

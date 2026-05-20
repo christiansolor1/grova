@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\EventSubscriber;
 
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
@@ -9,11 +11,18 @@ use Symfony\Component\HttpKernel\KernelEvents;
 
 class SecurityHeadersSubscriber implements EventSubscriberInterface
 {
+    private const CDN_JS     = 'cdn.jsdelivr.net';
+    private const CDN_DT     = 'cdn.datatables.net';
+    private const CDN_JSZIP  = 'cdnjs.cloudflare.com';
+    private const RECAPTCHA  = 'www.google.com';
+    private const RECAPTCHA2 = 'www.gstatic.com';
+
     public function __construct(
         #[Autowire('%kernel.environment%')]
         private readonly string $kernelEnvironment,
     ) {
     }
+
     public static function getSubscribedEvents(): array
     {
         return [
@@ -38,35 +47,72 @@ class SecurityHeadersSubscriber implements EventSubscriberInterface
         $response = $event->getResponse();
         $headers  = $response->headers;
 
-        // Evita que el sitio sea embebido en iframes (clickjacking)
+        // Clickjacking protection
         $headers->set('X-Frame-Options', 'SAMEORIGIN');
 
-        // Evita que el browser adivine el content-type
+        // MIME sniffing protection
         $headers->set('X-Content-Type-Options', 'nosniff');
 
-        // Controla qué información de referencia se envía
+        // Referrer policy
         $headers->set('Referrer-Policy', 'strict-origin-when-cross-origin');
 
-        // Fuerza HTTPS en producción (HSTS)
-        if ($request->isSecure()) {
-            $headers->set('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
+        // HSTS — siempre en prod, incluso detrás de proxy
+        if ($this->kernelEnvironment !== 'dev') {
+            $headers->set('Strict-Transport-Security', 'max-age=31536000; includeSubDomains; preload');
         }
 
-        // Permisos de APIs del browser
+        // Permissions Policy
         $headers->set('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
 
-        // En dev no aplicar CSP estricta: choca con la Web Debug Toolbar (/_wdt, bundles/webprofiler, etc.)
-        if ($this->kernelEnvironment === 'dev') {
-            return;
-        }
+        // CSP
+        $csp = $this->buildCsp();
+        $headers->set('Content-Security-Policy', $csp);
+    }
 
-        $headers->set('Content-Security-Policy',
-            "default-src 'self'; " .
-            "script-src 'self' 'unsafe-inline' cdn.jsdelivr.net cdn.datatables.net; " .
-            "style-src 'self' 'unsafe-inline' cdn.jsdelivr.net cdn.datatables.net; " .
-            "font-src 'self' cdn.jsdelivr.net; " .
-            "img-src 'self' data:; " .
-            "connect-src 'self';"
+    private function buildCsp(): string
+    {
+        $base = "default-src 'self'; ";
+
+        $scriptSrc = sprintf(
+            "script-src 'self' 'unsafe-inline' %s %s %s %s %s; ",
+            self::CDN_JS,
+            self::CDN_DT,
+            self::CDN_JSZIP,
+            self::RECAPTCHA,
+            self::RECAPTCHA2,
         );
+
+        $styleSrc = sprintf(
+            "style-src 'self' 'unsafe-inline' %s %s %s; ",
+            self::CDN_JS,
+            self::CDN_DT,
+            self::RECAPTCHA,
+        );
+
+        $fontSrc = sprintf(
+            "font-src 'self' %s; ",
+            self::CDN_JS,
+        );
+
+        $imgSrc = sprintf(
+            "img-src 'self' data: %s %s %s; ",
+            self::CDN_DT,
+            self::RECAPTCHA,
+            self::RECAPTCHA2,
+        );
+
+        $connectSrc = sprintf(
+            "connect-src 'self' %s %s; ",
+            self::CDN_DT,
+            self::RECAPTCHA,
+        );
+
+        // frame-src necesario para reCAPTCHA v2 (widget en iframe)
+        $frameSrc = sprintf(
+            "frame-src %s; ",
+            self::RECAPTCHA,
+        );
+
+        return $base . $scriptSrc . $styleSrc . $fontSrc . $imgSrc . $connectSrc . $frameSrc;
     }
 }

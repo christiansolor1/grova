@@ -14,7 +14,12 @@ body.light-mode .lock-pin-input { background:#fff; border-color:#cbd5e1; color:#
 body.light-mode .lock-ttl-select { background:#fff; border-color:#cbd5e1; color:#0f172a; }
 .lock-section-sep { border-top:1px solid #1e293b; }
 body.light-mode .lock-section-sep { border-top-color:#e2e8f0; }
+.pref-card { background:#0f172a; border:1px solid #1f2937; border-radius:8px; padding:12px 16px; }
+body.light-mode .pref-card { background:#f8fafc; border-color:#e2e8f0; }
+body.light-mode .pref-card .pref-label { color:#64748b !important; }
+body.light-mode .pref-card .pref-value { color:#0f172a !important; }
 </style>
+<script src="https://www.google.com/recaptcha/api.js?hl={{ app.request.locale }}" async defer></script>
 {% endblock %}
 
 {% block app_main %}
@@ -71,6 +76,83 @@ body.light-mode .lock-section-sep { border-top-color:#e2e8f0; }
                 </form>
             </div>
         </div>
+    </div>
+</div>
+
+{# ── Preferencias (tema + idioma) ── #}
+{% set current_theme = app.request.cookies.get('grova_theme') ?: app.user.preferredTheme ?: 'dark' %}
+{% set current_locale = app.request.locale %}
+<div class="content-card mt-4">
+    <div class="content-card-header">
+        <span><i class="bi bi-sliders me-2"></i>{{ 'profile.preferences_title' | trans({}, 'profile') }}</span>
+    </div>
+    <div class="content-card-body">
+        <form method="post" action="{{ path('grova_profile_preferencias', {_locale: app.request.locale}) }}">
+            <input type="hidden" name="_token" value="{{ csrf_token('preferencias') }}">
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <div class="pref-card">
+                        <div class="pref-label" style="font-size:11px;color:#64748b;text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px;">
+                            <i class="bi {{ current_theme == 'dark' ? 'bi-moon' : 'bi-sun' }} me-1"></i>{{ 'profile.theme' | trans({}, 'profile') }}
+                        </div>
+                        <select name="theme" class="form-select form-select-sm" style="max-width:200px;">
+                            <option value="dark" {{ current_theme == 'dark' ? 'selected' : '' }}>{{ 'profile.theme_dark' | trans({}, 'profile') }}</option>
+                            <option value="light" {{ current_theme == 'light' ? 'selected' : '' }}>{{ 'profile.theme_light' | trans({}, 'profile') }}</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="pref-card">
+                        <div class="pref-label" style="font-size:11px;color:#64748b;text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px;">
+                            <i class="bi bi-globe me-1"></i>{{ 'profile.language' | trans({}, 'profile') }}
+                        </div>
+                        <select name="locale" class="form-select form-select-sm" style="max-width:200px;">
+                            <option value="es" {{ current_locale == 'es' ? 'selected' : '' }}>Español</option>
+                            <option value="en" {{ current_locale == 'en' ? 'selected' : '' }}>English</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            <div class="mt-3">
+                <button type="submit" class="btn btn-outline-secondary btn-sm">
+                    <i class="bi bi-check-lg me-1"></i>{{ 'profile.save' | trans({}, 'profile') }}
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+{# ── Cambiar contraseña ── #}
+<div class="content-card mt-4">
+    <div class="content-card-header">
+        <span><i class="bi bi-key me-2"></i>{{ 'profile.password_title'|trans({}, 'profile') }}</span>
+    </div>
+    <div class="content-card-body">
+        <form method="post" action="{{ path('grova_profile_cambiar_contrasena') }}">
+            <input type="hidden" name="_token" value="{{ csrf_token('cambiar_contrasena') }}">
+
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <label class="form-label">{{ 'profile.password_current'|trans({}, 'profile') }}</label>
+                    <input type="password" name="contrasena_actual" class="form-control" required autocomplete="current-password">
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">{{ 'profile.password_new'|trans({}, 'profile') }}</label>
+                    <input type="password" name="contrasena_nueva" class="form-control" required minlength="8" autocomplete="new-password">
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">{{ 'profile.password_confirm'|trans({}, 'profile') }}</label>
+                    <input type="password" name="contrasena_confirmar" class="form-control" required minlength="8" autocomplete="new-password">
+                </div>
+            </div>
+            <div class="d-flex justify-content-end align-items-center mt-3 gap-3 flex-wrap">
+                <div class="g-recaptcha" data-sitekey="{{ recaptcha_site_key }}" data-theme="dark"
+                     data-callback="onPwRecaptchaSuccess" data-expired-callback="onPwRecaptchaExpired"></div>
+                <button type="submit" id="btn-cambiar-contrasena" class="btn btn-primary btn-sm" disabled>
+                    <i class="bi bi-check-lg me-1"></i>{{ 'profile.btn_change_password'|trans({}, 'profile') }}
+                </button>
+            </div>
+        </form>
     </div>
 </div>
 
@@ -248,7 +330,7 @@ body.light-mode .lock-section-sep { border-top-color:#e2e8f0; }
                         </span>
                     </div>
                     <form method="post" action="{{ path('grova_lock_webauthn_remove', {_locale: app.request.locale, id: cred.id}) }}"
-                          onsubmit="return confirm('¿Eliminar {{ cred.nombreDispositivo ?? 'este dispositivo' }}?')">
+                          data-swal-confirm="¿Eliminar {{ cred.nombreDispositivo ?? 'este dispositivo' }}?">
                         <input type="hidden" name="_token" value="{{ csrf_token('lock_webauthn_remove_' ~ cred.id) }}">
                         <button type="submit" class="btn btn-outline-danger btn-sm" style="padding:2px 8px;font-size:11px;">
                             <i class="bi bi-trash"></i>
@@ -275,8 +357,14 @@ body.light-mode .lock-section-sep { border-top-color:#e2e8f0; }
 {# ── Dispositivos conectados ── #}
 <div class="content-card" style="margin-top:1.25rem;">
     <div class="content-card-header">
-        <i class="bi bi-laptop me-2"></i>Dispositivos conectados
-        <span style="color:#64748b;font-size:12px;font-weight:400;margin-left:6px;">(últimos 90 días)</span>
+        <span><i class="bi bi-laptop me-2"></i>Dispositivos conectados
+        <span style="color:#64748b;font-size:12px;font-weight:400;margin-left:6px;">(últimos 90 días)</span></span>
+        <form method="post" action="{{ path('grova_profile_cerrar_sesiones') }}" class="d-inline" data-swal-confirm="¿Cerrar todas las demás sesiones?">
+            <input type="hidden" name="_token" value="{{ csrf_token('cerrar_sesiones') }}">
+            <button type="submit" class="btn btn-outline-danger btn-sm">
+                <i class="bi bi-x-circle me-1"></i>Cerrar otras sesiones
+            </button>
+        </form>
     </div>
     <div class="content-card-body">
         {% if sesiones is empty %}
@@ -289,8 +377,8 @@ body.light-mode .lock-section-sep { border-top-color:#e2e8f0; }
                         <th style="padding:8px 12px;text-align:left;color:#94a3b8;font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:.3px;">Dispositivo</th>
                         <th style="padding:8px 12px;text-align:left;color:#94a3b8;font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:.3px;">IP</th>
                         <th style="padding:8px 12px;text-align:left;color:#94a3b8;font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:.3px;">Ubicación</th>
-                        <th style="padding:8px 12px;text-align:right;color:#94a3b8;font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:.3px;">Último acceso</th>
-                        <th style="padding:8px 12px;text-align:center;color:#94a3b8;font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:.3px;">Veces</th>
+                        <th style="padding:8px 12px;text-align:right;color:#94a3b8;font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:.3px;">Acceso</th>
+                        <th style="padding:8px 12px;text-align:center;color:#94a3b8;font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:.3px;width:90px;"></th>
                     </tr>
                 </thead>
                 <tbody>
@@ -339,7 +427,95 @@ body.light-mode .lock-section-sep { border-top-color:#e2e8f0; }
                             {{ sesion.ultimaVez|date('d/m/Y H:i') }}
                         </td>
                         <td style="padding:12px;vertical-align:middle;text-align:center;">
-                            <span style="background:#2563eb20;color:#93c5fd;border-radius:999px;padding:2px 10px;font-size:11px;font-weight:600;">{{ sesion.count }}</span>
+                            {% if sesion.sessionToken is defined and sesion.sessionToken == current_session_token %}
+                                <span style="color:#22c55e;font-size:11px;font-weight:600;">
+                                    <i class="bi bi-check-circle-fill me-1"></i>Actual
+                                </span>
+                            {% elseif sesion.sessionToken is not empty %}
+                                <form method="post" action="{{ path('grova_profile_cerrar_dispositivo', {sessionToken: sesion.sessionToken}) }}"
+                                      data-swal-confirm="¿Desconectar este dispositivo?">
+                                    <input type="hidden" name="_token" value="{{ csrf_token('cerrar_dispositivo') }}">
+                                    <button type="submit" class="btn btn-outline-danger btn-sm" style="padding:2px 8px;font-size:11px;">
+                                        <i class="bi bi-x-circle me-1"></i>Cerrar
+                                    </button>
+                                </form>
+                            {% else %}
+                                <span style="color:#475569;font-size:11px;">—</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+{# ── Actividad de seguridad ── #}
+<div class="content-card" style="margin-top:1.25rem;">
+    <div class="content-card-header">
+        <span><i class="bi bi-shield-exclamation me-2"></i>{{ 'profile.security_activity_title'|trans({}, 'profile') }}
+        <span style="color:#64748b;font-size:12px;font-weight:400;margin-left:6px;">({{ 'profile.security_activity_90days'|trans({}, 'profile') }})</span></span>
+    </div>
+    <div class="content-card-body">
+        {% if actividad_seguridad is empty %}
+        <p style="color:#64748b;font-size:13px;margin:0;">{{ 'profile.security_activity_empty'|trans({}, 'profile') }}</p>
+        {% else %}
+        <div style="overflow-x:auto;">
+            <table style="width:100%;border-collapse:collapse;font-size:13px;">
+                <thead>
+                    <tr style="border-bottom:1px solid #1e293b;">
+                        <th style="padding:8px 12px;text-align:left;color:#94a3b8;font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:.3px;">{{ 'profile.security_activity_event'|trans({}, 'profile') }}</th>
+                        <th style="padding:8px 12px;text-align:left;color:#94a3b8;font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:.3px;">IP</th>
+                        <th style="padding:8px 12px;text-align:left;color:#94a3b8;font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:.3px;">{{ 'profile.security_activity_location'|default('Ubicación')|trans({}, 'profile') }}</th>
+                        <th style="padding:8px 12px;text-align:left;color:#94a3b8;font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:.3px;">{{ 'profile.security_activity_device'|trans({}, 'profile') }}</th>
+                        <th style="padding:8px 12px;text-align:right;color:#94a3b8;font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:.3px;">{{ 'profile.security_activity_date'|trans({}, 'profile') }}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for evento in actividad_seguridad %}
+                    <tr style="border-bottom:1px solid #1e293b;">
+                        <td style="padding:12px;vertical-align:middle;">
+                            <div style="display:flex;align-items:center;gap:8px;">
+                                {% if evento.accion == 'login_fallido' or evento.accion == '2fa_fallido' %}
+                                    <span style="color:#ef4444;font-size:1.1rem;"><i class="bi bi-x-circle"></i></span>
+                                    <span style="color:#fca5a5;font-weight:600;font-size:12px;">
+                                        {{ evento.accion == '2fa_fallido' ? ('profile.security_2fa_failed'|trans({}, 'profile')) : ('profile.security_login_failed'|trans({}, 'profile')) }}
+                                    </span>
+                                {% elseif evento.accion == 'login_exitoso' %}
+                                    <span style="color:#22c55e;font-size:1.1rem;"><i class="bi bi-check-circle"></i></span>
+                                    <span style="color:#86efac;font-weight:600;font-size:12px;">{{ 'profile.security_login_success'|trans({}, 'profile') }}</span>
+                                {% elseif evento.accion == 'cambio_contrasena' %}
+                                    <span style="color:#f59e0b;font-size:1.1rem;"><i class="bi bi-key"></i></span>
+                                    <span style="color:#fbbf24;font-weight:600;font-size:12px;">{{ 'profile.security_password_changed'|trans({}, 'profile') }}</span>
+                                {% else %}
+                                    <span style="color:#64748b;font-size:1.1rem;"><i class="bi bi-record-circle"></i></span>
+                                    <span style="color:#94a3b8;font-weight:600;font-size:12px;">{{ evento.accion }}</span>
+                                {% endif %}
+                            </div>
+                        </td>
+                        <td style="padding:12px;vertical-align:middle;color:#94a3b8;font-size:12px;font-family:monospace;">{{ evento.ip }}</td>
+                        <td style="padding:12px;vertical-align:middle;">
+                            {% if evento.ubicacion is defined and evento.ubicacion is not null %}
+                                <span style="color:#94a3b8;font-size:12px;">
+                                    {{ evento.ubicacion.ciudad }}{{ evento.ubicacion.pais != 'Red local' ? ', ' ~ evento.ubicacion.pais }}
+                                </span>
+                            {% else %}
+                                <span style="color:#475569;font-size:12px;">—</span>
+                            {% endif %}
+                        </td>
+                        <td style="padding:12px;vertical-align:middle;">
+                            <span style="color:#94a3b8;font-size:11px;max-width:180px;display:inline-block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="{{ evento.userAgent }}">
+                                {% if evento.userAgent %}
+                                    {{ evento.userAgent|length > 50 ? evento.userAgent|slice(0,50) ~ '…' : evento.userAgent }}
+                                {% else %}
+                                    —
+                                {% endif %}
+                            </span>
+                        </td>
+                        <td style="padding:12px;vertical-align:middle;text-align:right;color:#94a3b8;font-size:12px;white-space:nowrap;">
+                            {{ evento.createdAt|date('d/m/Y H:i') }}
                         </td>
                     </tr>
                     {% endfor %}
@@ -497,6 +673,14 @@ if (btnReg) {
         var modal = new bootstrap.Modal(consentModal);
         modal.show();
     });
+}
+
+// ── reCAPTCHA v2 para cambio de contraseña ──
+function onPwRecaptchaSuccess() {
+    document.getElementById('btn-cambiar-contrasena').disabled = false;
+}
+function onPwRecaptchaExpired() {
+    document.getElementById('btn-cambiar-contrasena').disabled = true;
 }
 </script>
 {% endblock app_page_scripts %}

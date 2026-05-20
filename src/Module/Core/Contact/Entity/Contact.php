@@ -18,6 +18,9 @@ class Contact
     #[ORM\Column]
     private ?int $id = null;
 
+    #[ORM\Column]
+    private int $tenantId;
+
     /** cliente | proveedor | empleado | paciente | otro */
     #[ORM\Column(length: 20)]
     private string $tipo = 'cliente';
@@ -107,4 +110,7 @@ class Contact
     public function setActivo(bool $activo): static { $this->activo = $activo; return $this; }
 
     public function getCreatedAt(): \DateTimeImmutable { return $this->createdAt; }
+
+    public function getTenantId(): int { return $this->tenantId; }
+    public function setTenantId(int $tenantId): static { $this->tenantId = $tenantId; return $this; }
 }

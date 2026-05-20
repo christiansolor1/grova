@@ -37,6 +37,9 @@ class LegalCase
     #[ORM\Column]
     private ?int $id = null;
 
+    #[ORM\Column]
+    private int $tenantId;
+
     #[ORM\ManyToOne(targetEntity: Contact::class)]
     #[ORM\JoinColumn(nullable: false)]
     private Contact $contact;
@@ -144,4 +147,7 @@ class LegalCase
     }
 
     public function isAbierto(): bool { return in_array($this->estado, ['abierto', 'en_proceso'], true); }
+
+    public function getTenantId(): int { return $this->tenantId; }
+    public function setTenantId(int $tenantId): static { $this->tenantId = $tenantId; return $this; }
 }

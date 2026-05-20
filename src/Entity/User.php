@@ -203,6 +203,19 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface, TotpTwo
     #[ORM\Column(options: ['default' => false])]
     private bool $email2faEnabled = false;
 
+    #[ORM\Column(length: 10, nullable: true)]
+    private ?string $preferredTheme = null;
+
+    #[ORM\Column(length: 10, nullable: true)]
+    private ?string $preferredLocale = null;
+
+    #[ORM\Column(options: ['default' => 0])]
+    private int $sessionVersion = 0;
+
+    /** @var list<string> Tokens de sesión revocados individualmente */
+    #[ORM\Column(type: 'json', nullable: true)]
+    private ?array $revokedSessionTokens = null;
+
     public function getTotpSecret(): ?string { return $this->totpSecret; }
     public function setTotpSecret(?string $secret): static { $this->totpSecret = $secret; return $this; }
 
@@ -236,6 +249,41 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface, TotpTwo
 
     public function isEmail2faEnabled(): bool { return $this->email2faEnabled; }
     public function setEmail2faEnabled(bool $v): static { $this->email2faEnabled = $v; return $this; }
+
+    public function getPreferredTheme(): ?string { return $this->preferredTheme; }
+    public function setPreferredTheme(?string $theme): static { $this->preferredTheme = $theme; return $this; }
+
+    public function getPreferredLocale(): ?string { return $this->preferredLocale; }
+    public function setPreferredLocale(?string $locale): static { $this->preferredLocale = $locale; return $this; }
+
+    public function getSessionVersion(): int { return $this->sessionVersion; }
+    public function setSessionVersion(int $v): static { $this->sessionVersion = $v; return $this; }
+    public function incrementarSessionVersion(): static { $this->sessionVersion++; return $this; }
+
+    /** @return list<string> */
+    public function getRevokedSessionTokens(): array { return $this->revokedSessionTokens ?? []; }
+
+    /** @param list<string> $tokens */
+    public function setRevokedSessionTokens(array $tokens): static { $this->revokedSessionTokens = $tokens; return $this; }
+
+    public function revocarSessionToken(string $token): static
+    {
+        $tokens = $this->getRevokedSessionTokens();
+        if (!\in_array($token, $tokens, true)) {
+            $tokens[] = $token;
+            $this->revokedSessionTokens = $tokens;
+        }
+        return $this;
+    }
+
+    /** Limpia tokens antiguos (más de 200) para evitar que crezca sin control */
+    public function limpiarRevokedSessionTokens(int $max = 200): void
+    {
+        $tokens = $this->getRevokedSessionTokens();
+        if (\count($tokens) > $max) {
+            $this->revokedSessionTokens = \array_slice($tokens, -$max);
+        }
+    }
 
     public function getNombreCompleto(): string
     {

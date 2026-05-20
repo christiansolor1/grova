@@ -16,6 +16,9 @@ class LegalPayment
     #[ORM\Column]
     private ?int $id = null;
 
+    #[ORM\Column]
+    private int $tenantId;
+
     #[ORM\ManyToOne(targetEntity: LegalCase::class, inversedBy: 'payments')]
     #[ORM\JoinColumn(nullable: false, onDelete: 'CASCADE')]
     private LegalCase $case;
@@ -60,4 +63,7 @@ class LegalPayment
     public function setFechaPago(?\DateTimeImmutable $fechaPago): static { $this->fechaPago = $fechaPago; return $this; }
 
     public function getCreatedAt(): \DateTimeImmutable { return $this->createdAt; }
+
+    public function getTenantId(): int { return $this->tenantId; }
+    public function setTenantId(int $tenantId): static { $this->tenantId = $tenantId; return $this; }
 }

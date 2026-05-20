@@ -33,6 +33,9 @@ class ConstruccionGasto
     #[ORM\Column]
     private ?int $id = null;
 
+    #[ORM\Column]
+    private int $tenantId;
+
     #[ORM\ManyToOne(targetEntity: ConstruccionObra::class, inversedBy: 'gastos')]
     #[ORM\JoinColumn(nullable: false)]
     private ConstruccionObra $obra;
@@ -100,4 +103,7 @@ class ConstruccionGasto
     public function getCreatedAt(): \DateTimeImmutable { return $this->createdAt; }
 
     public function isPagado(): bool { return $this->estado === 'pagado'; }
+
+    public function getTenantId(): int { return $this->tenantId; }
+    public function setTenantId(int $tenantId): static { $this->tenantId = $tenantId; return $this; }
 }

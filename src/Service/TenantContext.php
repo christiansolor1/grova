@@ -41,11 +41,6 @@ final class TenantContext
         return $this->tenant?->getSlug();
     }
 
-    public function getDbName(): ?string
-    {
-        return $this->tenant?->getDbName();
-    }
-
     /** @return list<string> */
     public function getModulosActivos(): array
     {

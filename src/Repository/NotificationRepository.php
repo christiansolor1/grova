@@ -124,4 +124,22 @@ class NotificationRepository extends ServiceEntityRepository
             ->getQuery()
             ->execute();
     }
+
+    /**
+     * Elimina notificaciones descartadas más antiguas que $dias días.
+     *
+     * @return int Cantidad de registros eliminados
+     */
+    public function deleteOldDismissed(int $dias = 90): int
+    {
+        $limite = new \DateTimeImmutable("-{$dias} days");
+
+        return (int) $this->createQueryBuilder('n')
+            ->delete()
+            ->where('n.dismissedAt IS NOT NULL')
+            ->andWhere('n.dismissedAt < :limite')
+            ->setParameter('limite', $limite)
+            ->getQuery()
+            ->execute();
+    }
 }

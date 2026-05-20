@@ -47,3 +47,30 @@ profile.biometric_delete: "Eliminar"
 profile.biometric_register: "Registrar huella / Face ID"
 profile.btn_save_security: "Guardar configuración"
 profile.confirm_delete_biometric: "¿Eliminar credencial biométrica?"
+
+# ── Preferencias ──────────────────────────────────────────────────────────────
+profile.preferences_title: "Preferencias"
+profile.theme: "Tema"
+profile.theme_dark: "Modo noche"
+profile.theme_light: "Modo claro"
+profile.language: "Idioma predeterminado"
+
+# ── Cambio de contraseña ──────────────────────────────────────────────────────
+profile.password_title: "Cambiar contraseña"
+profile.password_current: "Contraseña actual"
+profile.password_new: "Nueva contraseña"
+profile.password_confirm: "Confirmar contraseña"
+profile.btn_change_password: "Cambiar contraseña"
+profile.password_changed: "Contraseña actualizada correctamente. Las otras sesiones han sido cerradas."
+
+# ── Actividad de seguridad ──────────────────────────────────────────────────
+profile.security_activity_title: "Actividad de seguridad"
+profile.security_activity_empty: "No hay actividad de seguridad registrada."
+profile.security_activity_90days: "últimos 90 días"
+profile.security_activity_event: "Evento"
+profile.security_activity_device: "Dispositivo"
+profile.security_activity_date: "Fecha"
+profile.security_login_failed: "Login fallido"
+profile.security_2fa_failed: "2FA fallido"
+profile.security_login_success: "Login exitoso"
+profile.security_password_changed: "Cambio de contraseña"

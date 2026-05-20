@@ -36,6 +36,30 @@ class SuscripcionRepository extends ServiceEntityRepository
     }
 
     /**
+     * Suscripciones activas cuya fecha de vencimiento está dentro de los próximos $dias días.
+     * Excluye aquellas a las que ya se les envió recordatorio hoy.
+     *
+     * @return list<Suscripcion>
+     */
+    public function findProximasAVencer(int $dias): array
+    {
+        $hoy = new \DateTimeImmutable('today');
+        $limite = $hoy->modify("+{$dias} days");
+
+        /** @var list<Suscripcion> */
+        return $this->createQueryBuilder('s')
+            ->where('s.estado = :activa')
+            ->andWhere('s.fechaVencimiento >= :hoy')
+            ->andWhere('s.fechaVencimiento <= :limite')
+            ->andWhere('s.ultimoRecordatorioEnviadoAt IS NULL OR s.ultimoRecordatorioEnviadoAt < :hoy')
+            ->setParameter('activa', 'activa')
+            ->setParameter('hoy', $hoy)
+            ->setParameter('limite', $limite)
+            ->getQuery()
+            ->getResult();
+    }
+
+    /**
      * Suscripciones que siguen marcadas como 'activa' pero ya superaron su fecha de vencimiento.
      * Las usa el comando grova:suscripciones:vencer (manual o cron).
      *

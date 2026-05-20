@@ -11,13 +11,16 @@ use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity(repositoryClass: WorkInvoiceRepository::class)]
 #[ORM\Table(name: 'work_invoice')]
-#[ORM\UniqueConstraint(columns: ['client_id', 'anio', 'mes'])]
+#[ORM\UniqueConstraint(columns: ['tenant_id', 'client_id', 'anio', 'mes'])]
 class WorkInvoice
 {
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
     private ?int $id = null;
+
+    #[ORM\Column]
+    private int $tenantId;
 
     #[ORM\ManyToOne(targetEntity: WorkClient::class)]
     #[ORM\JoinColumn(nullable: false)]
@@ -277,4 +280,7 @@ class WorkInvoice
     {
         return $this->paymentProofStoredFilename !== null && $this->paymentProofStoredFilename !== '';
     }
+
+    public function getTenantId(): int { return $this->tenantId; }
+    public function setTenantId(int $tenantId): static { $this->tenantId = $tenantId; return $this; }
 }

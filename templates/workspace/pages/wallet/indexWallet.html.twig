@@ -93,7 +93,7 @@ body.light-mode .cat-chip { background:#f1f5f9; color:#475569; }
                             {{ entry.isIngreso ? '+' : '-' }}${{ entry.monto|number_format(2, '.', ',') }}
                         </td>
                         <td>
-                            <form method="post" action="{{ path('grova_wallet_entry_delete', {id: entry.id, _locale: app.request.locale}) }}" onsubmit="return confirm('¿Eliminar este movimiento?')">
+                            <form method="post" action="{{ path('grova_wallet_entry_delete', {id: entry.id, _locale: app.request.locale}) }}" data-swal-confirm="¿Eliminar este movimiento?">
                                 <input type="hidden" name="_token" value="{{ csrf_token('wallet_delete_' ~ entry.id) }}">
                                 <button type="submit" class="btn btn-outline-danger btn-sm" style="padding:2px 7px;font-size:11px;">
                                     <i class="bi bi-trash3"></i>

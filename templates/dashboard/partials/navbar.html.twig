@@ -102,7 +102,7 @@
                     {% else %}
                         {% set locale_url = path(_current_route, _route_params|merge({'_locale': locale})) %}
                     {% endif %}
-                    <a href="{{ locale_url }}" onclick="setCookie('grova_locale','{{ locale }}',365)" class="lang-combo-option {{ app.request.locale == locale ? 'active' : '' }}">
+                    <a href="{{ locale_url }}" onclick="setCookie('grova_locale','{{ locale }}',365);var x=new XMLHttpRequest();x.open('POST','{{ path('grova_profile_preferencias', {_locale: locale}) }}',true);x.setRequestHeader('Content-Type','application/x-www-form-urlencoded');x.send('locale={{ locale }}&_token={{ csrf_token('preferencias') }}');" class="lang-combo-option {{ app.request.locale == locale ? 'active' : '' }}">
                         <span style="font-size:15px;">{{ flag }}</span>
                         <span>{{ locale|upper }}</span>
                         {% if app.request.locale == locale %}<svg class="lc-check" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>{% endif %}

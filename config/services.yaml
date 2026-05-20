@@ -86,10 +86,6 @@ services:
         arguments:
             $emCore: '@doctrine.orm.core_entity_manager'
 
-    App\Doctrine\TenantSwitchMiddleware:
-        tags:
-            - { name: doctrine.dbal.middleware, connection: tenant }
-
     App\EventListener\JWTCreatedListener:
         tags:
             - { name: kernel.event_listener, event: lexik_jwt_authentication.on_jwt_created, method: onJWTCreated }
@@ -103,6 +99,11 @@ services:
             $cacheDir: '%kernel.cache_dir%'
 
     App\Controller\ControladorRecuperacion:
+        arguments:
+            $recaptchaSiteKey: '%env(RECAPTCHA_SITE_KEY)%'
+            $recaptchaSecretKey: '%env(RECAPTCHA_SECRET_KEY)%'
+
+    App\Controller\ProfileController:
         arguments:
             $recaptchaSiteKey: '%env(RECAPTCHA_SITE_KEY)%'
             $recaptchaSecretKey: '%env(RECAPTCHA_SECRET_KEY)%'

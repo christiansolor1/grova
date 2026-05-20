@@ -37,6 +37,12 @@ final class GuardiaSubscripcion
             return EstadoSubscripcion::superAdmin();
         }
 
+        // Tenants tipo staff (desarrolladores internos) bypass
+        $tenant = $usuario->getTenant();
+        if ($tenant !== null && $tenant->esStaff()) {
+            return EstadoSubscripcion::superAdmin();
+        }
+
         // Instalación on-premise: validar con licencia firmada
         if ($this->licenseKey !== '') {
             return $this->validadorLicencias->esValida($this->licenseKey)
@@ -45,8 +51,6 @@ final class GuardiaSubscripcion
         }
 
         // Instalación SaaS: validar contra BD
-        $tenant = $usuario->getTenant();
-
         if ($tenant === null) {
             return EstadoSubscripcion::sinSuscripcion();
         }

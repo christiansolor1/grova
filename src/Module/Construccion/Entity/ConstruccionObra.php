@@ -28,6 +28,9 @@ class ConstruccionObra
     #[ORM\Column]
     private ?int $id = null;
 
+    #[ORM\Column]
+    private int $tenantId;
+
     #[ORM\Column(length: 255)]
     private string $nombre = '';
 
@@ -137,4 +140,7 @@ class ConstruccionObra
     {
         return in_array($this->estado, ['activa', 'pausada'], true);
     }
+
+    public function getTenantId(): int { return $this->tenantId; }
+    public function setTenantId(int $tenantId): static { $this->tenantId = $tenantId; return $this; }
 }

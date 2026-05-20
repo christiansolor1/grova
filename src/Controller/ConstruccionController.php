@@ -14,7 +14,6 @@ use App\Module\Core\Contact\Repository\ContactRepository;
 use App\Service\MenuTreeBuilder;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
-use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
@@ -63,7 +62,6 @@ final class ConstruccionController extends AbstractController
     #[Route('/obra/create', name: 'obra_create', methods: ['POST'])]
     public function createObra(
         Request $request,
-        #[Autowire(service: 'doctrine.orm.tenant_entity_manager')]
         EntityManagerInterface $em,
     ): Response {
         if (!$this->isCsrfTokenValid('construccion_obra', (string) $request->request->get('_token'))) {
@@ -103,7 +101,6 @@ final class ConstruccionController extends AbstractController
     public function editObra(
         int $id,
         Request $request,
-        #[Autowire(service: 'doctrine.orm.tenant_entity_manager')]
         EntityManagerInterface $em,
     ): Response {
         if (!$this->isCsrfTokenValid('construccion_obra_edit_' . $id, (string) $request->request->get('_token'))) {
@@ -155,7 +152,6 @@ final class ConstruccionController extends AbstractController
     public function addGasto(
         int $id,
         Request $request,
-        #[Autowire(service: 'doctrine.orm.tenant_entity_manager')]
         EntityManagerInterface $em,
     ): Response {
         if (!$this->isCsrfTokenValid('construccion_gasto_' . $id, (string) $request->request->get('_token'))) {
@@ -194,7 +190,6 @@ final class ConstruccionController extends AbstractController
     public function deleteGasto(
         int $id,
         Request $request,
-        #[Autowire(service: 'doctrine.orm.tenant_entity_manager')]
         EntityManagerInterface $em,
     ): Response {
         if (!$this->isCsrfTokenValid('construccion_gasto_del_' . $id, (string) $request->request->get('_token'))) {
@@ -217,7 +212,6 @@ final class ConstruccionController extends AbstractController
     public function pagarGasto(
         int $id,
         Request $request,
-        #[Autowire(service: 'doctrine.orm.tenant_entity_manager')]
         EntityManagerInterface $em,
     ): Response {
         if (!$this->isCsrfTokenValid('construccion_gasto_pagar_' . $id, (string) $request->request->get('_token'))) {
@@ -241,7 +235,6 @@ final class ConstruccionController extends AbstractController
     #[Route('/proveedor/create', name: 'proveedor_create', methods: ['POST'])]
     public function createProveedor(
         Request $request,
-        #[Autowire(service: 'doctrine.orm.tenant_entity_manager')]
         EntityManagerInterface $em,
     ): Response {
         if (!$this->isCsrfTokenValid('construccion_proveedor', (string) $request->request->get('_token'))) {
@@ -266,7 +259,6 @@ final class ConstruccionController extends AbstractController
     public function editProveedor(
         int $id,
         Request $request,
-        #[Autowire(service: 'doctrine.orm.tenant_entity_manager')]
         EntityManagerInterface $em,
     ): Response {
         if (!$this->isCsrfTokenValid('construccion_proveedor_edit_' . $id, (string) $request->request->get('_token'))) {

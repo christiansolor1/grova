@@ -16,6 +16,9 @@ class WalletCategory
     #[ORM\Column]
     private ?int $id = null;
 
+    #[ORM\Column]
+    private int $tenantId;
+
     #[ORM\Column(length: 80)]
     private string $nombre = '';
 
@@ -45,4 +48,7 @@ class WalletCategory
 
     public function isIngreso(): bool { return $this->tipo === 'ingreso'; }
     public function isGasto(): bool { return $this->tipo === 'gasto'; }
+
+    public function getTenantId(): int { return $this->tenantId; }
+    public function setTenantId(int $tenantId): static { $this->tenantId = $tenantId; return $this; }
 }

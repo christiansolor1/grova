@@ -9,13 +9,16 @@ use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity(repositoryClass: FishingTripMemberRepository::class)]
 #[ORM\Table(name: 'fishing_trip_member')]
-#[ORM\UniqueConstraint(columns: ['trip_id', 'user_id'])]
+#[ORM\UniqueConstraint(columns: ['tenant_id', 'trip_id', 'user_id'])]
 class FishingTripMember
 {
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
     private ?int $id = null;
+
+    #[ORM\Column]
+    private int $tenantId;
 
     #[ORM\ManyToOne(targetEntity: FishingTrip::class, inversedBy: 'members')]
     #[ORM\JoinColumn(nullable: false, onDelete: 'CASCADE')]
@@ -39,4 +42,7 @@ class FishingTripMember
 
     public function getNombre(): string { return $this->nombre; }
     public function setNombre(string $nombre): static { $this->nombre = $nombre; return $this; }
+
+    public function getTenantId(): int { return $this->tenantId; }
+    public function setTenantId(int $tenantId): static { $this->tenantId = $tenantId; return $this; }
 }

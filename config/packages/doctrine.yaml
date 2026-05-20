@@ -6,9 +6,6 @@ doctrine:
                 url: '%env(resolve:DATABASE_CORE_URL)%'
                 profiling_collect_backtrace: '%kernel.debug%'
                 use_savepoints: true
-            tenant:
-                url: '%env(resolve:DATABASE_CORE_URL)%'
-                use_savepoints: true
 
     orm:
         default_entity_manager: core
@@ -27,12 +24,6 @@ doctrine:
                         dir: '%kernel.project_dir%/src/Entity'
                         prefix: 'App\Entity'
                         alias: Core
-            tenant:
-                connection: tenant
-                report_fields_where_declared: true
-                validate_xml_mapping: true
-                naming_strategy: doctrine.orm.naming_strategy.underscore_number_aware
-                mappings:
                     Module:
                         type: attribute
                         is_bundle: false
@@ -54,13 +45,6 @@ when@prod:
             proxy_dir: '%kernel.build_dir%/doctrine/orm/Proxies'
             entity_managers:
                 core:
-                    query_cache_driver:
-                        type: pool
-                        pool: doctrine.system_cache_pool
-                    result_cache_driver:
-                        type: pool
-                        pool: doctrine.result_cache_pool
-                tenant:
                     query_cache_driver:
                         type: pool
                         pool: doctrine.system_cache_pool

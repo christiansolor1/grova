@@ -57,7 +57,6 @@ final class LegalController extends AbstractController
     #[Route('/case/create', name: 'case_create', methods: ['POST'])]
     public function createCase(
         Request $request,
-        #[Autowire(service: 'doctrine.orm.tenant_entity_manager')]
         EntityManagerInterface $em,
     ): Response {
         if (!$this->isCsrfTokenValid('legal_case', (string) $request->request->get('_token'))) {
@@ -109,7 +108,6 @@ final class LegalController extends AbstractController
     public function editCase(
         int $id,
         Request $request,
-        #[Autowire(service: 'doctrine.orm.tenant_entity_manager')]
         EntityManagerInterface $em,
     ): Response {
         if (!$this->isCsrfTokenValid('legal_case_edit_' . $id, (string) $request->request->get('_token'))) {
@@ -137,7 +135,6 @@ final class LegalController extends AbstractController
     public function addFollowUp(
         int $id,
         Request $request,
-        #[Autowire(service: 'doctrine.orm.tenant_entity_manager')]
         EntityManagerInterface $em,
     ): Response {
         if (!$this->isCsrfTokenValid('legal_followup_' . $id, (string) $request->request->get('_token'))) {
@@ -167,7 +164,6 @@ final class LegalController extends AbstractController
     public function addPayment(
         int $id,
         Request $request,
-        #[Autowire(service: 'doctrine.orm.tenant_entity_manager')]
         EntityManagerInterface $em,
     ): Response {
         if (!$this->isCsrfTokenValid('legal_payment_' . $id, (string) $request->request->get('_token'))) {
@@ -198,7 +194,6 @@ final class LegalController extends AbstractController
     public function uploadDocument(
         int $id,
         Request $request,
-        #[Autowire(service: 'doctrine.orm.tenant_entity_manager')]
         EntityManagerInterface $em,
         #[Autowire('%kernel.project_dir%/public/uploads/legal')]
         string $uploadDir,

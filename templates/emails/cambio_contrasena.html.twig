@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tu contraseña ha sido cambiada — Grova</title>
+</head>
+<body style="margin:0;padding:0;background:#f1f5f9;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
+    <table width="100%" cellpadding="0" cellspacing="0" style="background:#f1f5f9;padding:40px 16px;">
+        <tr>
+            <td align="center">
+                <table width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;">
+
+                    {# Logo #}
+                    <tr>
+                        <td align="center" style="padding-bottom:24px;">
+                            <table cellpadding="0" cellspacing="0">
+                                <tr>
+                                    <td style="background:#2563eb;border-radius:10px;width:44px;height:44px;text-align:center;vertical-align:middle;">
+                                        <span style="color:#fff;font-weight:700;font-size:1.2rem;line-height:44px;">G</span>
+                                    </td>
+                                    <td style="padding-left:12px;vertical-align:middle;">
+                                        <span style="font-size:1.25rem;font-weight:700;color:#0f172a;letter-spacing:-0.3px;">Grova</span>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+
+                    {# Card #}
+                    <tr>
+                        <td style="background:#ffffff;border-radius:12px;border:1px solid #e2e8f0;padding:40px 36px;">
+
+                            <p style="margin:0 0 8px;font-size:1.2rem;font-weight:700;color:#0f172a;">
+                                Tu contraseña ha sido cambiada
+                            </p>
+                            <p style="margin:0 0 24px;font-size:1rem;color:#64748b;line-height:1.6;">
+                                Hola{{ usuario.nombre ? ' ' ~ usuario.nombre }}, la contraseña de tu cuenta en Grova fue cambiada el <strong style="color:#0f172a;">{{ fecha|date('d/m/Y H:i T') }}</strong>.
+                            </p>
+
+                            {# Detalles #}
+                            <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:24px;">
+                                <tr>
+                                    <td style="background:#fef2f2;border:1px solid #fecaca;border-radius:8px;padding:20px;">
+                                        {% if detalles.ip is defined %}
+                                        <div style="margin-bottom:12px;">
+                                            <span style="font-size:11px;color:#991b1b;text-transform:uppercase;letter-spacing:1px;display:block;margin-bottom:2px;">IP</span>
+                                            <span style="font-size:14px;color:#450a0a;font-weight:600;">{{ detalles.ip }}</span>
+                                        </div>
+                                        {% endif %}
+                                        {% if detalles.userAgent is defined and detalles.userAgent %}
+                                        <div>
+                                            <div style="font-size:11px;color:#991b1b;text-transform:uppercase;letter-spacing:1px;margin-bottom:2px;">Dispositivo</div>
+                                            <div style="font-size:13px;color:#450a0a;word-break:break-all;overflow-wrap:break-word;">{{ detalles.userAgent }}</div>
+                                        </div>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                            </table>
+
+                            {# Alerta #}
+                            <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:24px;">
+                                <tr>
+                                    <td style="background:#fef2f2;border:1px solid #fecaca;border-radius:8px;padding:16px 20px;">
+                                        <p style="margin:0 0 8px;font-size:.88rem;font-weight:700;color:#991b1b;">
+                                            ¿No fuiste tú?
+                                        </p>
+                                        <p style="margin:0;font-size:.85rem;color:#450a0a;line-height:1.5;">
+                                            Si no realizaste este cambio, comunícate con soporte de inmediato en
+                                            <a href="mailto:soporte@grovaapp.com" style="color:#2563eb;font-weight:600;">soporte@grovaapp.com</a>
+                                            para proteger tu cuenta.
+                                        </p>
+                                    </td>
+                                </tr>
+                            </table>
+
+                            <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:4px;">
+                                <tr>
+                                    <td align="center">
+                                        <a href="https://grovaapp.com/es/profile"
+                                           style="display:inline-block;background:#2563eb;color:#ffffff;font-weight:600;font-size:.95rem;text-decoration:none;padding:14px 32px;border-radius:8px;">
+                                            Ir a mi perfil
+                                        </a>
+                                    </td>
+                                </tr>
+                            </table>
+
+                        </td>
+                    </tr>
+
+                    {# Footer #}
+                    <tr>
+                        <td style="padding:24px 0 0;text-align:center;">
+                            <p style="margin:0;font-size:.75rem;color:#94a3b8;">
+                                Este mensaje se generó automáticamente. No respondas a este correo.
+                            </p>
+                            <p style="margin:4px 0 0;font-size:.75rem;color:#94a3b8;">
+                                © {{ "now"|date("Y") }} Grova · <a href="https://grovaapp.com" style="color:#94a3b8;">grovaapp.com</a>
+                            </p>
+                        </td>
+                    </tr>
+
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>
