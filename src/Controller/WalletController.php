@@ -11,7 +11,6 @@ use App\Service\MenuTreeBuilder;
 use App\Service\TenantContext;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
-use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
@@ -60,7 +59,6 @@ final class WalletController extends AbstractController
     #[Route('/entry/create', name: 'entry_create', methods: ['POST'])]
     public function createEntry(
         Request $request,
-        #[Autowire(service: 'doctrine.orm.tenant_entity_manager')]
         EntityManagerInterface $em,
     ): Response {
         if (!$this->isCsrfTokenValid('wallet_entry', (string) $request->request->get('_token'))) {
@@ -110,7 +108,6 @@ final class WalletController extends AbstractController
     public function deleteEntry(
         int $id,
         Request $request,
-        #[Autowire(service: 'doctrine.orm.tenant_entity_manager')]
         EntityManagerInterface $em,
     ): Response {
         if (!$this->isCsrfTokenValid('wallet_delete_' . $id, (string) $request->request->get('_token'))) {

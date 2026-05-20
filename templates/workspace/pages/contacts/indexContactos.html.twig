@@ -72,7 +72,7 @@ body.light-mode .contact-avatar { background:#dbeafe; color:#1d4ed8; }
                                     <i class="bi bi-pencil"></i>
                                 </button>
                                 <form method="post" action="{{ path('grova_contacts_delete', {id: contact.id, _locale: app.request.locale}) }}"
-                                      onsubmit="return confirm('¿Archivar este contacto?')">
+                                      data-swal-confirm="¿Archivar este contacto?">
                                     <input type="hidden" name="_token" value="{{ csrf_token('contact_delete_' ~ contact.id) }}">
                                     <button type="submit" class="btn btn-outline-danger btn-sm" style="font-size:11px;padding:2px 7px;">
                                         <i class="bi bi-archive"></i>

@@ -17,16 +17,19 @@ final class ServicioLogActividad
     ) {
     }
 
+    /**
+     * @return string|null El sessionToken generado (solo para login/2fa exitoso), o null
+     */
     public function registrar(
         string $accion,
         ?User $usuario = null,
         ?string $email = null,
         ?array $detalles = null,
-    ): void {
+    ): ?string {
         $request = $this->requestStack->getCurrentRequest();
 
         if ($request === null) {
-            return;
+            return null;
         }
 
         $registro = LogActividad::crear(
@@ -38,7 +41,15 @@ final class ServicioLogActividad
             detalles: $detalles,
         );
 
+        // Generar sessionToken para inicios de sesión exitosos (permite revocación individual)
+        if (\in_array($accion, [LogActividad::ACCION_LOGIN_EXITOSO, LogActividad::ACCION_2FA_EXITOSO], true)) {
+            $token = bin2hex(random_bytes(32));
+            $registro->setSessionToken($token);
+        }
+
         $this->em->persist($registro);
         $this->em->flush();
+
+        return $registro->getSessionToken();
     }
 }

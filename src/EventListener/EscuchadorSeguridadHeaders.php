@@ -61,7 +61,8 @@ final class EscuchadorSeguridadHeaders
 
             "connect-src 'self' "
                 .self::CDN_JSDELIVR.' '
-                .self::CDN_CLOUDFLARE,
+                .self::CDN_CLOUDFLARE.' '
+                .self::CDN_DATATABLES,
 
             "img-src 'self' data: blob: "
                 .self::CDN_JSDELIVR.' '

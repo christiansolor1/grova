@@ -18,6 +18,9 @@ class FishingFinca
     #[ORM\Column]
     private ?int $id = null;
 
+    #[ORM\Column]
+    private int $tenantId;
+
     #[ORM\Column(length: 100)]
     private string $nombre = '';
 
@@ -63,4 +66,7 @@ class FishingFinca
 
     /** @return Collection<int, FishingSpot> */
     public function getSpots(): Collection { return $this->spots; }
+
+    public function getTenantId(): int { return $this->tenantId; }
+    public function setTenantId(int $tenantId): static { $this->tenantId = $tenantId; return $this; }
 }

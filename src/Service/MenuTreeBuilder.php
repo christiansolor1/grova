@@ -285,15 +285,25 @@ final class MenuTreeBuilder
 
     private function hrefForLeafKey(string $menuKey): ?string
     {
-        $locale = $this->requestStack->getCurrentRequest()?->getLocale() ?? 'es';
-        $params  = ['_locale' => $locale];
-
         try {
             $route = WorkspaceLeafRoutes::routeNameForMenuKey($menuKey);
         } catch (\InvalidArgumentException) {
             return null;
         }
 
-        return $this->urlGenerator->generate($route, $params);
+        $locale = $this->requestStack->getCurrentRequest()?->getLocale() ?? 'es';
+
+        // Si el locale actual no funciona (ej. rutas que solo aceptan es), se cae
+        // a es como fallback.
+        $locales = $locale !== 'es' ? [$locale, 'es'] : ['es'];
+        foreach ($locales as $tryLocale) {
+            try {
+                return $this->urlGenerator->generate($route, ['_locale' => $tryLocale]);
+            } catch (\InvalidArgumentException) {
+                continue;
+            }
+        }
+
+        return null;
     }
 }

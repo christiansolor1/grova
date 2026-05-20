@@ -143,6 +143,9 @@
         <a href="{{ path('grova_admin_planes_index') }}" class="text-decoration-none" style="color:#94a3b8;">
             <i class="bi bi-box-seam me-1"></i>Planes
         </a>
+        <a href="{{ path('grova_admin_errores_index') }}" class="text-decoration-none" style="color:#94a3b8;">
+            <i class="bi bi-bug me-1"></i>{{ 'admin.errores.nav'|trans }}
+        </a>
     </nav>
 
     {% for etiqueta, mensajes in app.flashes %}
@@ -155,4 +158,29 @@
 
     {% block admin_main %}{% endblock %}
 </div>
+
+{# ── Global SweetAlert2 confirm handler ── #}
+<script>
+document.addEventListener('submit', function(e) {
+    var form = e.target;
+    var msg = form.getAttribute('data-swal-confirm');
+    if (!msg) return;
+    e.preventDefault();
+    if (typeof Swal === 'undefined') return;
+    Swal.fire({
+        title: 'Confirmar',
+        text: msg,
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonText: 'Sí',
+        cancelButtonText: 'Cancelar',
+        reverseButtons: true
+    }).then(function (result) {
+        if (result.isConfirmed) {
+            form.removeAttribute('data-swal-confirm');
+            form.submit();
+        }
+    });
+});
+</script>
 {% endblock %}

@@ -14,9 +14,10 @@ final class ControladorGoogle extends AbstractController
     #[Route('/connect/google', name: 'connect_google')]
     public function redirigir(ClientRegistry $clientRegistry): RedirectResponse
     {
-        return $clientRegistry->getClient('google')->redirect([
-            'openid', 'email', 'profile',
-        ]);
+        return $clientRegistry->getClient('google')->redirect(
+            ['openid', 'email', 'profile'],
+            ['redirect_uri' => 'https://localhost:8443/connect/google/check'],
+        );
     }
 
     /**

@@ -17,6 +17,9 @@ class WorkDay
     #[ORM\Column]
     private ?int $id = null;
 
+    #[ORM\Column]
+    private int $tenantId;
+
     #[ORM\ManyToOne(targetEntity: WorkClient::class)]
     #[ORM\JoinColumn(nullable: false)]
     private WorkClient $client;
@@ -85,4 +88,7 @@ class WorkDay
     {
         return $this->horaEntrada !== null && !$this->esFeriado && !$this->esVacacion;
     }
+
+    public function getTenantId(): int { return $this->tenantId; }
+    public function setTenantId(int $tenantId): static { $this->tenantId = $tenantId; return $this; }
 }

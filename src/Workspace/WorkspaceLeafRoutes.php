@@ -56,6 +56,7 @@ final class WorkspaceLeafRoutes
         'proveedores'          => 'grova_proveedores_index',
         'sucursales'           => 'grova_sucursales_index',
         'respaldo'             => 'grova_respaldo_index',
+        'errores'              => 'grova_admin_errores_index',
     ];
 
     /** @var array<string, string> route name => menu_key */
@@ -105,6 +106,7 @@ final class WorkspaceLeafRoutes
         'grova_proveedores_index'           => 'proveedores',
         'grova_sucursales_index'            => 'sucursales',
         'grova_respaldo_index'              => 'respaldo',
+        'grova_admin_errores_index'         => 'errores',
     ];
 
     public static function routeNameForMenuKey(string $menuKey): string

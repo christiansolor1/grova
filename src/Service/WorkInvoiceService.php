@@ -16,7 +16,6 @@ use Dompdf\Dompdf;
 use Dompdf\Options;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bridge\Twig\Mime\TemplatedEmail;
-use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\Mailer\MailerInterface;
 use Symfony\Component\Mime\Part\DataPart;
@@ -27,7 +26,6 @@ final class WorkInvoiceService
     public function __construct(
         private readonly WorkInvoiceRepository $invoiceRepo,
         private readonly WorkDayRepository $dayRepo,
-        #[Autowire(service: 'doctrine.orm.tenant_entity_manager')]
         private readonly EntityManagerInterface $em,
         private readonly Environment $twig,
         private readonly MailerInterface $mailer,

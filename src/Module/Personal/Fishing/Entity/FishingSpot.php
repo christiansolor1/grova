@@ -16,6 +16,9 @@ class FishingSpot
     #[ORM\Column]
     private ?int $id = null;
 
+    #[ORM\Column]
+    private int $tenantId;
+
     #[ORM\ManyToOne(targetEntity: FishingFinca::class, inversedBy: 'spots')]
     #[ORM\JoinColumn(nullable: false, onDelete: 'CASCADE')]
     private FishingFinca $finca;
@@ -66,4 +69,7 @@ class FishingSpot
     public function setNotas(?string $notas): static { $this->notas = $notas; return $this; }
 
     public function getCreatedAt(): \DateTimeImmutable { return $this->createdAt; }
+
+    public function getTenantId(): int { return $this->tenantId; }
+    public function setTenantId(int $tenantId): static { $this->tenantId = $tenantId; return $this; }
 }

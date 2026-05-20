@@ -68,7 +68,6 @@ final class FishingController extends AbstractController
     #[Route('/finca/create', name: 'finca_create', methods: ['POST'])]
     public function createFinca(
         Request $request,
-        #[Autowire(service: 'doctrine.orm.tenant_entity_manager')]
         EntityManagerInterface $em,
     ): Response {
         if (!$this->isCsrfTokenValid('fishing_finca', (string) $request->request->get('_token'))) {
@@ -138,7 +137,6 @@ final class FishingController extends AbstractController
     #[Route('/lure/create', name: 'lure_create', methods: ['POST'])]
     public function createLure(
         Request $request,
-        #[Autowire(service: 'doctrine.orm.tenant_entity_manager')]
         EntityManagerInterface $em,
         #[Autowire('%kernel.project_dir%/public/uploads/fishing/lures')]
         string $uploadDir,
@@ -182,7 +180,6 @@ final class FishingController extends AbstractController
     #[Route('/lure-result/create', name: 'lure_result_create', methods: ['POST'])]
     public function createLureResult(
         Request $request,
-        #[Autowire(service: 'doctrine.orm.tenant_entity_manager')]
         EntityManagerInterface $em,
     ): Response {
         if (!$this->isCsrfTokenValid('fishing_lure_result', (string) $request->request->get('_token'))) {
@@ -221,7 +218,6 @@ final class FishingController extends AbstractController
     #[Route('/trip/create', name: 'trip_create', methods: ['POST'])]
     public function createTrip(
         Request $request,
-        #[Autowire(service: 'doctrine.orm.tenant_entity_manager')]
         EntityManagerInterface $em,
     ): Response {
         if (!$this->isCsrfTokenValid('fishing_trip', (string) $request->request->get('_token'))) {
@@ -280,7 +276,6 @@ final class FishingController extends AbstractController
     public function addExpense(
         int $id,
         Request $request,
-        #[Autowire(service: 'doctrine.orm.tenant_entity_manager')]
         EntityManagerInterface $em,
     ): Response {
         if (!$this->isCsrfTokenValid('fishing_expense_' . $id, (string) $request->request->get('_token'))) {
@@ -308,7 +303,6 @@ final class FishingController extends AbstractController
     public function addTripLure(
         int $id,
         Request $request,
-        #[Autowire(service: 'doctrine.orm.tenant_entity_manager')]
         EntityManagerInterface $em,
     ): Response {
         if (!$this->isCsrfTokenValid('fishing_trip_lure_' . $id, (string) $request->request->get('_token'))) {

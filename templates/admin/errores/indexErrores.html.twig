@@ -1,0 +1,282 @@
+{% extends 'workspace/app_layout.html.twig' %}
+
+{% block page_title %}{{ 'admin.errores.titulo'|trans }}{% endblock %}
+
+{% block main_attributes %} data-grova-filter-schema="filter-errores"{% endblock %}
+
+{% block app_filters_row %}{% include 'workspace/partials/_filters_active_row.html.twig' %}{% endblock %}
+{% block app_filters_drawer %}{% include 'workspace/partials/_filters_drawer.html.twig' %}{% endblock %}
+
+{% block page_styles %}
+<style>
+    .badge-critical { background: rgba(220,38,38,.15); border: 1px solid rgba(220,38,38,.3); color: #fca5a5; font-size:11px; padding: 2px 8px; border-radius:20px; }
+    .badge-error    { background: rgba(249,115,22,.15); border: 1px solid rgba(249,115,22,.3); color: #fdba74; font-size:11px; padding: 2px 8px; border-radius:20px; }
+    .badge-warning  { background: rgba(234,179,8,.15); border: 1px solid rgba(234,179,8,.3); color: #fde047; font-size:11px; padding: 2px 8px; border-radius:20px; }
+    .badge-info     { background: rgba(59,130,246,.15); border: 1px solid rgba(59,130,246,.3); color: #93c5fd; font-size:11px; padding: 2px 8px; border-radius:20px; }
+    .badge-new       { background: rgba(239,68,68,.15); border: 1px solid rgba(239,68,68,.3); color: #fca5a5; font-size:11px; padding: 2px 8px; border-radius:20px; }
+    .badge-progress  { background: rgba(234,179,8,.15); border: 1px solid rgba(234,179,8,.3); color: #fde047; font-size:11px; padding: 2px 8px; border-radius:20px; }
+    .badge-resolved  { background: rgba(34,197,94,.15); border: 1px solid rgba(34,197,94,.3); color: #86efac; font-size:11px; padding: 2px 8px; border-radius:20px; }
+    .badge-ignored   { background: rgba(100,116,139,.15); border: 1px solid rgba(100,116,139,.3); color: #94a3b8; font-size:11px; padding: 2px 8px; border-radius:20px; }
+    .errores-msg-link { color: inherit; text-decoration: none; }
+    .errores-msg-link:hover { text-decoration: underline; }
+</style>
+{% endblock %}
+
+{% block app_main %}
+<div class="content-card">
+    <div class="content-card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
+        <span>
+            <i class="bi bi-bug me-2"></i>{{ 'admin.errores.titulo'|trans }}
+            <span class="text-muted fw-normal ms-2" style="font-size:.8rem;">({{ total }})</span>
+        </span>
+    </div>
+    <div class="content-card-body p-0">
+        {% if errores is empty %}
+        <p class="text-muted mb-0 px-3 py-3">{{ 'admin.errores.vacio'|trans }}</p>
+        {% else %}
+        <div class="table-responsive">
+            <table id="errores-table" class="table table-hover align-middle mb-0" style="color:inherit;">
+                <thead>
+                    <tr>
+                        <th>{{ 'admin.errores.col.nivel'|trans }}</th>
+                        <th>{{ 'admin.errores.col.mensaje'|trans }}</th>
+                        <th>{{ 'admin.errores.col.canal'|trans }}</th>
+                        <th>{{ 'admin.errores.col.fecha'|trans }}</th>
+                        <th>{{ 'admin.errores.col.estado'|trans }}</th>
+                        <th class="text-nowrap">{{ 'admin.errores.col.acciones'|trans }}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for error in errores %}
+                    <tr>
+                        <td data-search="{{ error.level }}">
+                            {% set level_class = error.level == 'CRITICAL' ? 'badge-critical'
+                                : error.level == 'ERROR' ? 'badge-error'
+                                : error.level == 'WARNING' ? 'badge-warning'
+                                : 'badge-info' %}
+                            <span class="{{ level_class }}">{{ error.levelLabel }}</span>
+                        </td>
+                        <td>
+                            <a href="{{ path('grova_admin_errores_detalle', {id: error.id}) }}" class="errores-msg-link">
+                                {{ error.message|length > 100 ? error.message|slice(0, 100) ~ '…' : error.message }}
+                            </a>
+                        </td>
+                        <td data-search="{{ error.channel }}">{{ error.channel }}</td>
+                        <td data-order="{{ error.createdAt|date('U') }}">{{ error.createdAt|date('Y-m-d H:i') }}</td>
+                        <td data-search="{{ error.status }}">
+                            <span class="badge-{{ error.status == 'new' ? 'new' : error.status == 'in_progress' ? 'progress' : error.status == 'resolved' ? 'resolved' : 'ignored' }}">{{ error.statusLabel }}</span>
+                        </td>
+                        <td>
+                            <a href="{{ path('grova_admin_errores_detalle', {id: error.id}) }}"
+                               class="btn btn-sm btn-outline-secondary">
+                                <i class="bi bi-eye"></i>
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block app_page_scripts %}
+{{ parent() }}
+<script>
+(function () {
+    var indexUrl = {{ path('grova_admin_errores_index')|json_encode|raw }};
+    var locale = {{ app.request.locale|json_encode|raw }};
+    var todosLabel = {{ 'admin.errores.filtro.todos'|trans|json_encode|raw }};
+    var filtrosIniciales = {{ filtros|json_encode|raw }};
+    var niveles = {{ niveles|json_encode|raw }};
+    var canales = {{ canales|json_encode|raw }};
+    var estados = [
+        { value: 'new', label: {{ 'admin.errores.estado.nuevo'|trans|json_encode|raw }} },
+        { value: 'in_progress', label: {{ 'admin.errores.estado.en_progreso'|trans|json_encode|raw }} },
+        { value: 'resolved', label: {{ 'admin.errores.estado.resuelto'|trans|json_encode|raw }} },
+        { value: 'ignored', label: {{ 'admin.errores.estado.ignorado'|trans|json_encode|raw }} },
+    ];
+    var labels = {
+        nivel: {{ 'admin.errores.col.nivel'|trans|json_encode|raw }},
+        estado: {{ 'admin.errores.col.estado'|trans|json_encode|raw }},
+        canal: {{ 'admin.errores.col.canal'|trans|json_encode|raw }},
+        desde: {{ 'admin.errores.filtro.desde'|trans|json_encode|raw }},
+        hasta: {{ 'admin.errores.filtro.hasta'|trans|json_encode|raw }},
+    };
+
+    var filterPanelInit = false;
+    var dt = null;
+
+    function toggleFilters(force) {
+        var open = force === undefined ? !document.body.classList.contains('filters-open') : !!force;
+        document.body.classList.toggle('filters-open', open);
+    }
+
+    function getFilterValues() {
+        var out = {};
+        document.querySelectorAll('[data-filter-input="1"]').forEach(function (el) {
+            if (!('value' in el)) return;
+            var key = el.dataset.filterKey;
+            if (!key) return;
+            var raw = (el.value || '').trim();
+            if (!raw) return;
+            if (el.tagName === 'SELECT') {
+                var txt = el.options && el.selectedIndex >= 0 ? el.options[el.selectedIndex].text : raw;
+                var norm = (txt || '').trim().toLowerCase();
+                if ([todosLabel.toLowerCase(), 'todos', 'todas', 'all'].includes(norm)) return;
+            }
+            out[key] = raw;
+        });
+        return out;
+    }
+
+    function getFilterSummary() {
+        var parts = [];
+        document.querySelectorAll('[data-filter-input="1"]').forEach(function (el) {
+            if (!('value' in el)) return;
+            var raw = (el.value || '').trim();
+            if (!raw) return;
+            var label = el.dataset.label || el.id || 'Filtro';
+            if (el.tagName === 'SELECT') {
+                var txt = el.options && el.selectedIndex >= 0 ? el.options[el.selectedIndex].text : raw;
+                var norm = (txt || '').trim().toLowerCase();
+                if ([todosLabel.toLowerCase(), 'todos', 'todas', 'all'].includes(norm)) return;
+                parts.push(label + ': ' + txt);
+            } else {
+                parts.push(label + ': ' + raw);
+            }
+        });
+        return parts;
+    }
+
+    function updateActiveFilters() {
+        var row = document.getElementById('active-filters-row');
+        var text = document.getElementById('active-filters-text');
+        if (!row || !text) return;
+        var parts = getFilterSummary();
+        if (!parts.length) {
+            row.classList.remove('show');
+            text.textContent = '';
+            return;
+        }
+        var preview = parts.slice(0, 3).join(' ; ');
+        if (parts.length > 3) preview += ' ; +' + (parts.length - 3) + ' m\u00e1s';
+        text.textContent = ' ' + preview;
+        row.classList.add('show');
+    }
+
+    function buildIndexUrl(params) {
+        var qs = new URLSearchParams();
+        Object.keys(params).forEach(function (k) {
+            if (params[k]) qs.set(k, params[k]);
+        });
+        var q = qs.toString();
+        return q ? indexUrl + '?' + q : indexUrl;
+    }
+
+    function applyFilters() {
+        window.location.href = buildIndexUrl(getFilterValues());
+    }
+
+    function resetFilters() {
+        window.location.href = indexUrl;
+    }
+
+    function renderSelect(id, label, filterKey, options, valueKey) {
+        var opts = '<option value="">' + todosLabel + '</option>';
+        options.forEach(function (o) {
+            var val = valueKey ? o[valueKey] : o;
+            var txt = valueKey ? o.label : o;
+            var selected = filtrosIniciales[filterKey] === val ? ' selected' : '';
+            opts += '<option value="' + val + '"' + selected + '>' + txt + '</option>';
+        });
+        return '<label class="form-label">' + label + '</label>' +
+            '<select id="' + id + '" data-filter-input="1" data-filter-key="' + filterKey + '" data-label="' + label + '" class="form-select form-select-sm mb-2">' + opts + '</select>';
+    }
+
+    function initFilterPanel() {
+        if (filterPanelInit) return;
+        filterPanelInit = true;
+
+        var applyBtn = document.getElementById('filters-apply');
+        var resetBtn = document.getElementById('filters-reset');
+        var clearBtn = document.getElementById('active-filters-clear');
+        var body = document.getElementById('filters-body');
+
+        if (body) body.setAttribute('data-grova-filters-custom', '1');
+        if (applyBtn) applyBtn.addEventListener('click', applyFilters);
+        if (resetBtn) resetBtn.addEventListener('click', resetFilters);
+        if (clearBtn) clearBtn.addEventListener('click', resetFilters);
+        if (!body) return;
+
+        var sections = [
+            {
+                title: {{ 'admin.errores.filtro.seccion.criterios'|trans|json_encode|raw }},
+                open: true,
+                html:
+                    renderSelect('filter-level', labels.nivel, 'level', niveles) +
+                    renderSelect('filter-status', labels.estado, 'status', estados, 'value') +
+                    renderSelect('filter-channel', labels.canal, 'channel', canales),
+            },
+            {
+                title: {{ 'admin.errores.filtro.seccion.fechas'|trans|json_encode|raw }},
+                open: true,
+                html:
+                    '<label class="form-label">' + labels.desde + '</label>' +
+                    '<input id="filter-desde" data-filter-input="1" data-filter-key="desde" data-label="' + labels.desde + '" class="form-control form-control-sm mb-2" type="date" value="' + (filtrosIniciales.desde || '') + '">' +
+                    '<label class="form-label">' + labels.hasta + '</label>' +
+                    '<input id="filter-hasta" data-filter-input="1" data-filter-key="hasta" data-label="' + labels.hasta + '" class="form-control form-control-sm mb-2" type="date" value="' + (filtrosIniciales.hasta || '') + '">',
+            },
+        ];
+
+        body.innerHTML = sections.map(function (section) {
+            return '<div class="filter-section' + (section.open ? ' open' : '') + '">' +
+                '<button class="filter-section-btn" type="button">' + section.title +
+                '<span class="chev"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg></span></button>' +
+                '<div class="filter-section-content">' + section.html + '</div></div>';
+        }).join('');
+
+        if (window.GrovaFilters && typeof window.GrovaFilters.refreshSections === 'function') {
+            window.GrovaFilters.refreshSections(body);
+        }
+        updateActiveFilters();
+    }
+
+    initFilterPanel();
+
+    var tableEl = document.getElementById('errores-table');
+    if (!tableEl || typeof DataTable === 'undefined') return;
+
+    var dtLang = locale === 'en'
+        ? 'https://cdn.datatables.net/plug-ins/2.1.8/i18n/en-GB.json'
+        : 'https://cdn.datatables.net/plug-ins/2.1.8/i18n/es-ES.json';
+
+    try {
+        var initDt = (window.GrovaDataTable && window.GrovaDataTable.init)
+            ? window.GrovaDataTable.init
+            : function (el, o) { return new DataTable(el, o); };
+
+        dt = initDt(tableEl, {
+            language: { url: dtLang },
+            pageLength: 25,
+            order: [[3, 'desc']],
+            columnDefs: [
+                { orderable: false, targets: [5] },
+                { searchable: false, targets: [5] },
+            ],
+            layout: {
+                topEnd: {
+                    search: {
+                        placeholder: locale === 'en' ? 'Search…' : 'Buscar…',
+                    },
+                },
+            },
+        });
+    } catch (e) {
+        console.error(e);
+    }
+})();
+</script>
+{% endblock %}

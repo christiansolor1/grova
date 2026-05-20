@@ -46,6 +46,9 @@ class LogActividad
     #[ORM\Column(type: 'json', nullable: true)]
     private ?array $detalles = null;
 
+    #[ORM\Column(length: 64, nullable: true)]
+    private ?string $sessionToken = null;
+
     #[ORM\Column]
     private \DateTimeImmutable $createdAt;
 
@@ -80,5 +83,7 @@ class LogActividad
     public function getIp(): string { return $this->ip; }
     public function getUserAgent(): ?string { return $this->userAgent; }
     public function getDetalles(): ?array { return $this->detalles; }
+    public function getSessionToken(): ?string { return $this->sessionToken; }
+    public function setSessionToken(?string $token): static { $this->sessionToken = $token; return $this; }
     public function getCreatedAt(): \DateTimeImmutable { return $this->createdAt; }
 }

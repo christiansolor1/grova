@@ -16,6 +16,9 @@ class LegalFollowUp
     #[ORM\Column]
     private ?int $id = null;
 
+    #[ORM\Column]
+    private int $tenantId;
+
     #[ORM\ManyToOne(targetEntity: LegalCase::class, inversedBy: 'followUps')]
     #[ORM\JoinColumn(nullable: false, onDelete: 'CASCADE')]
     private LegalCase $case;
@@ -53,4 +56,7 @@ class LegalFollowUp
     public function setProximaAudiencia(?\DateTimeImmutable $proximaAudiencia): static { $this->proximaAudiencia = $proximaAudiencia; return $this; }
 
     public function getCreatedAt(): \DateTimeImmutable { return $this->createdAt; }
+
+    public function getTenantId(): int { return $this->tenantId; }
+    public function setTenantId(int $tenantId): static { $this->tenantId = $tenantId; return $this; }
 }

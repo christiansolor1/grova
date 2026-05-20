@@ -15,40 +15,89 @@
     letter-spacing: .08em;
     margin-bottom: .75rem;
 }
-.dash-tenant-card {
-    background: #111827;
-    border: 1px solid #1e293b;
-    border-radius: 12px;
-    padding: 1.25rem;
+.dash-top-col {
     display: flex;
-    align-items: center;
-    gap: 1rem;
-    flex-wrap: wrap;
+    flex-direction: column;
+    min-height: 0;
 }
-body.light-mode .dash-tenant-card { background: #fff; border-color: #e2e8f0; }
-
+.dash-tenant-card,
 .dash-plan-card {
     background: #111827;
-    border: 1px solid #1e3a5f;
     border-radius: 12px;
     padding: 1.25rem;
-    height: 100%;
+    flex: 1 1 auto;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    min-height: 168px;
 }
+.dash-tenant-card {
+    border: 1px solid #1e293b;
+}
+.dash-plan-card {
+    border: 1px solid #1e3a5f;
+}
+body.light-mode .dash-tenant-card { background: #fff; border-color: #e2e8f0; }
 body.light-mode .dash-plan-card { background: #fff; border-color: #bfdbfe; }
 
-.dash-plan-name { font-size: 22px; font-weight: 800; color: #60a5fa; }
+.dash-card-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: .75rem;
+}
+.dash-card-head-main {
+    display: flex;
+    align-items: center;
+    gap: .75rem;
+    min-width: 0;
+    flex: 1;
+}
+.dash-card-title {
+    font-size: 16px;
+    font-weight: 700;
+    color: #f1f5f9;
+    line-height: 1.25;
+}
+body.light-mode .dash-card-title { color: #1e293b; }
+.dash-card-meta {
+    font-size: 12px;
+    color: #64748b;
+    margin-top: 2px;
+}
+.dash-card-meta code {
+    font-size: 11px;
+}
+.dash-card-foot {
+    margin-top: auto;
+}
+.dash-tenant-card .grova-detail-list {
+    width: 100%;
+    min-width: 0;
+}
+.dash-tenant-card .grova-detail-row dt {
+    min-width: 72px;
+}
+
+.dash-plan-name { font-size: 22px; font-weight: 800; color: #60a5fa; line-height: 1.2; }
 .dash-plan-price { font-size: 13px; color: #64748b; margin-top: 2px; }
 .dash-plan-expiry { font-size: 12px; color: #64748b; margin-top: .5rem; }
+.dash-plan-badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .3rem;
+}
 
 .dash-module-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
     gap: .5rem;
 }
 .dash-module-chip {
     display: flex;
     align-items: center;
     gap: .4rem;
+    min-height: 40px;
     background: #0f172a;
     border: 1px solid #1e293b;
     border-radius: 8px;
@@ -58,7 +107,28 @@ body.light-mode .dash-plan-card { background: #fff; border-color: #bfdbfe; }
     font-weight: 500;
 }
 body.light-mode .dash-module-chip { background: #f8fafc; border-color: #e2e8f0; color: #475569; }
-.dash-module-chip i { color: #60a5fa; font-size: 14px; }
+.dash-module-chip i { color: #60a5fa; font-size: 14px; flex-shrink: 0; }
+
+.dash-stat-col { display: flex; }
+.dash-stat-col .stat-card {
+    flex: 1;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+}
+.dash-stat-col .stat-value {
+    min-height: 32px;
+    display: flex;
+    align-items: center;
+}
+.dash-stat-col .stat-value--md { font-size: 18px; }
+.dash-stat-col .stat-value--sm { font-size: 16px; }
+.dash-stat-col .stat-value--xs { font-size: 14px; }
+.dash-stat-col .stat-change {
+    color: #64748b;
+    margin-top: auto;
+    line-height: 1.35;
+}
 
 .dash-no-tenant {
     display: flex;
@@ -77,28 +147,30 @@ body.light-mode .dash-module-chip { background: #f8fafc; border-color: #e2e8f0; 
 
 {% if tenant %}
 {# ── Fila superior: tarjeta tenant + tarjeta plan ── #}
-<div class="row g-3 mb-4">
+<div class="row g-3 mb-4 align-items-stretch">
 
     {# Tarjeta del tenant #}
-    <div class="col-lg-6">
+    <div class="col-lg-6 dash-top-col">
         <div class="dash-section-title">Tu espacio</div>
         <div class="dash-tenant-card">
-            <div class="grova-profile-avatar" style="width:48px;height:48px;font-size:18px;">
-                {{ tenant.initials }}
-            </div>
-            <div style="flex:1;min-width:0;">
-                <div style="font-size:16px;font-weight:700;color:#f1f5f9;">{{ tenant.nombre }}</div>
-                <div style="font-size:12px;color:#64748b;margin-top:2px;"><code>{{ tenant.slug }}</code></div>
-                <div style="margin-top:.5rem;">
-                    <span class="badge {{ tenant.isActivo ? 'bg-success' : 'bg-secondary' }}">
-                        {{ tenant.estado|capitalize }}
-                    </span>
+            <div class="dash-card-head">
+                <div class="dash-card-head-main">
+                    <div class="grova-profile-avatar" style="width:48px;height:48px;font-size:18px;flex-shrink:0;">
+                        {{ tenant.initials }}
+                    </div>
+                    <div style="min-width:0;">
+                        <div class="dash-card-title">{{ tenant.nombre }}</div>
+                        <div class="dash-card-meta"><code>{{ tenant.slug }}</code></div>
+                    </div>
                 </div>
+                <span class="badge {{ tenant.isActivo ? 'bg-success' : 'bg-secondary' }}">
+                    {{ tenant.estado|capitalize }}
+                </span>
             </div>
-            <div class="grova-detail-list" style="min-width:160px;">
+            <div class="dash-card-foot grova-detail-list">
                 <div class="grova-detail-row">
                     <dt>BD</dt>
-                    <dd><code style="font-size:11px;">{{ tenant.dbName }}</code></dd>
+                    <dd><code>{{ tenant.dbName }}</code></dd>
                 </div>
                 <div class="grova-detail-row">
                     <dt>Desde</dt>
@@ -109,12 +181,12 @@ body.light-mode .dash-module-chip { background: #f8fafc; border-color: #e2e8f0; 
     </div>
 
     {# Tarjeta del plan #}
-    <div class="col-lg-6">
+    <div class="col-lg-6 dash-top-col">
         <div class="dash-section-title">Plan activo</div>
         {% if suscripcion %}
         <div class="dash-plan-card">
-            <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:.5rem;flex-wrap:wrap;">
-                <div>
+            <div class="dash-card-head">
+                <div style="min-width:0;">
                     <div class="dash-plan-name">{{ suscripcion.plan.nombre }}</div>
                     <div class="dash-plan-price">
                         {% if suscripcion.plan.precioMensual == '0.00' %}
@@ -132,7 +204,7 @@ body.light-mode .dash-module-chip { background: #f8fafc; border-color: #e2e8f0; 
                     {{ suscripcion.estado|capitalize }}
                 </span>
             </div>
-            <div style="margin-top:.75rem;display:flex;flex-wrap:wrap;gap:.3rem;">
+            <div class="dash-card-foot dash-plan-badges">
                 {% for modulo in suscripcion.plan.modulos|slice(0,4) %}
                     <span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25" style="font-size:11px;">{{ modulo }}</span>
                 {% endfor %}
@@ -143,7 +215,11 @@ body.light-mode .dash-module-chip { background: #f8fafc; border-color: #e2e8f0; 
         </div>
         {% else %}
         <div class="dash-plan-card" style="border-color:#dc2626;">
-            <div style="color:#f87171;font-size:13px;"><i class="bi bi-exclamation-triangle me-1"></i>Sin suscripción activa</div>
+            <div class="dash-card-head">
+                <div style="color:#f87171;font-size:13px;">
+                    <i class="bi bi-exclamation-triangle me-1"></i>Sin suscripción activa
+                </div>
+            </div>
         </div>
         {% endif %}
     </div>
@@ -209,18 +285,18 @@ body.light-mode .dash-module-chip { background: #f8fafc; border-color: #e2e8f0; 
 </div>
 
 {# ── Stats del usuario ── #}
-<div class="row g-3">
-    <div class="col-sm-6 col-xl-3">
+<div class="row g-3 align-items-stretch">
+    <div class="col-sm-6 col-xl-3 dash-stat-col">
         <div class="stat-card">
             <div class="stat-label">Módulos activos</div>
             <div class="stat-value">{{ modulos_activos|length }}</div>
             <div class="stat-change">de {{ suscripcion ? suscripcion.plan.modulos|length : 0 }} disponibles</div>
         </div>
     </div>
-    <div class="col-sm-6 col-xl-3">
+    <div class="col-sm-6 col-xl-3 dash-stat-col">
         <div class="stat-card">
             <div class="stat-label">Plan</div>
-            <div class="stat-value" style="font-size:18px;">{{ suscripcion ? suscripcion.plan.nombre : '—' }}</div>
+            <div class="stat-value stat-value--md">{{ suscripcion ? suscripcion.plan.nombre : '—' }}</div>
             <div class="stat-change">
                 {% if suscripcion %}
                     vence {{ suscripcion.fechaVencimiento|date('d/m/Y') }}
@@ -230,10 +306,10 @@ body.light-mode .dash-module-chip { background: #f8fafc; border-color: #e2e8f0; 
             </div>
         </div>
     </div>
-    <div class="col-sm-6 col-xl-3">
+    <div class="col-sm-6 col-xl-3 dash-stat-col">
         <div class="stat-card">
             <div class="stat-label">Rol</div>
-            <div class="stat-value" style="font-size:16px;">
+            <div class="stat-value stat-value--sm">
                 {% if is_granted('ROLE_DEVELOPER') %}Super-admin
                 {% elseif is_granted('ROLE_ADMIN') %}Admin
                 {% else %}Usuario{% endif %}
@@ -241,10 +317,10 @@ body.light-mode .dash-module-chip { background: #f8fafc; border-color: #e2e8f0; 
             <div class="stat-change">{{ app.user.email }}</div>
         </div>
     </div>
-    <div class="col-sm-6 col-xl-3">
+    <div class="col-sm-6 col-xl-3 dash-stat-col">
         <div class="stat-card">
             <div class="stat-label">Tenant</div>
-            <div class="stat-value" style="font-size:14px;word-break:break-all;">{{ tenant.slug }}</div>
+            <div class="stat-value stat-value--xs" style="word-break:break-all;">{{ tenant.slug }}</div>
             <div class="stat-change">
                 <span class="badge {{ tenant.isActivo ? 'bg-success' : 'bg-secondary' }}" style="font-size:10px;">{{ tenant.estado }}</span>
             </div>

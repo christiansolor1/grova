@@ -16,6 +16,9 @@ class WorkVacation
     #[ORM\Column]
     private ?int $id = null;
 
+    #[ORM\Column]
+    private int $tenantId;
+
     #[ORM\Column(type: 'date_immutable')]
     private \DateTimeImmutable $fechaInicio;
 
@@ -67,4 +70,7 @@ class WorkVacation
     public function setNotas(?string $notas): static { $this->notas = $notas; return $this; }
 
     public function getCreatedAt(): \DateTimeImmutable { return $this->createdAt; }
+
+    public function getTenantId(): int { return $this->tenantId; }
+    public function setTenantId(int $tenantId): static { $this->tenantId = $tenantId; return $this; }
 }

@@ -16,6 +16,9 @@ class FishingTripLure
     #[ORM\Column]
     private ?int $id = null;
 
+    #[ORM\Column]
+    private int $tenantId;
+
     #[ORM\ManyToOne(targetEntity: FishingTrip::class, inversedBy: 'lures')]
     #[ORM\JoinColumn(nullable: false, onDelete: 'CASCADE')]
     private FishingTrip $trip;
@@ -43,4 +46,7 @@ class FishingTripLure
 
     public function getNotas(): ?string { return $this->notas; }
     public function setNotas(?string $notas): static { $this->notas = $notas; return $this; }
+
+    public function getTenantId(): int { return $this->tenantId; }
+    public function setTenantId(int $tenantId): static { $this->tenantId = $tenantId; return $this; }
 }

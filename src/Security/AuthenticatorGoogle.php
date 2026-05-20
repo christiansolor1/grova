@@ -28,6 +28,7 @@ use Symfony\Component\Security\Http\Authenticator\Passport\Badge\RememberMeBadge
 use Symfony\Component\Security\Http\Authenticator\Passport\Badge\UserBadge;
 use Symfony\Component\Security\Http\Authenticator\Passport\SelfValidatingPassport;
 use Symfony\Component\String\Slugger\AsciiSlugger;
+use Psr\Log\LoggerInterface;
 
 final class AuthenticatorGoogle extends OAuth2Authenticator
 {
@@ -40,6 +41,7 @@ final class AuthenticatorGoogle extends OAuth2Authenticator
         private readonly UserPasswordHasherInterface $hasher,
         private readonly RouterInterface $router,
         private readonly ServicioLogActividad $log,
+        private readonly LoggerInterface $logger,
     ) {
     }
 
@@ -83,6 +85,10 @@ final class AuthenticatorGoogle extends OAuth2Authenticator
 
     public function onAuthenticationFailure(Request $request, AuthenticationException $exception): ?Response
     {
+        $this->logger->error('Google OAuth failure: '.$exception->getMessage(), [
+            'exception_class' => $exception::class,
+            'trace' => $exception->getTraceAsString(),
+        ]);
         $request->getSession()->getFlashBag()->add('error', 'No se pudo iniciar sesión con Google. Intenta de nuevo.');
 
         return new RedirectResponse($this->router->generate('login', ['_locale' => 'es']));
@@ -90,8 +96,8 @@ final class AuthenticatorGoogle extends OAuth2Authenticator
 
     private function crearUsuarioDesdeGoogle(GoogleUser $googleUser): User
     {
-        $plan = $this->planRepository->findOneBy(['nombre' => 'Trial', 'estado' => 'activo'])
-            ?? throw new \RuntimeException('No existe un plan Trial activo.');
+        $plan = $this->planRepository->findOneBy(['nombre' => 'Pro', 'estado' => 'activo'])
+            ?? throw new \RuntimeException('No existe un plan Pro activo.');
 
         $nombre = (string) ($googleUser->getFirstName() ?: $googleUser->getName() ?: 'Usuario');
         $apellido = (string) ($googleUser->getLastName() ?: '');
@@ -102,7 +108,8 @@ final class AuthenticatorGoogle extends OAuth2Authenticator
         $tenant->setNombre('Workspace de '.$nombre)
                ->setSlug($slug)
                ->setDbName($slug)
-               ->setEstado('activo');
+               ->setEstado('activo')
+               ->setTipo('trial');
         $this->emCore->persist($tenant);
 
         $suscripcion = new Suscripcion();
@@ -110,8 +117,7 @@ final class AuthenticatorGoogle extends OAuth2Authenticator
                     ->setPlan($plan)
                     ->setFechaInicio(new \DateTimeImmutable('today'))
                     ->setFechaVencimiento(new \DateTimeImmutable('+30 days'))
-                    ->setEstado('activa')
-                    ->setTipoCliente('cortesia');
+                    ->setEstado('activa');
         $this->emCore->persist($suscripcion);
 
         foreach ($plan->getModulos() as $claveModulo) {

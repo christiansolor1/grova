@@ -1,6 +1,6 @@
 {% extends 'base.html.twig' %}
 
-{% block title %}{{ 'app.name' | trans }} – {{ 'dashboard.title' | trans }}{% endblock %}
+{% block title %}{{ 'app.name' | trans }} – {{ 'dashboard.title' | trans({}, 'dashboard') }}{% endblock %}
 
 {% block stylesheets %}
 <link rel="stylesheet" href="https://cdn.datatables.net/buttons/3.1.2/css/buttons.dataTables.min.css">
@@ -1137,30 +1137,30 @@ body.light-mode .page-footer-form .form-control {
     <div id="dashboard-stats" class="row g-3 mb-4">
         <div class="col-sm-6 col-xl-3">
             <div class="stat-card">
-                <div class="stat-label">{{ 'stat.active_users' | trans }}</div>
+                <div class="stat-label">{{ 'stat.active_users' | trans({}, 'dashboard') }}</div>
                 <div class="stat-value">1,248</div>
-                <div class="stat-change">{{ 'stat.active_users.change' | trans }}</div>
+                <div class="stat-change">{{ 'stat.active_users.change' | trans({}, 'dashboard') }}</div>
             </div>
         </div>
         <div class="col-sm-6 col-xl-3">
             <div class="stat-card">
-                <div class="stat-label">{{ 'stat.organizations' | trans }}</div>
+                <div class="stat-label">{{ 'stat.organizations' | trans({}, 'dashboard') }}</div>
                 <div class="stat-value">84</div>
-                <div class="stat-change">{{ 'stat.organizations.change' | trans }}</div>
+                <div class="stat-change">{{ 'stat.organizations.change' | trans({}, 'dashboard') }}</div>
             </div>
         </div>
         <div class="col-sm-6 col-xl-3">
             <div class="stat-card">
-                <div class="stat-label">{{ 'stat.revenue' | trans }}</div>
+                <div class="stat-label">{{ 'stat.revenue' | trans({}, 'dashboard') }}</div>
                 <div class="stat-value">$24.8k</div>
-                <div class="stat-change">{{ 'stat.revenue.change' | trans }}</div>
+                <div class="stat-change">{{ 'stat.revenue.change' | trans({}, 'dashboard') }}</div>
             </div>
         </div>
         <div class="col-sm-6 col-xl-3">
             <div class="stat-card">
-                <div class="stat-label">{{ 'stat.churn' | trans }}</div>
+                <div class="stat-label">{{ 'stat.churn' | trans({}, 'dashboard') }}</div>
                 <div class="stat-value">2.1%</div>
-                <div class="stat-change down">{{ 'stat.churn.change' | trans }}</div>
+                <div class="stat-change down">{{ 'stat.churn.change' | trans({}, 'dashboard') }}</div>
             </div>
         </div>
     </div>
@@ -1168,22 +1168,22 @@ body.light-mode .page-footer-form .form-control {
     <!-- Users table -->
     <div id="dashboard-users-table" class="content-card">
         <div class="content-card-header">
-            {{ 'table.users.title' | trans }}
+            {{ 'table.users.title' | trans({}, 'dashboard') }}
             <button class="btn btn-sm btn-primary">
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="me-1"><path d="M12 5v14M5 12h14"/></svg>
-                {{ 'table.users.new' | trans }}
+                {{ 'table.users.new' | trans({}, 'dashboard') }}
             </button>
         </div>
         <div class="content-card-body">
             <table id="users-table" class="table table-hover w-100" style="color:inherit;">
                 <thead>
                     <tr>
-                        <th>{{ 'table.col.id' | trans }}</th>
-                        <th>{{ 'table.col.username' | trans }}</th>
-                        <th>{{ 'table.col.email' | trans }}</th>
-                        <th>{{ 'table.col.role' | trans }}</th>
-                        <th>{{ 'table.col.status' | trans }}</th>
-                        <th>{{ 'table.col.actions' | trans }}</th>
+                        <th>{{ 'table.col.id' | trans({}, 'dashboard') }}</th>
+                        <th>{{ 'table.col.username' | trans({}, 'dashboard') }}</th>
+                        <th>{{ 'table.col.email' | trans({}, 'dashboard') }}</th>
+                        <th>{{ 'table.col.role' | trans({}, 'dashboard') }}</th>
+                        <th>{{ 'table.col.status' | trans({}, 'dashboard') }}</th>
+                        <th>{{ 'table.col.actions' | trans({}, 'dashboard') }}</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -1415,8 +1415,8 @@ const NAV_TRANS = {
     'nav.admin.themes':       {{ 'nav.admin.themes' | trans | json_encode | raw }},
     'nav.settings':           {{ 'nav.settings' | trans | json_encode | raw }},
     'breadcrumb.home':        {{ 'breadcrumb.home' | trans | json_encode | raw }},
-    'dashboard.title':        {{ 'dashboard.title' | trans | json_encode | raw }},
-    'dashboard.subtitle':     {{ 'dashboard.subtitle' | trans | json_encode | raw }},
+    'dashboard.title':        {{ 'dashboard.title' | trans({}, 'dashboard') | json_encode | raw }},
+    'dashboard.subtitle':     {{ 'dashboard.subtitle' | trans({}, 'dashboard') | json_encode | raw }},
 };
 function t(key) { return NAV_TRANS[key] || key; }
 

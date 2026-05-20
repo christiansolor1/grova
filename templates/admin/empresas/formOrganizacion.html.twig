@@ -74,17 +74,18 @@
                         <div class="form-text">{{ 'admin.organizaciones.form.estado_ayuda'|trans }}</div>
                     </div>
 
-                    {% if suscripcionActiva %}
                     <div class="col-md-6">
-                        <label for="tipo_cliente" class="form-label">{{ 'admin.organizaciones.col.tipo'|trans }}</label>
-                        <select id="tipo_cliente" name="tipo_cliente" class="form-select form-select-sm">
-                            <option value="" {{ suscripcionActiva.tipoCliente is null ? 'selected' }}>—</option>
-                            <option value="cortesia" {{ suscripcionActiva.tipoCliente == 'cortesia' ? 'selected' }}>
+                        <label for="tipo" class="form-label">{{ 'admin.organizaciones.col.tipo'|trans }}</label>
+                        <select id="tipo" name="tipo" class="form-select form-select-sm">
+                            <option value="" {{ inquilino.tipo is null ? 'selected' }}>—</option>
+                            <option value="cortesia" {{ inquilino.tipo == 'cortesia' ? 'selected' }}>
                                 {{ 'admin.organizaciones.tipo.cortesia'|trans }}
                             </option>
-                            <option value="pago" {{ suscripcionActiva.tipoCliente == 'pago' ? 'selected' }}>
+                            <option value="pago" {{ inquilino.tipo == 'pago' ? 'selected' }}>
                                 {{ 'admin.organizaciones.tipo.pago'|trans }}
                             </option>
+                            <option value="trial" {{ inquilino.tipo == 'trial' ? 'selected' }}>Prueba</option>
+                            <option value="staff" {{ inquilino.tipo == 'staff' ? 'selected' }}>Staff</option>
                         </select>
                     </div>
 

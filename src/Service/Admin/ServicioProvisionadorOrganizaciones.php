@@ -12,10 +12,7 @@ use App\Entity\User;
 use App\Repository\PlanRepository;
 use App\Repository\TenantRepository;
 use App\Repository\UserRepository;
-use App\Service\TenantContext;
 use Doctrine\ORM\EntityManagerInterface;
-use Doctrine\ORM\Tools\SchemaTool;
-use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 use Symfony\Component\String\Slugger\AsciiSlugger;
 
@@ -23,9 +20,6 @@ final class ServicioProvisionadorOrganizaciones
 {
     public function __construct(
         private readonly EntityManagerInterface $em,
-        #[Autowire(service: 'doctrine.orm.tenant_entity_manager')]
-        private readonly EntityManagerInterface $emTenant,
-        private readonly TenantContext $tenantContext,
         private readonly TenantRepository $repositorioInquilinos,
         private readonly PlanRepository $repositorioPlanes,
         private readonly UserRepository $repositorioUsuarios,
@@ -34,7 +28,7 @@ final class ServicioProvisionadorOrganizaciones
     }
 
     /**
-     * Crea tenant en core, BD dedicada, esquema de módulos, suscripción y opcionalmente admin del tenant.
+     * Crea tenant en core con suscripción, módulos y opcionalmente admin del tenant.
      *
      * @param 'activo'|'suspendido' $estado
      */
@@ -81,13 +75,14 @@ final class ServicioProvisionadorOrganizaciones
         }
 
         $slug = $this->generarSlugUnico($nombreLimpio);
-        $tipoNormalizado = in_array($tipoCliente, ['cortesia', 'pago'], true) ? $tipoCliente : null;
+        $tipoNormalizado = in_array($tipoCliente, ['staff', 'trial', 'cortesia', 'pago'], true) ? $tipoCliente : null;
 
         $inquilino = new Tenant();
         $inquilino->setNombre($nombreLimpio);
         $inquilino->setSlug($slug);
         $inquilino->setDbName($slug);
         $inquilino->setEstado($estado);
+        $inquilino->setTipo($tipoNormalizado);
         $this->em->persist($inquilino);
 
         $suscripcion = new Suscripcion();
@@ -96,7 +91,6 @@ final class ServicioProvisionadorOrganizaciones
         $suscripcion->setFechaInicio(new \DateTimeImmutable('today'));
         $suscripcion->setFechaVencimiento(new \DateTimeImmutable('+1 year'));
         $suscripcion->setEstado('activa');
-        $suscripcion->setTipoCliente($tipoNormalizado);
         $this->em->persist($suscripcion);
 
         foreach ($plan->getModulos() as $claveModulo) {
@@ -121,35 +115,7 @@ final class ServicioProvisionadorOrganizaciones
 
         $this->em->flush();
 
-        $this->provisionarBaseDatosTenant($inquilino);
-
         return $inquilino;
-    }
-
-    private function provisionarBaseDatosTenant(Tenant $inquilino): void
-    {
-        $dbName = preg_replace('/[^a-zA-Z0-9_]/', '', $inquilino->getDbName());
-        if ($dbName === '') {
-            throw new \RuntimeException('Nombre de base de datos del tenant no válido.');
-        }
-
-        $conexionCore = $this->em->getConnection();
-        $conexionCore->executeStatement(sprintf(
-            'CREATE DATABASE IF NOT EXISTS `%s` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci',
-            $dbName,
-        ));
-
-        $this->emTenant->getConnection()->close();
-        $this->tenantContext->setTenant($inquilino, []);
-
-        $herramientaEsquema = new SchemaTool($this->emTenant);
-        $metadatos = $this->emTenant->getMetadataFactory()->getAllMetadata();
-
-        if ($metadatos === []) {
-            return;
-        }
-
-        $herramientaEsquema->createSchema($metadatos);
     }
 
     private function generarSlugUnico(string $nombre): string

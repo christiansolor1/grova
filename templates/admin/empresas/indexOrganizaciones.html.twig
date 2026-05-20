@@ -129,7 +129,7 @@
                                     <form method="post"
                                           action="{{ path('grova_admin_empresa_estado', {id: empresa.id}) }}"
                                           class="d-inline"
-                                          onsubmit="return confirm('{{ (empresa.estaActiva ? 'admin.organizaciones.confirm.desactivar' : 'admin.organizaciones.confirm.activar')|trans({'%nombre%': empresa.nombre})|e('js') }}');">
+                                          data-swal-confirm="{{ (empresa.estaActiva ? 'admin.organizaciones.confirm.desactivar' : 'admin.organizaciones.confirm.activar')|trans({'%nombre%': empresa.nombre})|e('js') }}">
                                         <input type="hidden" name="_token" value="{{ csrf_token('admin_empresa_estado_' ~ empresa.id) }}">
                                         <button type="submit"
                                                 class="btn btn-sm {{ empresa.estaActiva ? 'btn-outline-warning' : 'btn-outline-success' }}"
@@ -144,8 +144,12 @@
                                     {{ empresa.nombre }}
                                     {% if empresa.esCortesia %}
                                         <span class="badge-cortesia ms-1">cortesía</span>
-                                    {% elseif empresa.tipoCliente == 'pago' %}
+                                    {% elseif empresa.esPago %}
                                         <span class="badge-pago ms-1">pago</span>
+                                    {% elseif empresa.esStaff %}
+                                        <span class="badge bg-info ms-1">staff</span>
+                                    {% elseif empresa.esTrial %}
+                                        <span class="badge bg-warning text-dark ms-1">prueba</span>
                                     {% endif %}
                                 </div>
                                 <div class="admin-empresa-slug"><code>{{ empresa.slug }}</code></div>
@@ -197,16 +201,18 @@
                             <td>
                                 {% if empresa.estadoSuscripcion is not null %}
                                 <form method="post"
-                                      action="{{ path('grova_admin_empresa_tipo_cliente', {id: empresa.id}) }}"
+                                      action="{{ path('grova_admin_empresa_tipo', {id: empresa.id}) }}"
                                       class="d-inline">
-                                    <input type="hidden" name="_token" value="{{ csrf_token('admin_tipo_cliente_' ~ empresa.id) }}">
-                                    <select name="tipo_cliente"
+                                    <input type="hidden" name="_token" value="{{ csrf_token('admin_tipo_' ~ empresa.id) }}">
+                                    <select name="tipo"
                                             class="select-tipo-cliente"
                                             onchange="this.form.submit()"
                                             title="{{ 'admin.organizaciones.col.tipo'|trans }}">
-                                        <option value="" {{ empresa.tipoCliente is null ? 'selected' }}>—</option>
-                                        <option value="cortesia" {{ empresa.tipoCliente == 'cortesia' ? 'selected' }}>{{ 'admin.organizaciones.tipo.cortesia'|trans }}</option>
-                                        <option value="pago" {{ empresa.tipoCliente == 'pago' ? 'selected' }}>{{ 'admin.organizaciones.tipo.pago'|trans }}</option>
+                                        <option value="" {{ empresa.tipo is null ? 'selected' }}>—</option>
+                                        <option value="cortesia" {{ empresa.tipo == 'cortesia' ? 'selected' }}>{{ 'admin.organizaciones.tipo.cortesia'|trans }}</option>
+                                        <option value="pago" {{ empresa.tipo == 'pago' ? 'selected' }}>{{ 'admin.organizaciones.tipo.pago'|trans }}</option>
+                                        <option value="trial" {{ empresa.tipo == 'trial' ? 'selected' }}>Prueba</option>
+                                        <option value="staff" {{ empresa.tipo == 'staff' ? 'selected' }}>Staff</option>
                                     </select>
                                 </form>
                                 {% else %}

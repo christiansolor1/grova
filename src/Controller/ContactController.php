@@ -9,7 +9,6 @@ use App\Module\Core\Contact\Repository\ContactRepository;
 use App\Service\MenuTreeBuilder;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
-use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -54,7 +53,6 @@ final class ContactController extends AbstractController
     #[Route('/create', name: 'create', methods: ['POST'])]
     public function create(
         Request $request,
-        #[Autowire(service: 'doctrine.orm.tenant_entity_manager')]
         EntityManagerInterface $em,
     ): Response {
         if (!$this->isCsrfTokenValid('contact_create', (string) $request->request->get('_token'))) {
@@ -76,7 +74,6 @@ final class ContactController extends AbstractController
     public function edit(
         int $id,
         Request $request,
-        #[Autowire(service: 'doctrine.orm.tenant_entity_manager')]
         EntityManagerInterface $em,
     ): Response {
         if (!$this->isCsrfTokenValid('contact_edit_' . $id, (string) $request->request->get('_token'))) {
@@ -98,7 +95,6 @@ final class ContactController extends AbstractController
     public function delete(
         int $id,
         Request $request,
-        #[Autowire(service: 'doctrine.orm.tenant_entity_manager')]
         EntityManagerInterface $em,
     ): Response {
         if (!$this->isCsrfTokenValid('contact_delete_' . $id, (string) $request->request->get('_token'))) {

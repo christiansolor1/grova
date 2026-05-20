@@ -28,6 +28,16 @@ class Tenant
     #[ORM\Column(length: 20)]
     private string $estado = 'activo';
 
+    /**
+     * staff | trial | cortesia | pago
+     * staff = Super Admin / developers (sin restricción)
+     * trial = periodo de prueba (30 días)
+     * cortesia = feedback / early adopters
+     * pago = clientes que pagan
+     */
+    #[ORM\Column(length: 20, nullable: true)]
+    private ?string $tipo = null;
+
     #[ORM\Column]
     private \DateTimeImmutable $createdAt;
 
@@ -53,6 +63,14 @@ class Tenant
     public function getCreatedAt(): \DateTimeImmutable { return $this->createdAt; }
 
     public function isActivo(): bool { return $this->estado === 'activo'; }
+
+    public function getTipo(): ?string { return $this->tipo; }
+    public function setTipo(?string $tipo): static { $this->tipo = $tipo; return $this; }
+
+    public function esStaff(): bool { return $this->tipo === 'staff'; }
+    public function esCortesia(): bool { return $this->tipo === 'cortesia'; }
+    public function esTrial(): bool { return $this->tipo === 'trial'; }
+    public function esPago(): bool { return $this->tipo === 'pago'; }
 
     /** Iniciales para el avatar (máx. 2 letras). */
     public function getInitials(): string

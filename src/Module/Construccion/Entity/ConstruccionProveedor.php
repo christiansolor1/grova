@@ -31,6 +31,9 @@ class ConstruccionProveedor
     #[ORM\Column]
     private ?int $id = null;
 
+    #[ORM\Column]
+    private int $tenantId;
+
     #[ORM\Column(length: 255)]
     private string $nombre = '';
 
@@ -73,4 +76,7 @@ class ConstruccionProveedor
     public function setActivo(bool $a): static { $this->activo = $a; return $this; }
 
     public function getCreatedAt(): \DateTimeImmutable { return $this->createdAt; }
+
+    public function getTenantId(): int { return $this->tenantId; }
+    public function setTenantId(int $tenantId): static { $this->tenantId = $tenantId; return $this; }
 }

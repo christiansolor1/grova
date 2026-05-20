@@ -5,9 +5,7 @@ declare(strict_types=1);
 namespace App\Service\Admin;
 
 use App\DTO\Admin\FilaEmpresaAdmin;
-use App\Entity\Suscripcion;
 use App\Entity\Tenant;
-use App\Repository\SuscripcionRepository;
 use App\Repository\TenantRepository;
 use Doctrine\ORM\EntityManagerInterface;
 
@@ -15,7 +13,6 @@ final class ServicioEmpresasAdmin
 {
     public function __construct(
         private readonly TenantRepository $repositorioInquilinos,
-        private readonly SuscripcionRepository $repositorioSuscripciones,
         private readonly EntityManagerInterface $em,
     ) {
     }
@@ -33,30 +30,24 @@ final class ServicioEmpresasAdmin
                 nombre: $datos['nombre'],
                 slug: $datos['slug'],
                 estado: $datos['estado'],
+                tipo: $datos['tipo'],
                 totalUsuarios: $datos['totalUsuarios'],
                 nombrePlan: $datos['nombrePlan'],
                 estadoSuscripcion: $datos['estadoSuscripcion'],
                 fechaVencimiento: $datos['fechaVencimiento'],
-                tipoCliente: $datos['tipoCliente'],
             );
         }
 
         return $filas;
     }
 
-    public function setTipoClienteEmpresa(int $idInquilino, ?string $tipo): void
+    public function setTipoEmpresa(int $idInquilino, ?string $tipo): void
     {
         $inquilino = $this->obtenerInquilino($idInquilino);
 
-        $tipoNormalizado = in_array($tipo, ['cortesia', 'pago'], true) ? $tipo : null;
+        $tipoNormalizado = in_array($tipo, ['staff', 'trial', 'cortesia', 'pago'], true) ? $tipo : null;
 
-        $suscripcion = $this->repositorioSuscripciones->findUltimaForTenant($inquilino);
-
-        if (!$suscripcion instanceof Suscripcion) {
-            throw new \InvalidArgumentException('La empresa no tiene suscripción registrada.');
-        }
-
-        $suscripcion->setTipoCliente($tipoNormalizado);
+        $inquilino->setTipo($tipoNormalizado);
         $this->em->flush();
     }
 
@@ -101,11 +92,8 @@ final class ServicioEmpresasAdmin
         $inquilino->setNombre($nombreLimpio);
         $inquilino->setEstado($estado);
 
-        $suscripcion = $this->repositorioSuscripciones->findUltimaForTenant($inquilino);
-        if ($suscripcion instanceof Suscripcion) {
-            $tipoNormalizado = in_array($tipoCliente, ['cortesia', 'pago'], true) ? $tipoCliente : null;
-            $suscripcion->setTipoCliente($tipoNormalizado);
-        }
+        $tipoNormalizado = in_array($tipoCliente, ['staff', 'trial', 'cortesia', 'pago'], true) ? $tipoCliente : null;
+        $inquilino->setTipo($tipoNormalizado);
 
         $this->em->flush();
     }

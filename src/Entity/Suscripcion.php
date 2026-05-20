@@ -38,6 +38,9 @@ class Suscripcion
     #[ORM\Column(length: 20, nullable: true)]
     private ?string $tipoCliente = null;
 
+    #[ORM\Column(type: 'datetime_immutable', nullable: true)]
+    private ?\DateTimeImmutable $ultimoRecordatorioEnviadoAt = null;
+
     public function getId(): ?int { return $this->id; }
 
     public function getTenant(): Tenant { return $this->tenant; }
@@ -59,4 +62,7 @@ class Suscripcion
 
     public function getTipoCliente(): ?string { return $this->tipoCliente; }
     public function setTipoCliente(?string $tipoCliente): static { $this->tipoCliente = $tipoCliente; return $this; }
+
+    public function getUltimoRecordatorioEnviadoAt(): ?\DateTimeImmutable { return $this->ultimoRecordatorioEnviadoAt; }
+    public function setUltimoRecordatorioEnviadoAt(?\DateTimeImmutable $ultimoRecordatorioEnviadoAt): static { $this->ultimoRecordatorioEnviadoAt = $ultimoRecordatorioEnviadoAt; return $this; }
 }

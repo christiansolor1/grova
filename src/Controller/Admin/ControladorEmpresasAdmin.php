@@ -66,7 +66,7 @@ final class ControladorEmpresasAdmin extends AbstractController
                 (string) $peticion->request->get('nombre', ''),
                 (int) $peticion->request->get('plan_id', 0),
                 (string) $peticion->request->get('estado', 'activo'),
-                $peticion->request->get('tipo_cliente'),
+                $peticion->request->get('tipo'),
                 $peticion->request->get('admin_email'),
                 $peticion->request->get('admin_username'),
                 $peticion->request->get('admin_password'),
@@ -116,7 +116,7 @@ final class ControladorEmpresasAdmin extends AbstractController
                 $id,
                 (string) $peticion->request->get('nombre', ''),
                 (string) $peticion->request->get('estado', 'activo'),
-                $peticion->request->get('tipo_cliente'),
+                $peticion->request->get('tipo'),
             );
             $this->addFlash('success', 'Organización actualizada.');
         } catch (\InvalidArgumentException $e) {
@@ -128,18 +128,18 @@ final class ControladorEmpresasAdmin extends AbstractController
         return $this->redirectToRoute('grova_admin_empresa_editar', ['id' => $id]);
     }
 
-    #[Route('/empresas/{id}/tipo-cliente', name: 'empresa_tipo_cliente', requirements: ['id' => '\d+'], methods: ['POST'])]
-    public function setTipoCliente(int $id, Request $peticion): Response
+    #[Route('/empresas/{id}/tipo', name: 'empresa_tipo', requirements: ['id' => '\d+'], methods: ['POST'])]
+    public function setTipo(int $id, Request $peticion): Response
     {
-        if (!$this->isCsrfTokenValid('admin_tipo_cliente_'.$id, (string) $peticion->request->get('_token'))) {
+        if (!$this->isCsrfTokenValid('admin_tipo_'.$id, (string) $peticion->request->get('_token'))) {
             $this->addFlash('error', 'Token de seguridad inválido.');
 
             return $this->redirectToRoute('grova_admin_empresas');
         }
 
         try {
-            $this->servicioEmpresas->setTipoClienteEmpresa($id, $peticion->request->get('tipo_cliente'));
-            $this->addFlash('success', 'Tipo de cliente actualizado.');
+            $this->servicioEmpresas->setTipoEmpresa($id, $peticion->request->get('tipo'));
+            $this->addFlash('success', 'Tipo de empresa actualizado.');
         } catch (\InvalidArgumentException $e) {
             $this->addFlash('error', $e->getMessage());
         }

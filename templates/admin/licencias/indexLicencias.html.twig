@@ -152,11 +152,11 @@
 
                                 {% if licencia.isActiva %}
                                 <form method="post"
-                                      action="{{ path('grova_admin_licencias_revocar', {id: inquilino.id, licenciaId: licencia.id}) }}">
+                                      action="{{ path('grova_admin_licencias_revocar', {id: inquilino.id, licenciaId: licencia.id}) }}"
+                                      data-swal-confirm="¿Revocar esta licencia? El cliente perderá acceso.">
                                     <input type="hidden" name="_token" value="{{ csrf_token('revocar_licencia_' ~ licencia.id) }}">
                                     <button type="submit" class="btn btn-sm btn-outline-danger"
-                                            style="font-size:11px; padding:2px 8px;"
-                                            onclick="return confirm('¿Revocar esta licencia? El cliente perderá acceso.')">
+                                            style="font-size:11px; padding:2px 8px;">
                                         <i class="bi bi-shield-x me-1"></i>Revocar
                                     </button>
                                 </form>

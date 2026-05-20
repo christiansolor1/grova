@@ -108,7 +108,7 @@ final class RespaldoWork implements RespaldoModuloInterface
 
     private function getConnection(): Connection
     {
-        $conn = $this->doctrine->getConnection('tenant');
+        $conn = $this->doctrine->getConnection('core');
         if (!$conn instanceof Connection) {
             throw new \RuntimeException('No se pudo obtener la conexión tenant.');
         }

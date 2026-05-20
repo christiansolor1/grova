@@ -46,3 +46,30 @@ profile.biometric_delete: "Delete"
 profile.biometric_register: "Register fingerprint / Face ID"
 profile.btn_save_security: "Save settings"
 profile.confirm_delete_biometric: "Delete biometric credential?"
+
+# ── Preferences ───────────────────────────────────────────────────────────────
+profile.preferences_title: "Preferences"
+profile.theme: "Theme"
+profile.theme_dark: "Dark mode"
+profile.theme_light: "Light mode"
+profile.language: "Default language"
+
+# ── Password change ──────────────────────────────────────────────────────────
+profile.password_title: "Change password"
+profile.password_current: "Current password"
+profile.password_new: "New password"
+profile.password_confirm: "Confirm password"
+profile.btn_change_password: "Change password"
+profile.password_changed: "Password updated. Other sessions have been closed."
+
+# ── Security activity ───────────────────────────────────────────────────────
+profile.security_activity_title: "Security activity"
+profile.security_activity_empty: "No security activity recorded."
+profile.security_activity_90days: "last 90 days"
+profile.security_activity_event: "Event"
+profile.security_activity_device: "Device"
+profile.security_activity_date: "Date"
+profile.security_login_failed: "Failed login"
+profile.security_2fa_failed: "2FA failed"
+profile.security_login_success: "Successful login"
+profile.security_password_changed: "Password changed"

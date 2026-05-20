@@ -33,11 +33,11 @@ class TenantRepository extends ServiceEntityRepository
      *     nombre: string,
      *     slug: string,
      *     estado: string,
+     *     tipo: string|null,
      *     totalUsuarios: int,
      *     nombrePlan: string|null,
      *     estadoSuscripcion: string|null,
      *     fechaVencimiento: \DateTimeImmutable|null,
-     *     tipoCliente: string|null
      * }>
      */
     public function obtenerDatosListadoAdmin(): array
@@ -49,17 +49,17 @@ class TenantRepository extends ServiceEntityRepository
                 't.nombre AS nombre',
                 't.slug AS slug',
                 't.estado AS estado',
+                't.tipo AS tipo',
                 'COUNT(DISTINCT u.id) AS totalUsuarios',
                 'p.nombre AS nombrePlan',
                 's.estado AS estadoSuscripcion',
                 's.fechaVencimiento AS fechaVencimiento',
-                's.tipoCliente AS tipoCliente',
             ])
             ->leftJoin(User::class, 'u', 'WITH', 'u.tenant = t')
             ->leftJoin(Suscripcion::class, 's', 'WITH', 's.tenant = t AND s.estado IN (:estadosSuscripcion)')
             ->leftJoin('s.plan', 'p')
             ->setParameter('estadosSuscripcion', ['activa', 'vencida'])
-            ->groupBy('t.id, t.nombre, t.slug, t.estado, p.nombre, s.estado, s.fechaVencimiento, s.tipoCliente')
+            ->groupBy('t.id, t.nombre, t.slug, t.estado, t.tipo, p.nombre, s.estado, s.fechaVencimiento')
             ->orderBy('t.nombre', 'ASC')
             ->getQuery()
             ->getArrayResult();
@@ -72,11 +72,11 @@ class TenantRepository extends ServiceEntityRepository
                 'nombre' => (string) $fila['nombre'],
                 'slug' => (string) $fila['slug'],
                 'estado' => (string) $fila['estado'],
+                'tipo' => isset($fila['tipo']) ? (string) $fila['tipo'] : null,
                 'totalUsuarios' => (int) $fila['totalUsuarios'],
                 'nombrePlan' => isset($fila['nombrePlan']) ? (string) $fila['nombrePlan'] : null,
                 'estadoSuscripcion' => isset($fila['estadoSuscripcion']) ? (string) $fila['estadoSuscripcion'] : null,
                 'fechaVencimiento' => $vencimiento instanceof \DateTimeImmutable ? $vencimiento : null,
-                'tipoCliente' => isset($fila['tipoCliente']) ? (string) $fila['tipoCliente'] : null,
             ];
         }
 
