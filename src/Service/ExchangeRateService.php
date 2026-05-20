@@ -14,6 +14,21 @@ use Symfony\Contracts\HttpClient\HttpClientInterface;
  */
 final class ExchangeRateService
 {
+    /** Misma fuente que bancatlan.hn y Atlántida Online (JSON público BASA en S3). */
+    private const URL_JSON_ATLANTIDA = 'https://basa-static.s3.amazonaws.com/tasa-de-cambio.json';
+
+    /** Clave de caché; subir versión al cambiar fuentes/parsers para no servir datos viejos. */
+    private const CACHE_KEY = 'exchange_rates_multi_v3';
+
+    private const BANCOS_ESPERADOS = ['Atlántida', 'Ficohsa', 'Occidente'];
+
+    private const ZONA_HONDURAS = 'America/Tegucigalpa';
+
+    public static function claveCacheTasas(): string
+    {
+        return self::CACHE_KEY;
+    }
+
     public function __construct(
         private readonly HttpClientInterface $httpClient,
         private readonly CacheInterface $cache,
@@ -33,9 +48,19 @@ final class ExchangeRateService
      */
     public function getRates(): array
     {
-        return $this->cache->get('exchange_rates_multi', function (ItemInterface $item): array {
-            $item->expiresAfter(4 * 3600);
+        $tasas = $this->leerTasasDesdeCache();
+        if (!isset($tasas['banks']['Atlántida'])) {
+            $this->cache->delete(self::CACHE_KEY);
+            $tasas = $this->leerTasasDesdeCache();
+        }
 
+        return $tasas;
+    }
+
+    /** @return array{banks:array,best_eur:string,best_usd:string,usd:float,usd_venta:float,eur:float,eur_venta:float,fecha:string,source:string} */
+    private function leerTasasDesdeCache(): array
+    {
+        return $this->cache->get(self::CACHE_KEY, function (ItemInterface $item): array {
             $banks = [];
 
             $banks['Atlántida'] = $this->fetchAtlantida();
@@ -48,6 +73,10 @@ final class ExchangeRateService
                 $item->expiresAfter(300);
                 return $this->fallback();
             }
+
+            $faltan = array_diff(self::BANCOS_ESPERADOS, array_keys($banks));
+            // Respuesta incompleta (p. ej. Atlántida caída): reintentar pronto, no 4 h
+            $item->expiresAfter(empty($faltan) ? 4 * 3600 : 300);
 
             // Mejor tasa EUR Compra (más lempiras por euro = mejor para quien recibe euros)
             $bestEur = array_key_first($banks);
@@ -68,7 +97,7 @@ final class ExchangeRateService
                 'usd_venta' => $primary['usd_venta'],
                 'eur'       => $primary['eur'],
                 'eur_venta' => $primary['eur_venta'],
-                'fecha'     => date('d/m/Y'),
+                'fecha'     => (new \DateTimeImmutable('now', new \DateTimeZone(self::ZONA_HONDURAS)))->format('d/m/Y'),
                 'source'    => $bestEur,
             ];
         });
@@ -87,24 +116,29 @@ final class ExchangeRateService
     private function fetchAtlantida(): ?array
     {
         try {
-            $json = $this->fetch('https://basa-static.s3.amazonaws.com/tasa-de-cambio.json');
-            $data = json_decode($json, true);
-            if (!is_array($data) || empty($data)) return null;
+            $json = $this->fetchJson(self::URL_JSON_ATLANTIDA);
+            $data = json_decode($json, true, 512, JSON_THROW_ON_ERROR);
+            if (!is_array($data) || $data === []) {
+                return null;
+            }
 
-            // Buscar la fecha más reciente (hoy primero, luego la última disponible)
-            $hoy = date('d-m-Y');
-            $fecha = isset($data[$hoy]) ? $hoy : array_key_last($data);
+            $hoy = (new \DateTimeImmutable('now', new \DateTimeZone(self::ZONA_HONDURAS)))->format('d-m-Y');
+            $fecha = isset($data[$hoy]) ? $hoy : (string) array_key_last($data);
             $dia = $data[$fecha] ?? null;
-            if (!$dia || empty($dia['USD']['compra']) || empty($dia['EUR']['compra'])) return null;
+            if (!is_array($dia) || empty($dia['USD']['compra']) || empty($dia['EUR']['compra'])) {
+                return null;
+            }
 
             return [
                 'usd'       => (float) $dia['USD']['compra'],
                 'usd_venta' => (float) ($dia['USD']['venta'] ?? $dia['USD']['compra']),
                 'eur'       => (float) $dia['EUR']['compra'],
                 'eur_venta' => (float) ($dia['EUR']['venta'] ?? $dia['EUR']['compra']),
-                'url'       => 'bancatlan.hn',
+                'url'       => 'aolweb.bancatlan.hn',
             ];
-        } catch (\Throwable) { return null; }
+        } catch (\Throwable) {
+            return null;
+        }
     }
 
     /** @return array{usd:float,usd_venta:float,eur:float,eur_venta:float,url:string}|null */
@@ -155,10 +189,38 @@ final class ExchangeRateService
 
     private function fetch(string $url): string
     {
-        return $this->httpClient->request('GET', $url, [
-            'timeout' => 10,
-            'headers' => ['User-Agent' => 'Mozilla/5.0 (compatible; Grova/1.0)'],
-        ])->getContent();
+        return $this->fetchJson($url);
+    }
+
+    private function fetchJson(string $url): string
+    {
+        try {
+            return $this->httpClient->request('GET', $url, [
+                'timeout' => 15,
+                'headers' => [
+                    'User-Agent' => 'Mozilla/5.0 (compatible; Grova/1.0)',
+                    'Accept'     => 'application/json, text/html, */*',
+                ],
+            ])->getContent();
+        } catch (\Throwable) {
+            $contexto = stream_context_create([
+                'http' => [
+                    'timeout'        => 15,
+                    'user_agent'     => 'Mozilla/5.0 (compatible; Grova/1.0)',
+                    'ignore_errors'  => true,
+                ],
+                'ssl' => [
+                    'verify_peer'      => true,
+                    'verify_peer_name' => true,
+                ],
+            ]);
+            $cuerpo = @file_get_contents($url, false, $contexto);
+            if ($cuerpo === false || $cuerpo === '') {
+                throw new \RuntimeException('No se pudo descargar: ' . $url);
+            }
+
+            return $cuerpo;
+        }
     }
 
     /** @return array{banks:array,best_eur:string,best_usd:string,usd:float,usd_venta:float,eur:float,eur_venta:float,fecha:string,source:string} */
