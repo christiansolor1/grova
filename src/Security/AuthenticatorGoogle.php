@@ -64,6 +64,11 @@ final class AuthenticatorGoogle extends OAuth2Authenticator
                 $usuario = $this->userRepository->findOneBy(['email' => $email]);
 
                 if ($usuario instanceof User) {
+                    if (!$usuario->isEmailVerificado()) {
+                        $usuario->setEmailVerificado(true);
+                        $this->emCore->flush();
+                    }
+
                     return $usuario;
                 }
 
@@ -134,6 +139,7 @@ final class AuthenticatorGoogle extends OAuth2Authenticator
                 ->setNombre($nombre)
                 ->setApellido($apellido)
                 ->setRoles(['ROLE_TENANT_ADMIN'])
+                ->setEmailVerificado(true)
                 ->setTenant($tenant);
 
         $contrasenaTemporal = bin2hex(random_bytes(16));
