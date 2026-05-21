@@ -104,8 +104,9 @@ final class AuthenticatorGoogle extends OAuth2Authenticator
 
         $esPrimero = $this->userRepository->count([]) === 0;
 
-        // Todos entran con Free — el Super Admin lo asigna a Pro manualmente
-        $plan = $this->planRepository->findOneBy(['nombre' => 'Free', 'estado' => 'activo'])
+        // Primer usuario (Super Admin) → Pro, resto → Free
+        $nombrePlan = $esPrimero ? 'Pro' : 'Free';
+        $plan = $this->planRepository->findOneBy(['nombre' => $nombrePlan, 'estado' => 'activo'])
             ?? $this->planRepository->findOneBy(['estado' => 'activo'])
             ?? throw new \RuntimeException('No hay ningún plan activo.');
 
