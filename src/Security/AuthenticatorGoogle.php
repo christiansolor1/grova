@@ -145,7 +145,9 @@ final class AuthenticatorGoogle extends OAuth2Authenticator
                 ->setApellido($apellido)
                 ->setRoles($roles)
                 ->setEmailVerificado(true)
-                ->setTenant($tenant);
+                ->setTenant($tenant)
+                ->setAvatarUrl($googleUser->getAvatar())
+                ->setPreferredLocale($googleUser->getLocale() !== null ? (str_starts_with($googleUser->getLocale(), 'es') ? 'es' : 'en') : null);
 
         $contrasenaTemporal = bin2hex(random_bytes(16));
         $usuario->setPassword($this->hasher->hashPassword($usuario, $contrasenaTemporal));

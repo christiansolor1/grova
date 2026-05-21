@@ -209,12 +209,49 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface, TotpTwo
     #[ORM\Column(length: 10, nullable: true)]
     private ?string $preferredLocale = null;
 
+    #[ORM\Column(length: 500, nullable: true)]
+    private ?string $avatarUrl = null;
+
+    #[ORM\Column(length: 20, nullable: true)]
+    private ?string $telefono = null;
+
+    #[ORM\Column(nullable: true)]
+    private ?\DateTimeImmutable $fechaNacimiento = null;
+
+    /** masculino | femenino | otro | prefiero_no_decir */
+    #[ORM\Column(length: 20, nullable: true)]
+    private ?string $genero = null;
+
+    #[ORM\Column(length: 100, nullable: true)]
+    private ?string $pais = null;
+
+    #[ORM\Column(length: 100, nullable: true)]
+    private ?string $ciudad = null;
+
     #[ORM\Column(options: ['default' => 0])]
     private int $sessionVersion = 0;
 
     /** @var list<string> Tokens de sesión revocados individualmente */
     #[ORM\Column(type: 'json', nullable: true)]
     private ?array $revokedSessionTokens = null;
+
+    public function getAvatarUrl(): ?string { return $this->avatarUrl; }
+    public function setAvatarUrl(?string $avatarUrl): static { $this->avatarUrl = $avatarUrl; return $this; }
+
+    public function getTelefono(): ?string { return $this->telefono; }
+    public function setTelefono(?string $telefono): static { $this->telefono = $telefono; return $this; }
+
+    public function getFechaNacimiento(): ?\DateTimeImmutable { return $this->fechaNacimiento; }
+    public function setFechaNacimiento(?\DateTimeImmutable $fechaNacimiento): static { $this->fechaNacimiento = $fechaNacimiento; return $this; }
+
+    public function getGenero(): ?string { return $this->genero; }
+    public function setGenero(?string $genero): static { $this->genero = $genero; return $this; }
+
+    public function getPais(): ?string { return $this->pais; }
+    public function setPais(?string $pais): static { $this->pais = $pais; return $this; }
+
+    public function getCiudad(): ?string { return $this->ciudad; }
+    public function setCiudad(?string $ciudad): static { $this->ciudad = $ciudad; return $this; }
 
     public function getTotpSecret(): ?string { return $this->totpSecret; }
     public function setTotpSecret(?string $secret): static { $this->totpSecret = $secret; return $this; }
