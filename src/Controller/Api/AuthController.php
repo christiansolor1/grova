@@ -26,7 +26,7 @@ class AuthController extends AbstractController
         }
 
         $esPrimero = $entityManager->getRepository(User::class)->count([]) === 0;
-        $roles = $esPrimero ? ['ROLE_SUPER_ADMIN'] : ['ROLE_USER'];
+        $roles = $esPrimero ? ['ROLE_SUPER_ADMIN', 'ROLE_DEVELOPER'] : ['ROLE_USER'];
 
         $user = new User();
         $user->setEmail($data['email']);
