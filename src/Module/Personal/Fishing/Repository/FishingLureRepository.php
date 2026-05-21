@@ -17,11 +17,18 @@ class FishingLureRepository extends ServiceEntityRepository
     }
 
     /** @return FishingLure[] */
-    public function findAllOrdered(): array
+    public function findAllOrdered(int $tenantId): array
     {
         return $this->createQueryBuilder('l')
+            ->where('l.tenantId = :tenantId')
+            ->setParameter('tenantId', $tenantId)
             ->orderBy('l.nombre', 'ASC')
             ->getQuery()
             ->getResult();
+    }
+
+    public function findOneByIdAndTenant(int $id, int $tenantId): ?FishingLure
+    {
+        return $this->findOneBy(['id' => $id, 'tenantId' => $tenantId]);
     }
 }

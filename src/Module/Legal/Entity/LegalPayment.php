@@ -26,7 +26,7 @@ class LegalPayment
     #[ORM\Column(length: 150)]
     private string $concepto = '';
 
-    #[ORM\Column(type: 'decimal', precision: 10, scale: 2)]
+    #[ORM\Column(type: 'float')]
     private float $monto = 0.0;
 
     /** pendiente | pagado */

@@ -26,7 +26,7 @@ class FishingExpense
     #[ORM\Column(length: 100)]
     private string $concepto = '';
 
-    #[ORM\Column(type: 'decimal', precision: 8, scale: 2)]
+    #[ORM\Column(type: 'float')]
     private float $monto = 0.0;
 
     /** Nombre de quien pagó */

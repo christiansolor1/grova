@@ -17,11 +17,18 @@ class FishingFincaRepository extends ServiceEntityRepository
     }
 
     /** @return FishingFinca[] */
-    public function findAllOrdered(): array
+    public function findAllOrdered(int $tenantId): array
     {
         return $this->createQueryBuilder('f')
+            ->where('f.tenantId = :tenantId')
+            ->setParameter('tenantId', $tenantId)
             ->orderBy('f.nombre', 'ASC')
             ->getQuery()
             ->getResult();
+    }
+
+    public function findOneByIdAndTenant(int $id, int $tenantId): ?FishingFinca
+    {
+        return $this->findOneBy(['id' => $id, 'tenantId' => $tenantId]);
     }
 }

@@ -17,7 +17,7 @@ class FishingTripRepository extends ServiceEntityRepository
     }
 
     /** @return FishingTrip[] */
-    public function findLatest(int $limit = 20): array
+    public function findLatest(int $tenantId, int $limit = 20): array
     {
         return $this->createQueryBuilder('t')
             ->leftJoin('t.finca', 'f')
@@ -26,9 +26,16 @@ class FishingTripRepository extends ServiceEntityRepository
             ->addSelect('m')
             ->leftJoin('t.expenses', 'e')
             ->addSelect('e')
+            ->where('t.tenantId = :tenantId')
+            ->setParameter('tenantId', $tenantId)
             ->orderBy('t.fecha', 'DESC')
             ->setMaxResults($limit)
             ->getQuery()
             ->getResult();
+    }
+
+    public function findOneByIdAndTenant(int $id, int $tenantId): ?FishingTrip
+    {
+        return $this->findOneBy(['id' => $id, 'tenantId' => $tenantId]);
     }
 }
