@@ -24,7 +24,7 @@ class Notification
     #[ORM\JoinColumn(nullable: false, onDelete: 'CASCADE')]
     private User $user;
 
-    #[ORM\Column(length: 20, nullable: true)]
+    #[ORM\Column(length: 60, nullable: true)]
     private ?string $tenantSlug = null;
 
     #[ORM\Column(length: 255)]
