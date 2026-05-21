@@ -61,16 +61,18 @@ final class AuthenticatorGoogle extends OAuth2Authenticator
 
                 $usuario = $this->userRepository->findOneBy(['email' => $email]);
 
-                if ($usuario instanceof User) {
-                    if (!$usuario->isEmailVerificado()) {
-                        $usuario->setEmailVerificado(true);
-                        $this->emCore->flush();
-                    }
-
-                    return $usuario;
+                if (!$usuario instanceof User) {
+                    throw new \Symfony\Component\Security\Core\Exception\CustomUserMessageAuthenticationException(
+                        'No tienes una cuenta en Grova. Contacta al administrador.'
+                    );
                 }
 
-                return $this->crearUsuarioDesdeGoogle($googleUser);
+                if (!$usuario->isEmailVerificado()) {
+                    $usuario->setEmailVerificado(true);
+                    $this->emCore->flush();
+                }
+
+                return $usuario;
             }),
             [new RememberMeBadge()],
         );
