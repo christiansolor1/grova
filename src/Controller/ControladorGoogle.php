@@ -16,6 +16,7 @@ final class ControladorGoogle extends AbstractController
     {
         return $clientRegistry->getClient('google')->redirect(
             ['openid', 'email', 'profile'],
+            ['prompt' => 'select_account'],
         );
     }
 
