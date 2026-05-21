@@ -26,7 +26,6 @@ use Symfony\Component\Security\Core\Exception\AuthenticationException;
 use Symfony\Component\Security\Http\Authenticator\Passport\Badge\RememberMeBadge;
 use Symfony\Component\Security\Http\Authenticator\Passport\Badge\UserBadge;
 use Symfony\Component\Security\Http\Authenticator\Passport\SelfValidatingPassport;
-use Symfony\Component\String\Slugger\AsciiSlugger;
 use Psr\Log\LoggerInterface;
 
 final class AuthenticatorGoogle extends OAuth2Authenticator
@@ -105,17 +104,26 @@ final class AuthenticatorGoogle extends OAuth2Authenticator
         $nombre = (string) ($googleUser->getFirstName() ?: $googleUser->getName() ?: 'Usuario');
         $apellido = (string) ($googleUser->getLastName() ?: '');
         $email = (string) $googleUser->getEmail();
-        $slug = $this->generarSlugUnico('Workspace de '.$nombre);
 
         $dbName = (string) $this->emCore->getConnection()->getDatabase();
 
+        // Persistir con slug temporal, luego actualizarlo con el ID real
         $tenant = new Tenant();
         $tenant->setNombre('Workspace de '.$nombre)
-               ->setSlug($slug)
+               ->setSlug('grova_tmp_'.bin2hex(random_bytes(4)))
                ->setDbName($dbName)
                ->setEstado('activo')
                ->setTipo('trial');
         $this->emCore->persist($tenant);
+        $this->emCore->flush(); // necesario para obtener el ID auto-increment
+
+        // Slug definitivo: grova_[4 chars aleatorios][ID 4 dígitos] → ej. grova_x9km0042
+        $chars = 'abcdefghijklmnopqrstuvwxyz0123456789';
+        $key = '';
+        for ($i = 0; $i < 4; $i++) {
+            $key .= $chars[random_int(0, strlen($chars) - 1)];
+        }
+        $tenant->setSlug(sprintf('grova_%s%04d', $key, $tenant->getId()));
 
         $suscripcion = new Suscripcion();
         $suscripcion->setTenant($tenant)
@@ -158,19 +166,4 @@ final class AuthenticatorGoogle extends OAuth2Authenticator
         return $usuario;
     }
 
-    private function generarSlugUnico(string $nombreEmpresa): string
-    {
-        $slugger = new AsciiSlugger();
-        $base = 'grova_'.strtolower((string) $slugger->slug($nombreEmpresa));
-        $base = preg_replace('/[^a-z0-9_]/', '', $base) ?: 'grova_workspace';
-        $slug = $base;
-        $sufijo = 1;
-
-        while ($this->emCore->getRepository(Tenant::class)->findOneBy(['slug' => $slug]) instanceof Tenant) {
-            $slug = $base.'_'.$sufijo;
-            ++$sufijo;
-        }
-
-        return $slug;
-    }
 }
