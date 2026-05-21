@@ -136,9 +136,11 @@ final class AuthenticatorGoogle extends OAuth2Authenticator
         $esPrimero = $this->userRepository->count([]) === 0;
         $roles = $esPrimero ? ['ROLE_SUPER_ADMIN', 'ROLE_DEVELOPER'] : ['ROLE_USER'];
 
+        $username = explode('@', $email)[0];
+
         $usuario = new User();
         $usuario->setEmail($email)
-                ->setUsername($email)
+                ->setUsername($username)
                 ->setNombre($nombre)
                 ->setApellido($apellido)
                 ->setRoles($roles)
