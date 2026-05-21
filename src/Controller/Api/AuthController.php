@@ -25,10 +25,14 @@ class AuthController extends AbstractController
             return $this->json(['message' => 'Email, username and password are required'], 400);
         }
 
+        $esPrimero = $entityManager->getRepository(User::class)->count([]) === 0;
+        $roles = $esPrimero ? ['ROLE_SUPER_ADMIN'] : ['ROLE_USER'];
+
         $user = new User();
         $user->setEmail($data['email']);
         $user->setUsername($data['username']);
         $user->setPassword($passwordHasher->hashPassword($user, $data['password']));
+        $user->setRoles($roles);
 
         $entityManager->persist($user);
         $entityManager->flush();

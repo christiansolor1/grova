@@ -133,12 +133,15 @@ final class AuthenticatorGoogle extends OAuth2Authenticator
             $this->emCore->persist($modulo);
         }
 
+        $esPrimero = $this->userRepository->count([]) === 0;
+        $roles = $esPrimero ? ['ROLE_SUPER_ADMIN'] : ['ROLE_USER'];
+
         $usuario = new User();
         $usuario->setEmail($email)
                 ->setUsername($email)
                 ->setNombre($nombre)
                 ->setApellido($apellido)
-                ->setRoles(['ROLE_USER'])
+                ->setRoles($roles)
                 ->setEmailVerificado(true)
                 ->setTenant($tenant);
 
