@@ -223,6 +223,98 @@ final class ProfileController extends AbstractController
         return $this->redirectToRoute('grova_profile');
     }
 
+    #[Route('/profile/actualizar', name: 'grova_profile_actualizar', methods: ['POST'])]
+    public function actualizarPerfil(Request $request): Response
+    {
+        /** @var User $user */
+        $user = $this->getUser();
+
+        if (!$this->isCsrfTokenValid('actualizar_perfil', (string) $request->request->get('_token'))) {
+            $this->addFlash('error', 'Token de seguridad inválido.');
+
+            return $this->redirectToRoute('grova_profile');
+        }
+
+        $nombre = trim((string) $request->request->get('nombre', ''));
+        $apellido = trim((string) $request->request->get('apellido', ''));
+        $telefono = trim((string) $request->request->get('telefono', ''));
+        $nacimiento = trim((string) $request->request->get('fecha_nacimiento', ''));
+        $genero = (string) $request->request->get('genero', '');
+        $pais = trim((string) $request->request->get('pais', ''));
+        $ciudad = trim((string) $request->request->get('ciudad', ''));
+
+        if ($nombre !== '') {
+            $user->setNombre($nombre);
+        }
+        $user->setApellido($apellido ?: null);
+        $user->setTelefono($telefono ?: null);
+        $user->setPais($pais ?: null);
+        $user->setCiudad($ciudad ?: null);
+
+        if (in_array($genero, ['masculino', 'femenino', 'otro', 'prefiero_no_decir'], true)) {
+            $user->setGenero($genero);
+        } elseif ($genero === '') {
+            $user->setGenero(null);
+        }
+
+        if ($nacimiento !== '') {
+            try {
+                $user->setFechaNacimiento(new \DateTimeImmutable($nacimiento));
+            } catch (\Throwable) {
+                // fecha inválida — ignorar
+            }
+        } else {
+            $user->setFechaNacimiento(null);
+        }
+
+        $this->em->flush();
+
+        $this->addFlash('success', 'Perfil actualizado correctamente.');
+
+        return $this->redirectToRoute('grova_profile');
+    }
+
+    #[Route('/profile/establecer-contrasena', name: 'grova_profile_establecer_contrasena', methods: ['POST'])]
+    public function establecerContrasena(Request $request): Response
+    {
+        /** @var User $user */
+        $user = $this->getUser();
+
+        if (!$this->isCsrfTokenValid('establecer_contrasena', (string) $request->request->get('_token'))) {
+            $this->addFlash('error', 'Token de seguridad inválido.');
+
+            return $this->redirectToRoute('grova_profile');
+        }
+
+        $nueva = (string) $request->request->get('contrasena_nueva', '');
+        $confirmar = (string) $request->request->get('contrasena_confirmar', '');
+
+        if (strlen($nueva) < 8) {
+            $this->addFlash('error', 'La contraseña debe tener al menos 8 caracteres.');
+
+            return $this->redirectToRoute('grova_profile');
+        }
+
+        if ($nueva !== $confirmar) {
+            $this->addFlash('error', 'Las contraseñas no coinciden.');
+
+            return $this->redirectToRoute('grova_profile');
+        }
+
+        $user->setPassword($this->hasher->hashPassword($user, $nueva));
+        $this->em->flush();
+
+        $this->logActividad->registrar(LogActividad::ACCION_CAMBIO_CONTRASENA, $user, $user->getEmail(), [
+            'ip'        => $request->getClientIp(),
+            'userAgent' => $request->headers->get('User-Agent'),
+            'metodo'    => 'establecer_contrasena',
+        ]);
+
+        $this->addFlash('success', 'Contraseña establecida. Ya puedes iniciar sesión con usuario y contraseña.');
+
+        return $this->redirectToRoute('grova_profile');
+    }
+
     #[Route('/profile/preferencias', name: 'grova_profile_preferencias', methods: ['POST'])]
     public function guardarPreferencias(Request $request): Response
     {

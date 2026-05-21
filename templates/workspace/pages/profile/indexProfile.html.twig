@@ -29,48 +29,82 @@ body.light-mode .pref-card .pref-value { color:#0f172a !important; }
         <div class="row g-4">
             <div class="col-xl-4">
                 <div class="text-center p-3 border rounded-3 profile-avatar-card">
-                    <div class="mx-auto mb-3 d-flex align-items-center justify-content-center rounded-circle" style="width:110px;height:110px;background:#2563eb;color:#fff;font-size:36px;font-weight:700;">
-                        {{ app.user.username|first|upper }}
-                    </div>
-                    <h6 class="mb-1">{{ app.user.username }}</h6>
-                    <p class="text-muted mb-3" style="font-size:12px;">{{ app.user.email }}</p>
-                    <button type="button" class="btn btn-sm btn-outline-secondary">{{ 'profile.change_photo' | trans({}, 'profile') }}</button>
+                    {% if app.user.avatarUrl %}
+                        <img src="{{ app.user.avatarUrl }}" alt="Avatar"
+                             class="mx-auto mb-3 rounded-circle d-block"
+                             style="width:110px;height:110px;object-fit:cover;">
+                    {% else %}
+                        <div class="mx-auto mb-3 d-flex align-items-center justify-content-center rounded-circle"
+                             style="width:110px;height:110px;background:#2563eb;color:#fff;font-size:36px;font-weight:700;">
+                            {{ app.user.initials }}
+                        </div>
+                    {% endif %}
+                    <h6 class="mb-1">{{ app.user.nombreCompleto ?: app.user.username }}</h6>
+                    <p class="text-muted mb-1" style="font-size:12px;">{{ app.user.email }}</p>
+                    {% if app.user.ciudad or app.user.pais %}
+                        <p class="text-muted mb-0" style="font-size:11px;">
+                            <i class="bi bi-geo-alt me-1"></i>{{ [app.user.ciudad, app.user.pais]|filter(v => v)|join(', ') }}
+                        </p>
+                    {% endif %}
                 </div>
             </div>
             <div class="col-xl-8">
-                <form>
+                <form method="post" action="{{ path('grova_profile_actualizar', {_locale: app.request.locale}) }}">
+                    <input type="hidden" name="_token" value="{{ csrf_token('actualizar_perfil') }}">
                     <div class="row g-3">
                         <div class="col-md-6">
-                            <label class="form-label">{{ 'profile.first_name' | trans({}, 'profile') }}</label>
-                            <input type="text" class="form-control" placeholder="{{ 'profile.first_name_ph' | trans({}, 'profile') }}">
+                            <label class="form-label">{{ 'profile.first_name'|trans({}, 'profile') }}</label>
+                            <input type="text" name="nombre" class="form-control"
+                                   value="{{ app.user.nombre }}"
+                                   placeholder="{{ 'profile.first_name_ph'|trans({}, 'profile') }}">
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label">{{ 'profile.last_name' | trans({}, 'profile') }}</label>
-                            <input type="text" class="form-control" placeholder="{{ 'profile.last_name_ph' | trans({}, 'profile') }}">
+                            <label class="form-label">{{ 'profile.last_name'|trans({}, 'profile') }}</label>
+                            <input type="text" name="apellido" class="form-control"
+                                   value="{{ app.user.apellido }}"
+                                   placeholder="{{ 'profile.last_name_ph'|trans({}, 'profile') }}">
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label">{{ 'profile.email' | trans({}, 'profile') }}</label>
-                            <input type="email" class="form-control" value="{{ app.user.email }}">
+                            <label class="form-label">{{ 'profile.email'|trans({}, 'profile') }}</label>
+                            <input type="email" class="form-control" value="{{ app.user.email }}" disabled>
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label">{{ 'profile.phone' | trans({}, 'profile') }}</label>
-                            <input type="text" class="form-control" placeholder="+34 600 123 456">
+                            <label class="form-label">{{ 'profile.phone'|trans({}, 'profile') }}</label>
+                            <input type="text" name="telefono" class="form-control"
+                                   value="{{ app.user.telefono }}"
+                                   placeholder="{{ 'profile.phone_ph'|trans({}, 'profile') }}">
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label">{{ 'profile.company' | trans({}, 'profile') }}</label>
-                            <input type="text" class="form-control" placeholder="Grova">
+                            <label class="form-label">{{ 'profile.birth_date'|trans({}, 'profile') }}</label>
+                            <input type="date" name="fecha_nacimiento" class="form-control"
+                                   value="{{ app.user.fechaNacimiento ? app.user.fechaNacimiento|date('Y-m-d') : '' }}">
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label">{{ 'profile.position' | trans({}, 'profile') }}</label>
-                            <input type="text" class="form-control" placeholder="{{ 'profile.position_ph' | trans({}, 'profile') }}">
+                            <label class="form-label">{{ 'profile.gender'|trans({}, 'profile') }}</label>
+                            <select name="genero" class="form-select">
+                                <option value="">{{ 'profile.gender_unspecified'|trans({}, 'profile') }}</option>
+                                <option value="masculino"         {{ app.user.genero == 'masculino'         ? 'selected' : '' }}>{{ 'profile.gender_male'|trans({}, 'profile') }}</option>
+                                <option value="femenino"          {{ app.user.genero == 'femenino'          ? 'selected' : '' }}>{{ 'profile.gender_female'|trans({}, 'profile') }}</option>
+                                <option value="otro"              {{ app.user.genero == 'otro'              ? 'selected' : '' }}>{{ 'profile.gender_other'|trans({}, 'profile') }}</option>
+                                <option value="prefiero_no_decir" {{ app.user.genero == 'prefiero_no_decir' ? 'selected' : '' }}>{{ 'profile.gender_prefer_not'|trans({}, 'profile') }}</option>
+                            </select>
                         </div>
-                        <div class="col-12">
-                            <label class="form-label">{{ 'profile.bio' | trans({}, 'profile') }}</label>
-                            <textarea class="form-control" rows="4" placeholder="{{ 'profile.bio_ph' | trans({}, 'profile') }}"></textarea>
+                        <div class="col-md-6">
+                            <label class="form-label">{{ 'profile.country'|trans({}, 'profile') }}</label>
+                            <input type="text" name="pais" class="form-control"
+                                   value="{{ app.user.pais }}"
+                                   placeholder="{{ 'profile.country_ph'|trans({}, 'profile') }}">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">{{ 'profile.city'|trans({}, 'profile') }}</label>
+                            <input type="text" name="ciudad" class="form-control"
+                                   value="{{ app.user.ciudad }}"
+                                   placeholder="{{ 'profile.city_ph'|trans({}, 'profile') }}">
                         </div>
                         <div class="col-12 d-flex gap-2 justify-content-end">
-                            <button type="button" class="btn btn-outline-secondary">{{ 'profile.cancel' | trans({}, 'profile') }}</button>
-                            <button type="button" class="btn btn-primary">{{ 'profile.save' | trans({}, 'profile') }}</button>
+                            <button type="submit" class="btn btn-primary btn-sm">
+                                <i class="bi bi-check-lg me-1"></i>{{ 'profile.save_profile'|trans({}, 'profile') }}
+                            </button>
                         </div>
                     </div>
                 </form>
@@ -116,6 +150,38 @@ body.light-mode .pref-card .pref-value { color:#0f172a !important; }
             <div class="mt-3">
                 <button type="submit" class="btn btn-outline-secondary btn-sm">
                     <i class="bi bi-check-lg me-1"></i>{{ 'profile.save' | trans({}, 'profile') }}
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+{# ── Establecer contraseña (para usuarios que entraron con Google) ── #}
+<div class="content-card mt-4">
+    <div class="content-card-header">
+        <span><i class="bi bi-google me-2"></i>{{ 'profile.set_password_title'|trans({}, 'profile') }}</span>
+    </div>
+    <div class="content-card-body">
+        <p style="color:#64748b;font-size:.85rem;margin-bottom:1rem;">
+            {{ 'profile.set_password_subtitle'|trans({}, 'profile') }}
+        </p>
+        <form method="post" action="{{ path('grova_profile_establecer_contrasena', {_locale: app.request.locale}) }}">
+            <input type="hidden" name="_token" value="{{ csrf_token('establecer_contrasena') }}">
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <label class="form-label">{{ 'profile.password_new'|trans({}, 'profile') }}</label>
+                    <input type="password" name="contrasena_nueva" class="form-control" minlength="8"
+                           autocomplete="new-password" placeholder="{{ 'profile.password_new'|trans({}, 'profile') }}">
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">{{ 'profile.password_confirm'|trans({}, 'profile') }}</label>
+                    <input type="password" name="contrasena_confirmar" class="form-control" minlength="8"
+                           autocomplete="new-password" placeholder="{{ 'profile.password_confirm'|trans({}, 'profile') }}">
+                </div>
+            </div>
+            <div class="mt-3">
+                <button type="submit" class="btn btn-outline-secondary btn-sm">
+                    <i class="bi bi-check-lg me-1"></i>{{ 'profile.btn_set_password'|trans({}, 'profile') }}
                 </button>
             </div>
         </form>
