@@ -16,15 +16,17 @@ class WorkClientRepository extends ServiceEntityRepository
         parent::__construct($registry, WorkClient::class);
     }
 
-    public function findActivo(): ?WorkClient
+    public function findActivo(int $tenantId): ?WorkClient
     {
-        return $this->findOneBy(['activo' => true]);
+        return $this->findOneBy(['activo' => true, 'tenantId' => $tenantId]);
     }
 
     /** @return WorkClient[] */
-    public function findAllOrdered(): array
+    public function findAllOrdered(int $tenantId): array
     {
         return $this->createQueryBuilder('c')
+            ->where('c.tenantId = :tenantId')
+            ->setParameter('tenantId', $tenantId)
             ->orderBy('c.nombre', 'ASC')
             ->getQuery()
             ->getResult();

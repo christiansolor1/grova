@@ -14,6 +14,7 @@ use App\Module\Personal\Work\Service\HondurasPublicHolidayCalculator;
 use App\Service\ExchangeRateService;
 use App\Service\MenuTreeBuilder;
 use App\Service\NotificationService;
+use App\Service\TenantContext;
 use App\Service\WorkInvoicePaymentProofStorage;
 use App\Service\WorkInvoiceService;
 use App\Module\Personal\Work\Entity\WorkClient;
@@ -38,6 +39,7 @@ final class WorkController extends AbstractController
 {
     public function __construct(
         private readonly MenuTreeBuilder $menuTreeBuilder,
+        private readonly TenantContext $tenantContext,
         private readonly WorkClientRepository $clientRepo,
         private readonly WorkDayRepository $dayRepo,
         private readonly HondurasPublicHolidayCalculator $hnHolidayCalculator,
@@ -69,12 +71,13 @@ final class WorkController extends AbstractController
         $nextYear  = (int) $nextDate->format('Y');
         $nextMonth = (int) $nextDate->format('n');
 
+        $tenantId = $this->tenantContext->getTenant()->getId();
         $tree   = $this->menuTreeBuilder->buildTree($this->isGranted('ROLE_DEVELOPER'));
-        $client = $this->clientRepo->findActivo();
+        $client = $this->clientRepo->findActivo($tenantId);
 
-        $daysInMonth    = $this->dayRepo->findByMonth($year, $month);
-        $days           = $showAll ? $this->dayRepo->findAllSorted() : $daysInMonth;
-        $distinctMonths = $this->dayRepo->findDistinctMonths();
+        $daysInMonth    = $this->dayRepo->findByMonth($tenantId, $year, $month);
+        $days           = $showAll ? $this->dayRepo->findAllSorted($tenantId) : $daysInMonth;
+        $distinctMonths = $this->dayRepo->findDistinctMonths($tenantId);
         $distinctYears     = array_values(array_unique(array_column($distinctMonths, 'year')));
         $monthsForYear     = array_values(array_filter($distinctMonths, fn($m) => $m['year'] === $year));
         $locale            = $request->getLocale();
@@ -139,11 +142,11 @@ final class WorkController extends AbstractController
         $invoiceYear   = (int) $request->query->get('invoice_year', (string) $nowYear);
         $invoiceYear   = max(2020, min(2099, $invoiceYear));
         $invoiceYears  = array_values(array_unique(array_merge(
-            $this->invoiceRepo->findDistinctAnios(),
+            $this->invoiceRepo->findDistinctAnios($tenantId),
             [$nowYear, $invoiceYear],
         )));
         rsort($invoiceYears, SORT_NUMERIC);
-        $invoices       = $this->invoiceRepo->findByAnio($invoiceYear);
+        $invoices       = $this->invoiceRepo->findByAnio($tenantId, $invoiceYear);
         $recargoHnlPerPayment = $client ? $client->getRecargoHnlFloat() : 0.0;
         $invoiceSummary = [
             'count'                 => \count($invoices),
@@ -185,7 +188,7 @@ final class WorkController extends AbstractController
             : null;
         $workRecalcMonthHasInvoice = $invoiceForViewMonth !== null;
         $workRecalcMonthIsPaid     = $invoiceForViewMonth !== null && $invoiceForViewMonth->isPagada();
-        $vacations     = $this->vacationRepo->findByYear($year);
+        $vacations     = $this->vacationRepo->findByYear($tenantId, $year);
 
         // Calendario del mes visto: mapa y contadores siempre con findByMonth (no mezclar "ver todo" con días 1–31)
         $firstDate  = new \DateTimeImmutable(sprintf('%d-%02d-01', $year, $month));
@@ -280,8 +283,8 @@ final class WorkController extends AbstractController
         }
 
         // Vacaciones
-        $vacUsadoS1 = $this->vacationRepo->countDaysUsedInSemestre($year, 1);
-        $vacUsadoS2 = $this->vacationRepo->countDaysUsedInSemestre($year, 2);
+        $vacUsadoS1 = $this->vacationRepo->countDaysUsedInSemestre($tenantId, $year, 1);
+        $vacUsadoS2 = $this->vacationRepo->countDaysUsedInSemestre($tenantId, $year, 2);
         $vacTotal   = $vacUsadoS1 + $vacUsadoS2;
 
         $vigenteYear = (int) $now->format('Y');
@@ -368,7 +371,8 @@ final class WorkController extends AbstractController
             return $this->redirectToRoute('grova_work_index', ['_locale' => $request->getLocale()]);
         }
 
-        $client = $this->clientRepo->findActivo();
+        $tenantId = $this->tenantContext->getTenant()->getId();
+        $client = $this->clientRepo->findActivo($tenantId);
         if ($client === null) {
             $this->addFlash('danger', $this->translator->trans('work.flash_no_active_client_configured', [], 'work'));
             return $this->redirectToRoute('grova_work_index', ['_locale' => $request->getLocale()]);
@@ -391,13 +395,14 @@ final class WorkController extends AbstractController
         }
 
         // Verificar que no exista ya ese día
-        $existing = $this->dayRepo->findOneBy(['fecha' => $fecha]);
+        $existing = $this->dayRepo->findOneBy(['fecha' => $fecha, 'tenantId' => $tenantId]);
         if ($existing !== null) {
             $this->addFlash('warning', $this->translator->trans('work.flash_day_exists_warning', [], 'work'));
             return $this->redirectToRoute('grova_work_index', ['_locale' => $request->getLocale()]);
         }
 
         $day = new WorkDay();
+        $day->setTenantId($tenantId);
         $day->setClient($client);
         $day->setFecha($fecha);
         $day->setHoraEntrada($horaEntrada !== '' ? $horaEntrada : null);
@@ -441,7 +446,8 @@ final class WorkController extends AbstractController
         $esVacacion  = (bool) $request->request->get('es_vacacion', false);
         $notas       = trim((string) $request->request->get('notas', ''));
 
-        $client = $this->clientRepo->findActivo();
+        $tenantId = $this->tenantContext->getTenant()->getId();
+        $client = $this->clientRepo->findActivo($tenantId);
         $oldKeyY = (int) $day->getFecha()->format('Y');
         $oldKeyM = (int) $day->getFecha()->format('n');
         $newFecha = new \DateTimeImmutable($fechaStr);
@@ -482,9 +488,10 @@ final class WorkController extends AbstractController
             return $this->redirectToRoute('grova_work_index', ['_locale' => $request->getLocale()]);
         }
 
+        $tenantId = $this->tenantContext->getTenant()->getId();
         $day = $this->dayRepo->find($id);
         if ($day !== null) {
-            $client = $this->clientRepo->findActivo();
+            $client = $this->clientRepo->findActivo($tenantId);
             if ($client !== null && $this->isMonthInvoiced((int) $day->getFecha()->format('Y'), (int) $day->getFecha()->format('n'), $client)) {
                 $this->addFlash('danger', $this->translator->trans('work.flash_cannot_delete_days_invoiced_month', [], 'work'));
                 return $this->redirectToRoute('grova_work_index', [
@@ -505,8 +512,9 @@ final class WorkController extends AbstractController
     #[Route('/clients', name: 'clients', methods: ['GET'])]
     public function clients(): Response
     {
+        $tenantId = $this->tenantContext->getTenant()->getId();
         $tree    = $this->menuTreeBuilder->buildTree($this->isGranted('ROLE_DEVELOPER'));
-        $clients = $this->clientRepo->findAllOrdered();
+        $clients = $this->clientRepo->findAllOrdered($tenantId);
 
         return $this->render('workspace/pages/work/clients.html.twig', [
             'menu_tree'               => $tree,
@@ -526,7 +534,9 @@ final class WorkController extends AbstractController
             return $this->redirectToRoute('grova_work_clients', ['_locale' => $request->getLocale()]);
         }
 
+        $tenantId = $this->tenantContext->getTenant()->getId();
         $client = new \App\Module\Personal\Work\Entity\WorkClient();
+        $client->setTenantId($tenantId);
         $this->fillClientFromRequest($client, $request);
 
         $em->persist($client);
@@ -575,7 +585,8 @@ final class WorkController extends AbstractController
             return $this->redirectToRoute('grova_work_clients', ['_locale' => $request->getLocale()]);
         }
 
-        foreach ($this->clientRepo->findAll() as $c) {
+        $tenantId = $this->tenantContext->getTenant()->getId();
+        foreach ($this->clientRepo->findAllOrdered($tenantId) as $c) {
             $c->setActivo(false);
         }
 
@@ -600,7 +611,8 @@ final class WorkController extends AbstractController
         $year  = (int) $request->request->get('year', date('Y'));
         $month = max(1, min(12, (int) $request->request->get('month', date('n'))));
 
-        $client = $this->clientRepo->findActivo();
+        $tenantId = $this->tenantContext->getTenant()->getId();
+        $client = $this->clientRepo->findActivo($tenantId);
         if ($client === null) {
             $this->addFlash('danger', $this->translator->trans('work.flash_no_active_client', [], 'work'));
             return $this->redirectToRoute('grova_work_index', ['_locale' => $request->getLocale()]);
@@ -671,7 +683,8 @@ final class WorkController extends AbstractController
             return $this->redirectToRoute('grova_work_index', ['_locale' => $request->getLocale()]);
         }
 
-        $client = $this->clientRepo->findActivo();
+        $tenantId = $this->tenantContext->getTenant()->getId();
+        $client = $this->clientRepo->findActivo($tenantId);
         if ($client === null) {
             $this->addFlash('danger', $this->translator->trans('work.flash_no_active_client', [], 'work'));
             return $this->redirectToRoute('grova_work_index', ['_locale' => $request->getLocale()]);
@@ -1584,7 +1597,9 @@ final class WorkController extends AbstractController
         $semestre    = (int) $request->request->get('semestre', 1);
         $notas       = trim((string) $request->request->get('notas', ''));
 
+        $tenantId = $this->tenantContext->getTenant()->getId();
         $vacation = new WorkVacation();
+        $vacation->setTenantId($tenantId);
         $vacation->setFechaInicio($fechaInicio);
         $vacation->setFechaFin($fechaFin);
         $vacation->setDias($dias);

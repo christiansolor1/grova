@@ -46,7 +46,7 @@ final class WorkInvoiceService
      */
     public function generateForMonth(WorkClient $client, int $year, int $month): WorkInvoice
     {
-        $days = $this->dayRepo->findByMonth($year, $month);
+        $days = $this->dayRepo->findByMonth($client->getTenantId(), $year, $month);
 
         $diasTrabajados = 0;
         $diasBonus      = 0;
@@ -78,7 +78,8 @@ final class WorkInvoiceService
         $this->recalculateInvoiceTotal($invoice);
 
         if ($isNew) {
-            $invoice->setNumero($this->invoiceRepo->findNextNumero());
+            $invoice->setTenantId($client->getTenantId());
+            $invoice->setNumero($this->invoiceRepo->findNextNumero($client->getTenantId()));
             $invoice->setEstado('borrador');
         }
 
@@ -95,7 +96,7 @@ final class WorkInvoiceService
      */
     public function generatePdf(WorkInvoice $invoice): string
     {
-        $days = $this->dayRepo->findByMonth($invoice->getAnio(), $invoice->getMes());
+        $days = $this->dayRepo->findByMonth($invoice->getTenantId(), $invoice->getAnio(), $invoice->getMes());
 
         $html = $this->twig->render('work/invoice_pdf.html.twig', [
             'invoice'              => $invoice,

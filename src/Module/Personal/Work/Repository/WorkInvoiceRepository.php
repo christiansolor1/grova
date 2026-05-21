@@ -23,8 +23,6 @@ class WorkInvoiceRepository extends ServiceEntityRepository
     }
 
     /**
-     * Facturas con fecha de envío o de pago dentro del mes calendario (mini calendario Work).
-     *
      * @return WorkInvoice[]
      */
     public function findWithEnvioOrPagoInCalendarMonth(WorkClient $client, int $year, int $month): array
@@ -42,10 +40,12 @@ class WorkInvoiceRepository extends ServiceEntityRepository
             ->getResult();
     }
 
-    public function findNextNumero(): int
+    public function findNextNumero(int $tenantId): int
     {
         $max = $this->createQueryBuilder('i')
             ->select('MAX(i.numero)')
+            ->where('i.tenantId = :tenantId')
+            ->setParameter('tenantId', $tenantId)
             ->getQuery()
             ->getSingleScalarResult();
 
@@ -53,11 +53,13 @@ class WorkInvoiceRepository extends ServiceEntityRepository
     }
 
     /** @return WorkInvoice[] */
-    public function findLatest(int $limit = 12): array
+    public function findLatest(int $tenantId, int $limit = 12): array
     {
         return $this->createQueryBuilder('i')
             ->leftJoin('i.client', 'c')
             ->addSelect('c')
+            ->where('i.tenantId = :tenantId')
+            ->setParameter('tenantId', $tenantId)
             ->orderBy('i.anio', 'DESC')
             ->addOrderBy('i.mes', 'DESC')
             ->setMaxResults($limit)
@@ -66,19 +68,20 @@ class WorkInvoiceRepository extends ServiceEntityRepository
     }
 
     /** @return WorkInvoice[] */
-    public function findByAnio(int $anio): array
+    public function findByAnio(int $tenantId, int $anio): array
     {
         return $this->createQueryBuilder('i')
             ->leftJoin('i.client', 'c')
             ->addSelect('c')
-            ->where('i.anio = :anio')
+            ->where('i.tenantId = :tenantId')
+            ->andWhere('i.anio = :anio')
+            ->setParameter('tenantId', $tenantId)
             ->setParameter('anio', $anio)
             ->orderBy('i.mes', 'DESC')
             ->getQuery()
             ->getResult();
     }
 
-    /** Última factura con tasas de emisión guardadas (para el card de salario / FX). */
     public function findLatestWithEmissionRates(WorkClient $client): ?WorkInvoice
     {
         return $this->createQueryBuilder('i')
@@ -92,10 +95,12 @@ class WorkInvoiceRepository extends ServiceEntityRepository
     }
 
     /** @return int[] */
-    public function findDistinctAnios(): array
+    public function findDistinctAnios(int $tenantId): array
     {
         $result = $this->createQueryBuilder('i')
             ->select('i.anio')
+            ->where('i.tenantId = :tenantId')
+            ->setParameter('tenantId', $tenantId)
             ->groupBy('i.anio')
             ->orderBy('i.anio', 'DESC')
             ->getQuery()
@@ -105,7 +110,7 @@ class WorkInvoiceRepository extends ServiceEntityRepository
     }
 
     /**
-     * @return array<string, true> Keys "YYYY-MM" for paid invoices (solo el cliente indicado).
+     * @return array<string, true>
      */
     public function findLockedMonths(?WorkClient $client = null): array
     {
@@ -127,7 +132,7 @@ class WorkInvoiceRepository extends ServiceEntityRepository
     }
 
     /**
-     * @return array<string, true> Keys "YYYY-MM" for months with an invoice (solo el cliente indicado).
+     * @return array<string, true>
      */
     public function findInvoicedMonths(?WorkClient $client = null): array
     {

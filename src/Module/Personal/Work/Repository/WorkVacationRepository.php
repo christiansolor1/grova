@@ -16,22 +16,26 @@ class WorkVacationRepository extends ServiceEntityRepository
         parent::__construct($registry, WorkVacation::class);
     }
 
-    public function countDaysUsedInYear(int $year): int
+    public function countDaysUsedInYear(int $tenantId, int $year): int
     {
         return (int) $this->createQueryBuilder('v')
             ->select('SUM(v.dias)')
-            ->where('v.anio = :year')
+            ->where('v.tenantId = :tenantId')
+            ->andWhere('v.anio = :year')
+            ->setParameter('tenantId', $tenantId)
             ->setParameter('year', $year)
             ->getQuery()
             ->getSingleScalarResult();
     }
 
-    public function countDaysUsedInSemestre(int $year, int $semestre): int
+    public function countDaysUsedInSemestre(int $tenantId, int $year, int $semestre): int
     {
         return (int) $this->createQueryBuilder('v')
             ->select('SUM(v.dias)')
-            ->where('v.anio = :year')
+            ->where('v.tenantId = :tenantId')
+            ->andWhere('v.anio = :year')
             ->andWhere('v.semestre = :semestre')
+            ->setParameter('tenantId', $tenantId)
             ->setParameter('year', $year)
             ->setParameter('semestre', $semestre)
             ->getQuery()
@@ -39,10 +43,12 @@ class WorkVacationRepository extends ServiceEntityRepository
     }
 
     /** @return WorkVacation[] */
-    public function findByYear(int $year): array
+    public function findByYear(int $tenantId, int $year): array
     {
         return $this->createQueryBuilder('v')
-            ->where('v.anio = :year')
+            ->where('v.tenantId = :tenantId')
+            ->andWhere('v.anio = :year')
+            ->setParameter('tenantId', $tenantId)
             ->setParameter('year', $year)
             ->orderBy('v.fechaInicio', 'DESC')
             ->getQuery()
