@@ -22,7 +22,7 @@ class Tenant
     #[ORM\Column(length: 60, unique: true)]
     private string $slug = '';
 
-    #[ORM\Column(length: 80, unique: true)]
+    #[ORM\Column(length: 80)]
     private string $dbName = '';
 
     #[ORM\Column(length: 20)]
