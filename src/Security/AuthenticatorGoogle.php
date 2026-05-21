@@ -98,12 +98,16 @@ final class AuthenticatorGoogle extends OAuth2Authenticator
 
     private function crearUsuarioDesdeGoogle(GoogleUser $googleUser): User
     {
-        $plan = $this->planRepository->findOneBy(['nombre' => 'Pro', 'estado' => 'activo'])
-            ?? throw new \RuntimeException('No existe un plan Pro activo.');
-
         $nombre = (string) ($googleUser->getFirstName() ?: $googleUser->getName() ?: 'Usuario');
         $apellido = (string) ($googleUser->getLastName() ?: '');
         $email = (string) $googleUser->getEmail();
+
+        // Primer usuario → Pro, resto → Free
+        $esPrimero = $this->userRepository->count([]) === 0;
+        $nombrePlan = $esPrimero ? 'Pro' : 'Free';
+        $plan = $this->planRepository->findOneBy(['nombre' => $nombrePlan, 'estado' => 'activo'])
+            ?? $this->planRepository->findOneBy(['estado' => 'activo'])
+            ?? throw new \RuntimeException('No hay ningún plan activo.');
 
         $dbName = (string) $this->emCore->getConnection()->getDatabase();
 
@@ -141,7 +145,6 @@ final class AuthenticatorGoogle extends OAuth2Authenticator
             $this->emCore->persist($modulo);
         }
 
-        $esPrimero = $this->userRepository->count([]) === 0;
         $roles = $esPrimero ? ['ROLE_SUPER_ADMIN', 'ROLE_DEVELOPER'] : ['ROLE_USER'];
 
         $username = explode('@', $email)[0];
