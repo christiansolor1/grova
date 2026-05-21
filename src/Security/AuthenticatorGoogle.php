@@ -12,7 +12,6 @@ use App\Entity\User;
 use App\Repository\PlanRepository;
 use App\Repository\UserRepository;
 use App\Service\Auth\ServicioLogActividad;
-use Doctrine\DBAL\Connection;
 use Doctrine\ORM\EntityManagerInterface;
 use KnpU\OAuth2ClientBundle\Client\ClientRegistry;
 use KnpU\OAuth2ClientBundle\Security\Authenticator\OAuth2Authenticator;
@@ -37,7 +36,6 @@ final class AuthenticatorGoogle extends OAuth2Authenticator
         private readonly UserRepository $userRepository,
         private readonly PlanRepository $planRepository,
         private readonly EntityManagerInterface $emCore,
-        private readonly Connection $conexionCore,
         private readonly UserPasswordHasherInterface $hasher,
         private readonly RouterInterface $router,
         private readonly ServicioLogActividad $log,
@@ -112,7 +110,7 @@ final class AuthenticatorGoogle extends OAuth2Authenticator
         $tenant = new Tenant();
         $tenant->setNombre('Workspace de '.$nombre)
                ->setSlug($slug)
-               ->setDbName($slug)
+               ->setDbName('grova')
                ->setEstado('activo')
                ->setTipo('trial');
         $this->emCore->persist($tenant);
@@ -147,13 +145,6 @@ final class AuthenticatorGoogle extends OAuth2Authenticator
 
         $this->emCore->persist($usuario);
         $this->emCore->flush();
-
-        $this->conexionCore->executeStatement(
-            sprintf(
-                'CREATE DATABASE IF NOT EXISTS `%s` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci',
-                $slug,
-            )
-        );
 
         return $usuario;
     }
