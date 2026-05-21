@@ -107,10 +107,12 @@ final class AuthenticatorGoogle extends OAuth2Authenticator
         $email = (string) $googleUser->getEmail();
         $slug = $this->generarSlugUnico('Workspace de '.$nombre);
 
+        $dbName = (string) $this->emCore->getConnection()->getDatabase();
+
         $tenant = new Tenant();
         $tenant->setNombre('Workspace de '.$nombre)
                ->setSlug($slug)
-               ->setDbName('grova')
+               ->setDbName($dbName)
                ->setEstado('activo')
                ->setTipo('trial');
         $this->emCore->persist($tenant);

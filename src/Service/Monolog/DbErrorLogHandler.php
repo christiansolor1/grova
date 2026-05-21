@@ -25,6 +25,10 @@ final class DbErrorLogHandler extends AbstractProcessingHandler
 
     protected function write(LogRecord $record): void
     {
+        if (!$this->em->isOpen()) {
+            return;
+        }
+
         $exception = $record->context['exception'] ?? null;
 
         $errorLog = new ErrorLog();
