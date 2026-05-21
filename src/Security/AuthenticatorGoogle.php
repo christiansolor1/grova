@@ -138,7 +138,7 @@ final class AuthenticatorGoogle extends OAuth2Authenticator
                 ->setUsername($email)
                 ->setNombre($nombre)
                 ->setApellido($apellido)
-                ->setRoles(['ROLE_TENANT_ADMIN'])
+                ->setRoles(['ROLE_USER'])
                 ->setEmailVerificado(true)
                 ->setTenant($tenant);
 
