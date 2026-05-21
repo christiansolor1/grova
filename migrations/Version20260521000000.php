@@ -17,7 +17,7 @@ final class Version20260521000000 extends AbstractMigration
 
     public function up(Schema $schema): void
     {
-        $this->addSql('ALTER TABLE tenant DROP INDEX UNIQ_4E59C462628DE0D9');
+        $this->addSql('ALTER TABLE tenant DROP INDEX IF EXISTS UNIQ_4E59C462628DE0D9');
     }
 
     public function down(Schema $schema): void
