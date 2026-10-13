@@ -1,0 +1,123 @@
+{% extends 'workspace/app_layout.html.twig' %}
+{% block page_title %}Usuarios{% endblock %}
+{% block app_page_subtitle %}Guardias y residentes con acceso al sistema{% endblock %}
+
+{% block app_main %}
+
+<div class="content-card mb-4">
+    <div class="content-card-header d-flex justify-content-between align-items-center">
+        <span>Usuarios del residencial — {{ usuarios|length }}</span>
+        <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#modalCrearUsuario">
+            <i class="bi bi-person-plus me-1"></i>Nuevo usuario
+        </button>
+    </div>
+    <div class="content-card-body p-0">
+        {% if usuarios is empty %}
+            <p class="text-muted text-center py-4">Sin usuarios creados todavía.</p>
+        {% else %}
+        <div class="table-responsive">
+            <table class="table table-sm mb-0">
+                <thead>
+                    <tr>
+                        <th>Nombre</th>
+                        <th>Email / Usuario</th>
+                        <th>Rol</th>
+                        <th>Vinculado a</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for u in usuarios %}
+                    {% set es_guardia = 'ROLE_RESIDENCIAL_GUARDIA' in u.roles %}
+                    <tr>
+                        <td>{{ u.nombre ?? u.email }}</td>
+                        <td class="small text-muted">{{ u.email }}</td>
+                        <td>
+                            {% if es_guardia %}
+                                <span class="badge bg-warning text-dark"><i class="bi bi-shield me-1"></i>Guardia</span>
+                            {% else %}
+                                <span class="badge bg-info text-dark"><i class="bi bi-house me-1"></i>Residente</span>
+                            {% endif %}
+                        </td>
+                        <td class="small text-muted">
+                            {% for p in personas %}
+                                {% if p.userId == u.id %}{{ p.nombreCompleto }} — {{ p.casa ? p.casa.label : '—' }}{% endif %}
+                            {% endfor %}
+                        </td>
+                        <td class="text-end">
+                            <form method="post"
+                                  action="{{ path('grova_residencial_admin_usuario_eliminar', {id: u.id, _locale: app.request.locale}) }}"
+                                  onsubmit="return confirm('¿Eliminar usuario {{ u.nombre ?? u.email }}?')">
+                                <input type="hidden" name="_token" value="{{ csrf_token('residencial_usuario_del_' ~ u.id) }}">
+                                <button type="submit" class="btn btn-xs btn-outline-danger"><i class="bi bi-trash"></i></button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+{# Modal crear usuario #}
+<div class="modal fade" id="modalCrearUsuario" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="bi bi-person-plus me-2"></i>Nuevo usuario</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="post" action="{{ path('grova_residencial_admin_usuario_crear', {_locale: app.request.locale}) }}">
+                <input type="hidden" name="_token" value="{{ csrf_token('residencial_usuario') }}">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Nombre</label>
+                        <input type="text" name="nombre" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Email</label>
+                        <input type="email" name="email" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Contraseña temporal</label>
+                        <input type="password" name="password" class="form-control" required minlength="8">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Rol</label>
+                        <select name="rol" class="form-select" id="rolSelect">
+                            <option value="ROLE_RESIDENCIAL_GUARDIA">Guardia</option>
+                            <option value="ROLE_RESIDENCIAL_RESIDENTE">Residente</option>
+                        </select>
+                    </div>
+                    <div id="personaField" class="mb-3" style="display:none">
+                        <label class="form-label">Vincular a persona (opcional)</label>
+                        <select name="persona_id" class="form-select">
+                            <option value="0">— Sin vincular —</option>
+                            {% for p in personas %}
+                                {% if p.userId is null %}
+                                <option value="{{ p.id }}">{{ p.nombreCompleto }} — {{ p.casa ? p.casa.label : 'sin casa' }}</option>
+                                {% endif %}
+                            {% endfor %}
+                        </select>
+                        <div class="form-text">Solo residentes sin usuario asignado.</div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Crear usuario</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+document.getElementById('rolSelect').addEventListener('change', function () {
+    document.getElementById('personaField').style.display =
+        this.value === 'ROLE_RESIDENCIAL_RESIDENTE' ? '' : 'none';
+});
+</script>
+
+{% endblock %}

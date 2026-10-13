@@ -1,0 +1,146 @@
+{% extends 'workspace/app_layout.html.twig' %}
+{% block page_title %}Casas{% endblock %}
+{% block app_page_subtitle %}Gestión de manzanas y casas del residencial{% endblock %}
+
+{% block page_styles %}
+<style>
+.casa-row { background:#111827; border:1px solid #1e293b; border-radius:10px; padding:.85rem 1rem; margin-bottom:.4rem; display:flex; align-items:center; gap:.75rem; flex-wrap:wrap; }
+body.light-mode .casa-row { background:#fff; border-color:#e2e8f0; }
+.casa-numero { font-weight:700; font-size:1.1rem; min-width:60px; }
+.badge-habitada { background:#16a34a22; color:#4ade80; }
+.badge-vacia    { background:#1e293b;   color:#64748b; }
+.badge-casa     { font-size:10px; padding:2px 8px; border-radius:8px; font-weight:600; }
+</style>
+{% endblock %}
+
+{% block app_main %}
+
+{% for label, messages in app.flashes %}
+    {% for message in messages %}
+        <div class="alert alert-{{ label == 'danger' ? 'danger' : 'success' }} mb-3">{{ message }}</div>
+    {% endfor %}
+{% endfor %}
+
+{% if residencial is null %}
+    <div class="alert alert-warning">No hay un residencial activo. <a href="{{ path('grova_residencial_admin_dashboard', {_locale: app.request.locale}) }}">Configúralo primero.</a></div>
+{% else %}
+
+<div class="content-card mb-3">
+    <div class="content-card-header">
+        Manzanas y casas — {{ residencial.nombre }}
+        <div class="ms-auto d-flex gap-2">
+            <button class="btn btn-sm btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#modalNuevaManzana">
+                <i class="bi bi-plus-lg me-1"></i>Manzana
+            </button>
+            <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#modalNuevaCasa">
+                <i class="bi bi-plus-lg me-1"></i>Casa
+            </button>
+        </div>
+    </div>
+    <div class="content-card-body">
+        {% if casas is empty %}
+            <p class="text-muted text-center py-4">Aún no hay casas registradas.</p>
+        {% else %}
+            {% for manzana in manzanas %}
+                <div class="mb-3">
+                    <div class="small text-muted mb-2 text-uppercase" style="letter-spacing:.06em;">
+                        <i class="bi bi-grid me-1"></i>{{ manzana.nombre }}
+                    </div>
+                    {% for casa in casas if casa.manzana and casa.manzana.id == manzana.id %}
+                        {% include 'workspace/pages/residencial/admin/_casa_row.html.twig' with {casa: casa} %}
+                    {% endfor %}
+                </div>
+            {% endfor %}
+
+            {# Casas sin manzana #}
+            {% set sin_manzana = casas|filter(c => c.manzana is null) %}
+            {% if sin_manzana|length > 0 %}
+                <div class="mb-3">
+                    <div class="small text-muted mb-2 text-uppercase" style="letter-spacing:.06em;">
+                        <i class="bi bi-grid me-1"></i>Sin manzana
+                    </div>
+                    {% for casa in sin_manzana %}
+                        {% include 'workspace/pages/residencial/admin/_casa_row.html.twig' with {casa: casa} %}
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endif %}
+    </div>
+</div>
+
+{% endif %}
+
+{# ── Modal nueva manzana ── #}
+<div class="modal fade" id="modalNuevaManzana" tabindex="-1">
+    <div class="modal-dialog modal-sm">
+        <div class="modal-content">
+            <form method="post" action="{{ path('grova_residencial_admin_manzana_create', {_locale: app.request.locale}) }}">
+                <input type="hidden" name="_token" value="{{ csrf_token('residencial_manzana') }}">
+                <div class="modal-header">
+                    <h5 class="modal-title">Nueva manzana</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <label class="form-label">Nombre</label>
+                    <input type="text" name="nombre" class="form-control" required placeholder="Manzana A">
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-sm btn-primary">Crear</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+{# ── Modal nueva casa ── #}
+<div class="modal fade" id="modalNuevaCasa" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="post" action="{{ path('grova_residencial_admin_casa_create', {_locale: app.request.locale}) }}">
+                <input type="hidden" name="_token" value="{{ csrf_token('residencial_casa') }}">
+                <div class="modal-header">
+                    <h5 class="modal-title">Nueva casa</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row g-2">
+                        <div class="col-6">
+                            <label class="form-label">Número</label>
+                            <input type="text" name="numero" class="form-control" required placeholder="A-01">
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label">Tipo</label>
+                            <select name="tipo" class="form-select">
+                                <option value="casa">Casa</option>
+                                <option value="apartamento">Apartamento</option>
+                            </select>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label">Manzana</label>
+                            <select name="manzana_id" class="form-select">
+                                <option value="0">Sin manzana</option>
+                                {% for manzana in manzanas %}
+                                    <option value="{{ manzana.id }}">{{ manzana.nombre }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label">Estado</label>
+                            <select name="estado" class="form-select">
+                                <option value="vacia">Vacía</option>
+                                <option value="habitada">Habitada</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-sm btn-primary">Crear</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

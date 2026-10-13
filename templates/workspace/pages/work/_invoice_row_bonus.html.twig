@@ -1,0 +1,12 @@
+{# Columna bonus de la fila de factura #}
+{% if inv.diasBonus > 0 %}
+    <span style="color:#22c55e;">+{{ inv.diasBonus }}d</span>
+{% else %}
+    <span style="color:#475569;">—</span>
+{% endif %}
+{% if inv.extraBonusSumFloat > 0 %}
+    <div class="small text-warning text-nowrap mt-1" style="font-size:10px;line-height:1.2;"
+         title="{{ 'work.invoice_bonus_lines_tooltip'|trans({'%n%': inv.bonusLines|length}, 'work') }}">
+        +€{{ inv.extraBonusSumFloat|number_format(2, '.', ',') }}{% if inv.bonusLines|length > 1 %} <span class="text-muted">({{ inv.bonusLines|length }})</span>{% endif %}
+    </div>
+{% endif %}

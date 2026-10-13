@@ -1,0 +1,254 @@
+{% extends 'workspace/app_layout.html.twig' %}
+
+{% block page_title %}Plan de pago — {{ compromiso.nombre }}{% endblock %}
+{% block app_page_subtitle %}{{ cuotasPagadas }} de {{ plan|length }} cuotas · {{ pctCompletado }}% completado{% endblock %}
+
+{% block page_styles %}
+<style>
+.plan-header { background:#0f172a; border:1px solid #1e293b; border-radius:14px; padding:1.25rem; margin-bottom:1.5rem; }
+body.light-mode .plan-header { background:#fff; border-color:#e2e8f0; }
+.plan-kpi { text-align:center; }
+.plan-kpi-val { font-size:20px; font-weight:800; color:#f1f5f9; line-height:1; }
+body.light-mode .plan-kpi-val { color:#0f172a; }
+.plan-kpi-val--green { color:#4ade80; }
+.plan-kpi-val--red   { color:#f87171; }
+.plan-kpi-val--blue  { color:#818cf8; }
+.plan-kpi-label { font-size:10px; text-transform:uppercase; letter-spacing:.07em; color:#64748b; margin-top:.25rem; }
+.plan-progress { height:10px; background:#1e293b; border-radius:5px; overflow:hidden; margin:1rem 0; }
+body.light-mode .plan-progress { background:#e2e8f0; }
+.plan-progress-fill { height:100%; border-radius:5px; background:linear-gradient(90deg,#6366f1,#818cf8); transition:width .5s ease; }
+.plan-table { width:100%; border-collapse:collapse; font-size:13px; }
+.plan-table th { font-size:10px; text-transform:uppercase; letter-spacing:.07em; color:#64748b; padding:.5rem .75rem; border-bottom:1px solid #1e293b; text-align:left; font-weight:600; }
+body.light-mode .plan-table th { border-bottom-color:#e2e8f0; }
+.plan-table td { padding:.6rem .75rem; border-bottom:1px solid rgba(30,41,59,.4); vertical-align:middle; }
+body.light-mode .plan-table td { border-bottom-color:#f1f5f9; }
+.plan-table tr:last-child td { border-bottom:none; }
+.plan-table tr:hover td { background:rgba(99,102,241,.04); }
+.estado-badge { display:inline-block; padding:.15rem .55rem; border-radius:20px; font-size:11px; font-weight:600; }
+.estado-pagado   { background:rgba(74,222,128,.12); color:#4ade80; }
+.estado-vencido  { background:rgba(248,113,113,.12); color:#f87171; }
+.estado-pendiente{ background:rgba(148,163,184,.10); color:#94a3b8; }
+.estado-futuro   { background:rgba(30,41,59,.4); color:#475569; font-style:italic; }
+.doc-chip { display:inline-flex; align-items:center; gap:.3rem; font-size:11px; color:#38bdf8; background:rgba(56,189,248,.08); border-radius:20px; padding:.1rem .5rem; text-decoration:none; }
+.doc-chip:hover { background:rgba(56,189,248,.15); color:#38bdf8; }
+</style>
+{% endblock %}
+
+{% block app_main %}
+
+{# Breadcrumb #}
+<nav style="font-size:12px;color:#64748b;margin-bottom:1rem;">
+    <a href="{{ path('grova_financiera_index', {_locale: app.request.locale}) }}" style="color:#6366f1;text-decoration:none;">
+        <i class="bi bi-arrow-left me-1"></i>Financiera
+    </a>
+    <span class="mx-2">/</span>
+    {{ compromiso.nombre }}
+</nav>
+
+{# Cabecera con KPIs #}
+<div class="plan-header">
+    <div class="d-flex align-items-start justify-content-between mb-3 flex-wrap gap-2">
+        <div>
+            <div style="font-size:16px;font-weight:700;color:#f1f5f9;">{{ compromiso.nombre }}</div>
+            <div style="font-size:12px;color:#64748b;margin-top:.2rem;">
+                {{ compromiso.tipo|replace({'_':' '})|capitalize }} ·
+                L {{ compromiso.montoCuota|number_format(2) }}/mes ·
+                día {{ compromiso.diaPago }} de cada mes
+                {% if compromiso.fechaFin %} · hasta {{ compromiso.fechaFin|date('M Y') }}{% endif %}
+            </div>
+            {% if compromiso.descripcion %}
+            <div style="font-size:11px;color:#64748b;margin-top:.35rem;">{{ compromiso.descripcion }}</div>
+            {% endif %}
+        </div>
+
+        <span class="estado-badge {{ pctCompletado >= 100 ? 'estado-pagado' : 'estado-pendiente' }}">
+            {{ pctCompletado }}% completado
+        </span>
+    </div>
+
+    {# Desglose especial para compromisos con prima (ej. terreno) #}
+    {% if pagosSinCuota > 0 %}
+    <div class="mb-3 p-3" style="background:rgba(99,102,241,.06);border-radius:10px;border:1px solid rgba(99,102,241,.15);">
+        <div style="font-size:10px;text-transform:uppercase;letter-spacing:.07em;color:#6366f1;font-weight:600;margin-bottom:.75rem;">Desglose del financiamiento</div>
+        <div class="d-flex flex-wrap gap-4">
+            <div>
+                <div style="font-size:10px;color:#64748b;">Prima pagada</div>
+                <div style="font-size:15px;font-weight:700;color:#4ade80;">L {{ pagosSinCuota|number_format(2) }}</div>
+            </div>
+            <div>
+                <div style="font-size:10px;color:#64748b;">Cuotas ({{ plan|length }} × L {{ compromiso.montoCuota|number_format(2) }})</div>
+                <div style="font-size:15px;font-weight:700;color:#818cf8;">L {{ totalPlan|number_format(2) }}</div>
+            </div>
+            <div>
+                <div style="font-size:10px;color:#64748b;">Total comprometido</div>
+                <div style="font-size:15px;font-weight:700;color:#f1f5f9;">L {{ (pagosSinCuota + totalPlan)|number_format(2) }}</div>
+            </div>
+            <div>
+                <div style="font-size:10px;color:#64748b;">Ya pagado (prima + cuotas)</div>
+                <div style="font-size:15px;font-weight:700;color:#4ade80;">L {{ (pagosSinCuota + totalPagado)|number_format(2) }}</div>
+            </div>
+            <div>
+                <div style="font-size:10px;color:#64748b;">Saldo pendiente</div>
+                <div style="font-size:15px;font-weight:700;color:#f87171;">L {{ totalPendiente|number_format(2) }}</div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <div class="plan-progress">
+        <div class="plan-progress-fill" style="width:{{ pctCompletado }}%;"></div>
+    </div>
+
+    <div class="row g-3 text-center">
+        <div class="col-6 col-md-3">
+            <div class="plan-kpi">
+                <div class="plan-kpi-val">{{ plan|length }}</div>
+                <div class="plan-kpi-label">Total cuotas</div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="plan-kpi">
+                <div class="plan-kpi-val plan-kpi-val--green">{{ cuotasPagadas }}</div>
+                <div class="plan-kpi-label">Pagadas</div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="plan-kpi">
+                <div class="plan-kpi-val plan-kpi-val--blue">L {{ totalPagado|number_format(2) }}</div>
+                <div class="plan-kpi-label">Pagado</div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="plan-kpi">
+                <div class="plan-kpi-val plan-kpi-val--red">L {{ totalPendiente|number_format(2) }}</div>
+                <div class="plan-kpi-label">Pendiente</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{# Tabla del plan #}
+<div class="content-card">
+    <div class="content-card-body p-0" style="overflow-x:auto;">
+        <table class="plan-table">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Fecha vencimiento</th>
+                    <th>Monto</th>
+                    <th>Pagado</th>
+                    <th>Saldo</th>
+                    <th>Estado</th>
+                    <th>Comprobantes</th>
+                </tr>
+            </thead>
+            <tbody>
+            {% for fila in plan %}
+            <tr>
+                <td style="color:#64748b;font-variant-numeric:tabular-nums;">{{ fila.numero }}</td>
+                <td style="font-variant-numeric:tabular-nums;">
+                    {{ fila.fecha|date('d/M/Y') }}
+                </td>
+                <td style="font-variant-numeric:tabular-nums;">L {{ fila.monto|number_format(2) }}</td>
+                <td style="font-variant-numeric:tabular-nums;color:{{ fila.pagado > 0 ? '#4ade80' : '#475569' }};">
+                    {{ fila.pagado > 0 ? 'L ' ~ fila.pagado|number_format(2) : '—' }}
+                </td>
+                <td style="font-variant-numeric:tabular-nums;">
+                    {% set saldo = fila.monto - fila.pagado %}
+                    {{ saldo > 0 ? 'L ' ~ saldo|number_format(2) : '—' }}
+                </td>
+                <td>
+                    <span class="estado-badge estado-{{ fila.estado }}">
+                        {% if fila.estado == 'pagado' %}✓ Pagado
+                        {% elseif fila.estado == 'vencido' %}⚠ Vencido
+                        {% elseif fila.estado == 'pendiente' %}Pendiente
+                        {% else %}Próximo{% endif %}
+                    </span>
+                </td>
+                <td>
+                    {% if fila.cuota is not null %}
+                    {% set docs = docsPorCuota[fila.cuota.id] ?? [] %}
+                    {% for d in docs %}
+                    <a href="{{ path('grova_financiera_documento_ver', {_locale: app.request.locale, id: d.id}) }}"
+                       target="_blank" class="doc-chip me-1" title="{{ d.nombreOriginal }}">
+                        <i class="bi bi-{{ d.esPdf ? 'file-earmark-pdf' : 'image' }}"></i>
+                        {{ d.descripcion ?? d.nombreOriginal|slice(0,15) ~ (d.nombreOriginal|length > 15 ? '…' : '') }}
+                    </a>
+                    {% endfor %}
+                    <button type="button" class="btn btn-link p-0" style="font-size:12px;color:#6366f1;"
+                        data-bs-toggle="modal" data-bs-target="#modal-doc-cuota-{{ fila.cuota.id }}">
+                        <i class="bi bi-plus-circle"></i>
+                    </button>
+                    {% else %}
+                    <span style="font-size:11px;color:#334155;font-style:italic;">No generada aún</span>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+            </tbody>
+            <tfoot>
+                <tr>
+                    <td colspan="2" style="font-weight:700;font-size:13px;color:#94a3b8;padding:.75rem;">Total</td>
+                    <td style="font-weight:700;color:#f1f5f9;">L {{ totalPlan|number_format(2) }}</td>
+                    <td style="font-weight:700;color:#4ade80;">L {{ totalPagado|number_format(2) }}</td>
+                    <td style="font-weight:700;color:#f87171;">L {{ totalPendiente|number_format(2) }}</td>
+                    <td colspan="2"></td>
+                </tr>
+            </tfoot>
+        </table>
+    </div>
+</div>
+
+{# Modales: subir comprobante por cuota #}
+{% for fila in plan %}
+{% if fila.cuota is not null %}
+{% set docs = docsPorCuota[fila.cuota.id] ?? [] %}
+<div class="modal fade" id="modal-doc-cuota-{{ fila.cuota.id }}" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" style="font-size:14px;">
+                    <i class="bi bi-receipt me-2"></i>Comprobantes — Cuota #{{ fila.numero }} ({{ fila.fecha|date('d/M/Y') }})
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                {% if docs is not empty %}
+                <ul class="list-unstyled mb-3">
+                    {% for d in docs %}
+                    <li class="d-flex align-items-center gap-2 py-2 border-bottom" style="border-color:#1e293b !important;font-size:13px;">
+                        <i class="bi bi-{{ d.esPdf ? 'file-earmark-pdf text-danger' : 'image text-info' }}" style="font-size:16px;"></i>
+                        <a href="{{ path('grova_financiera_documento_ver', {_locale: app.request.locale, id: d.id}) }}" target="_blank" class="text-decoration-none" style="color:#6366f1;">
+                            {{ d.nombreOriginal }}
+                        </a>
+                        {% if d.descripcion %}<span style="font-size:11px;color:#64748b;">· {{ d.descripcion }}</span>{% endif %}
+                        <span style="font-size:10px;color:#475569;margin-left:auto;">{{ d.tamanoLegible() }}</span>
+                        <form method="post" action="{{ path('grova_financiera_documento_eliminar', {_locale: app.request.locale, id: d.id}) }}" class="d-inline" onsubmit="return confirm('¿Eliminar?')">
+                            <input type="hidden" name="_token" value="{{ csrf_token('fin_doc_del_' ~ d.id) }}">
+                            <button type="submit" class="btn btn-link p-0 text-danger" style="font-size:13px;"><i class="bi bi-trash3"></i></button>
+                        </form>
+                    </li>
+                    {% endfor %}
+                </ul>
+                {% endif %}
+                <form method="post" action="{{ path('grova_financiera_documento_subir', {_locale: app.request.locale}) }}" enctype="multipart/form-data">
+                    <input type="hidden" name="_token" value="{{ csrf_token('fin_documento') }}">
+                    <input type="hidden" name="entidad_tipo" value="cuota">
+                    <input type="hidden" name="entidad_id" value="{{ fila.cuota.id }}">
+                    <div class="mb-2">
+                        <input type="file" name="archivo" class="form-control form-control-sm" accept=".pdf,.jpg,.jpeg,.png,.webp" required>
+                        <div style="font-size:11px;color:#64748b;margin-top:.25rem;">PDF, JPG, PNG o WEBP · máx. 10 MB</div>
+                    </div>
+                    <div class="mb-3">
+                        <input type="text" name="descripcion" class="form-control form-control-sm" placeholder="Ej: Recibo físico #{{ fila.numero }}">
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-sm w-100"><i class="bi bi-upload me-1"></i>Subir comprobante</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endfor %}
+
+{% endblock app_main %}

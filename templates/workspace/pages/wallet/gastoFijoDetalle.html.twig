@@ -1,0 +1,465 @@
+{% extends 'workspace/app_layout.html.twig' %}
+{% block page_title %}{{ gasto.nombre }}{% endblock %}
+{% block app_page_subtitle %}Detalle del compromiso{% endblock %}
+
+{% block page_styles %}
+<style>
+.detalle-hero { background:linear-gradient(135deg,#1e293b 0%,#0f172a 100%); border:1px solid #334155; border-radius:14px; padding:1.75rem 2rem; }
+body.light-mode .detalle-hero { background:linear-gradient(135deg,#f1f5f9 0%,#e2e8f0 100%); border-color:#cbd5e1; }
+
+.stat-box { background:#111827; border:1px solid #1e293b; border-radius:10px; padding:1rem 1.25rem; }
+body.light-mode .stat-box { background:#fff; border-color:#e2e8f0; }
+.stat-box .stat-label { font-size:10px; text-transform:uppercase; letter-spacing:.07em; color:#64748b; margin-bottom:.2rem; }
+.stat-box .stat-value { font-size:20px; font-weight:800; }
+
+.schedule-table th { font-size:11px; text-transform:uppercase; letter-spacing:.05em; color:#64748b; background:transparent; border-color:#1e293b; }
+body.light-mode .schedule-table th { border-color:#e2e8f0; }
+.schedule-table td { font-size:13px; vertical-align:middle; border-color:#1e293b22; }
+body.light-mode .schedule-table td { border-color:#e2e8f022; }
+.schedule-table tr.fila-actual td { background:#1d4ed840; }
+body.light-mode .schedule-table tr.fila-actual td { background:#dbeafe; }
+.schedule-table tr.fila-prima td { background:#78350f22; }
+body.light-mode .schedule-table tr.fila-prima td { background:#fef3c7; }
+.schedule-table tr.fila-post td { opacity:.55; }
+
+.badge-estado-pagado    { background:#14532d; color:#86efac; }
+.badge-estado-pendiente { background:#1e293b; color:#94a3b8; }
+.badge-estado-vencido   { background:#7f1d1d; color:#fca5a5; }
+.badge-estado-en_riesgo { background:#78350f; color:#fcd34d; }
+.badge-estado-info      { background:#1e3a5f; color:#93c5fd; }
+.badge-estado-post      { background:#1e293b; color:#64748b; font-style:italic; }
+body.light-mode .badge-estado-pagado    { background:#dcfce7; color:#166534; }
+body.light-mode .badge-estado-pendiente { background:#f1f5f9; color:#64748b; }
+body.light-mode .badge-estado-vencido   { background:#fee2e2; color:#b91c1c; }
+body.light-mode .badge-estado-en_riesgo { background:#fef3c7; color:#92400e; }
+body.light-mode .badge-estado-info      { background:#dbeafe; color:#1d4ed8; }
+body.light-mode .badge-estado-post      { background:#f8fafc; color:#94a3b8; font-style:italic; }
+</style>
+{% endblock %}
+
+{% block app_main %}
+
+{# ── Breadcrumb ── #}
+<nav class="mb-3">
+    <a href="{{ path('grova_wallet_index', {_locale: app.request.locale}) }}" class="text-secondary text-decoration-none small">
+        <i class="bi bi-wallet2 me-1"></i>Wallet
+    </a>
+    <span class="text-muted small mx-1">/</span>
+    <span class="small text-muted">{{ gasto.nombre }}</span>
+</nav>
+
+{# ── Hero ── #}
+<div class="detalle-hero mb-4">
+    <div class="d-flex align-items-start justify-content-between gap-3 flex-wrap">
+        <div>
+            <div class="small text-muted mb-1" style="font-size:11px;text-transform:uppercase;letter-spacing:.07em;">
+                {{ gasto.tipoLabel }}
+                {% if not gasto.activo %}<span class="ms-2 badge bg-secondary">Inactivo</span>{% endif %}
+            </div>
+            <h4 class="mb-1 fw-bold" style="font-size:22px;">{{ gasto.nombre }}</h4>
+            <div class="small text-muted">
+                Pago día <strong>{{ gasto.diaPago }}</strong>
+                {% if gasto.diaCorte %} · Corte día <strong>{{ gasto.diaCorte }}</strong>{% endif %}
+                {% if gasto.cuenta %} · <span class="text-secondary">{{ gasto.cuenta.nombre }}</span>{% endif %}
+                {% if gasto.category %} · <span class="text-secondary">{{ gasto.category.nombre }}</span>{% endif %}
+            </div>
+        </div>
+        <a href="{{ path('grova_wallet_index', {_locale: app.request.locale}) }}" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-arrow-left me-1"></i>Volver
+        </a>
+    </div>
+</div>
+
+{# ── Stat boxes ── #}
+<div class="row g-3 mb-4">
+
+    {% if gasto.tipo in ['financiado', 'prestamo'] and gasto.fechaInicioPlan %}
+    <div class="col-6 col-md-3">
+        <div class="stat-box">
+            <div class="stat-label">Cuota actual</div>
+            <div class="stat-value" id="stat-cuota-actual">
+                {{ cuota_actual ?: '—' }}
+                <span style="font-size:13px;font-weight:400;color:#64748b;">/ {{ gasto.mesesFinanciamiento }}</span>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="stat-box">
+            <div class="stat-label">Meses restantes</div>
+            <div class="stat-value">{{ gasto.mesesRestantes is not null ? gasto.mesesRestantes : '—' }}</div>
+        </div>
+    </div>
+    {% if gasto.montoPrimaFloat > 0 %}
+    <div class="col-6 col-md-3">
+        <div class="stat-box">
+            <div class="stat-label">Prima pagada</div>
+            <div class="stat-value" style="font-size:16px;">L {{ gasto.montoPrimaFloat|number_format(2, '.', ',') }}</div>
+        </div>
+    </div>
+    {% endif %}
+    {% if gasto.costoTotalFinanciado > 0 %}
+    <div class="col-6 col-md-3">
+        <div class="stat-box">
+            <div class="stat-label">Costo total artículo</div>
+            <div class="stat-value" style="font-size:16px;">L {{ gasto.costoTotalFinanciado|number_format(2, '.', ',') }}</div>
+        </div>
+    </div>
+    {% endif %}
+    {% if gasto.fechaFinPlan %}
+    <div class="col-6 col-md-3">
+        <div class="stat-box">
+            <div class="stat-label">Termina</div>
+            <div class="stat-value" style="font-size:16px;">{{ gasto.fechaFinPlan|date('M Y') }}</div>
+        </div>
+    </div>
+    {% endif %}
+    {% endif %}
+
+    <div class="col-6 col-md-3">
+        <div class="stat-box">
+            <div class="stat-label">Total pagado</div>
+            <div class="stat-value" id="stat-total-pagado" style="font-size:16px;color:#22c55e;">L {{ total_pagado|number_format(2, '.', ',') }}</div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="stat-box">
+            <div class="stat-label">Pagos registrados</div>
+            <div class="stat-value" id="stat-cuotas-pagadas">{{ cuotas_pagadas }}</div>
+        </div>
+    </div>
+
+</div>
+
+{# ── Tabla de amortización ── #}
+<div class="content-card">
+    <div class="d-flex align-items-center justify-content-between mb-3">
+        <h6 class="mb-0 fw-bold" style="font-size:13px;">
+            {% if gasto.tipo in ['financiado', 'prestamo'] %}
+            Tabla de amortización
+            {% else %}
+            Historial de pagos
+            {% endif %}
+        </h6>
+        {% if gasto.tipo not in ['financiado', 'prestamo'] %}
+        <span class="small text-muted">Últimos 12 meses + próximos 3</span>
+        {% endif %}
+    </div>
+
+    {% if schedule|length > 0 %}
+    <div class="table-responsive">
+    <table class="table schedule-table mb-0">
+        <thead>
+            <tr>
+                {% if gasto.tipo in ['financiado', 'prestamo'] %}<th style="width:50px;">#</th>{% endif %}
+                <th>Mes</th>
+                <th style="width:100px;">Día pago</th>
+                {% if gasto.diaCorte %}<th style="width:100px;">Día corte</th>{% endif %}
+                <th style="width:130px;">Monto</th>
+                <th style="width:130px;">Pagado</th>
+                <th style="width:90px;">Estado</th>
+                <th style="width:80px;"></th>
+            </tr>
+        </thead>
+        <tbody>
+        {% set hoyAnio = 'now'|date('Y') %}
+        {% set hoyMes  = 'now'|date('n') %}
+        {% for fila in schedule %}
+        <tr class="
+            {{ fila.es_prima ? 'fila-prima' : '' }}
+            {{ fila.estado == 'post' ? 'fila-post' : '' }}
+            {{ (not fila.es_prima and fila.estado != 'post' and fila.anio == hoyAnio and fila.mes == hoyMes) ? 'fila-actual' : '' }}
+        ">
+            {% if gasto.tipo in ['financiado', 'prestamo'] %}
+            <td class="text-muted" style="font-size:12px;">
+                {% if fila.es_prima %}
+                    <i class="bi bi-star-fill" style="color:#f59e0b;" title="Prima"></i>
+                {% elseif fila.cuota is not null %}
+                    {{ fila.cuota }}
+                {% else %}
+                    <span class="text-muted">∞</span>
+                {% endif %}
+            </td>
+            {% endif %}
+
+            <td>
+                <span class="fw-semibold">{{ fila.mes_label }}</span>
+                {% if fila.es_prima %}<br><small class="text-warning" style="font-size:10px;">Enganche inicial</small>{% endif %}
+                {% if fila.estado == 'post' %}<br><small class="text-muted" style="font-size:10px;">Post-financiamiento</small>{% endif %}
+            </td>
+
+            <td style="font-size:12px;color:#64748b;">
+                {% if not fila.es_prima %}
+                    {{ fila.anio }}-{{ '%02d'|format(fila.mes) }}-{{ '%02d'|format(fila.dia_pago_real) }}
+                {% else %}—{% endif %}
+            </td>
+
+            {% if gasto.diaCorte %}
+            <td style="font-size:12px;color:#94a3b8;">
+                {% if not fila.es_prima %}
+                    <i class="bi bi-scissors" style="font-size:10px;"></i>
+                    {{ fila.anio }}-{{ '%02d'|format(fila.mes) }}-{{ '%02d'|format(fila.dia_corte_real) }}
+                {% else %}—{% endif %}
+            </td>
+            {% endif %}
+
+            <td class="fw-semibold">L {{ fila.monto|number_format(2, '.', ',') }}</td>
+
+            <td>
+                {% if fila.pago %}
+                    <span style="color:#22c55e;">L {{ fila.pago.montoFloat|number_format(2, '.', ',') }}</span>
+                    <br><small class="text-muted" style="font-size:10px;">{{ fila.pago.fecha|date('d/m/Y') }}</small>
+                {% else %}
+                    <span class="text-muted">—</span>
+                {% endif %}
+            </td>
+
+            <td>
+                <span class="badge badge-estado-{{ fila.estado }}" style="font-size:10px;padding:3px 7px;border-radius:5px;">
+                    {% if fila.estado == 'pagado' %}Pagado
+                    {% elseif fila.estado == 'pendiente' %}Pendiente
+                    {% elseif fila.estado == 'vencido' %}Vencido
+                    {% elseif fila.estado == 'en_riesgo' %}En riesgo
+                    {% elseif fila.estado == 'info' %}Prima
+                    {% elseif fila.estado == 'post' %}Post-fin
+                    {% else %}{{ fila.estado }}{% endif %}
+                </span>
+            </td>
+
+            <td class="text-end">
+                {% if fila.pago and not fila.es_prima %}
+                <button class="btn btn-link btn-sm p-0 text-secondary js-det-revertir"
+                    data-pago-id="{{ fila.pago.id }}"
+                    data-label="{{ fila.mes_label }}"
+                    data-token="{{ csrf_token('wallet_gasto_fijo_revertir_' ~ fila.pago.id) }}"
+                    title="Revertir pago">
+                    <i class="bi bi-arrow-counterclockwise" style="font-size:12px;"></i>
+                </button>
+                {% elseif not fila.es_prima and fila.estado != 'post' and fila.estado != 'pagado' %}
+                <button class="btn btn-success btn-sm js-det-pagar"
+                    style="font-size:11px;padding:2px 8px;"
+                    data-id="{{ gasto.id }}"
+                    data-anio="{{ fila.anio }}"
+                    data-mes="{{ fila.mes }}"
+                    data-monto="{{ fila.monto }}"
+                    data-label="{{ fila.mes_label }}"
+                    data-token="{{ csrf_token('wallet_gasto_fijo_pagar_' ~ gasto.id) }}">
+                    <i class="bi bi-check-lg"></i> Pagar
+                </button>
+                {% endif %}
+            </td>
+        </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+    </div>
+    {% else %}
+    <div class="grova-empty-state py-4">
+        <div class="grova-empty-icon"><i class="bi bi-calendar-check"></i></div>
+        <div class="grova-empty-title">Sin datos</div>
+    </div>
+    {% endif %}
+</div>
+
+{% endblock %}
+
+{% block app_page_scripts %}
+<script>
+(function () {
+    var GASTO_ID      = {{ gasto.id }};
+    var TIPO          = {{ gasto.tipo|json_encode|raw }};
+    var HAS_CORTE     = {{ gasto.diaCorte ? 'true' : 'false' }};
+    var MESES_FIN     = {{ gasto.mesesFinanciamiento|default(0) }};
+    var PAGAR_URL     = {{ path('grova_wallet_gasto_fijo_pagar',   {id: gasto.id, _locale: app.request.locale})|json_encode|raw }};
+    var REVERTIR_BASE = {{ path('grova_wallet_gasto_fijo_revertir', {pagoId: '__ID__', _locale: app.request.locale})|json_encode|raw }};
+    var SCHEDULE_URL  = {{ path('grova_wallet_gasto_fijo_schedule_data', {id: gasto.id, _locale: app.request.locale})|json_encode|raw }};
+
+    var tbody = document.querySelector('.schedule-table tbody');
+    var isFinanciado = (TIPO === 'financiado' || TIPO === 'prestamo');
+
+    var ESTADO_LABEL = {
+        pagado: 'Pagado', pendiente: 'Pendiente', vencido: 'Vencido',
+        en_riesgo: 'En riesgo', info: 'Prima', post: 'Post-fin'
+    };
+
+    function pad2(n) { return String(n).padStart(2, '0'); }
+
+    function fmtL(n) {
+        var parts = parseFloat(n).toFixed(2).split('.');
+        parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+        return 'L ' + parts.join('.');
+    }
+
+    function renderRow(f) {
+        var hoy  = new Date();
+        var hoyA = hoy.getFullYear();
+        var hoyM = hoy.getMonth() + 1;
+
+        var rowClass = f.es_prima ? 'fila-prima'
+            : (f.estado === 'post' ? 'fila-post'
+            : (f.anio == hoyA && f.mes == hoyM ? 'fila-actual' : ''));
+
+        var h = '<tr class="' + rowClass + '">';
+
+        if (isFinanciado) {
+            h += '<td class="text-muted" style="font-size:12px;">';
+            if (f.es_prima) h += '<i class="bi bi-star-fill" style="color:#f59e0b;" title="Prima"></i>';
+            else if (f.cuota !== null) h += f.cuota;
+            else h += '<span class="text-muted">\u221e</span>';
+            h += '</td>';
+        }
+
+        h += '<td><span class="fw-semibold">' + f.mes_label + '</span>';
+        if (f.es_prima) h += '<br><small class="text-warning" style="font-size:10px;">Enganche inicial</small>';
+        if (f.estado === 'post') h += '<br><small class="text-muted" style="font-size:10px;">Post-financiamiento</small>';
+        h += '</td>';
+
+        h += '<td style="font-size:12px;color:#64748b;">'
+            + (!f.es_prima ? (f.anio + '-' + pad2(f.mes) + '-' + pad2(f.dia_pago_real)) : '\u2014')
+            + '</td>';
+
+        if (HAS_CORTE) {
+            h += '<td style="font-size:12px;color:#94a3b8;">'
+                + (!f.es_prima ? ('<i class="bi bi-scissors" style="font-size:10px;"></i> ' + f.anio + '-' + pad2(f.mes) + '-' + pad2(f.dia_corte_real)) : '\u2014')
+                + '</td>';
+        }
+
+        h += '<td class="fw-semibold">' + fmtL(f.monto) + '</td>';
+
+        h += '<td>';
+        if (f.pago) {
+            h += '<span style="color:#22c55e;">' + fmtL(f.pago.montoFloat) + '</span>'
+               + '<br><small class="text-muted" style="font-size:10px;">' + f.pago.fecha + '</small>';
+        } else {
+            h += '<span class="text-muted">\u2014</span>';
+        }
+        h += '</td>';
+
+        var eLabel = ESTADO_LABEL[f.estado] || f.estado;
+        h += '<td><span class="badge badge-estado-' + f.estado + '" style="font-size:10px;padding:3px 7px;border-radius:5px;">' + eLabel + '</span></td>';
+
+        h += '<td class="text-end">';
+        if (f.pago && !f.es_prima) {
+            h += '<button class="btn btn-link btn-sm p-0 text-secondary js-det-revertir"'
+               + ' data-pago-id="' + f.pago.id + '" data-label="' + f.mes_label + '" data-token="' + f.token_revertir + '" title="Revertir pago">'
+               + '<i class="bi bi-arrow-counterclockwise" style="font-size:12px;"></i></button>';
+        } else if (!f.es_prima && f.estado !== 'post' && f.estado !== 'pagado') {
+            h += '<button class="btn btn-success btn-sm js-det-pagar" style="font-size:11px;padding:2px 8px;"'
+               + ' data-id="' + GASTO_ID + '" data-anio="' + f.anio + '" data-mes="' + f.mes + '"'
+               + ' data-monto="' + f.monto + '" data-label="' + f.mes_label + '" data-token="' + f.csrf_pagar + '">'
+               + '<i class="bi bi-check-lg"></i> Pagar</button>';
+        }
+        h += '</td></tr>';
+        return h;
+    }
+
+    function fetchSchedule() {
+        fetch(SCHEDULE_URL, { credentials: 'same-origin' })
+            .then(function (r) { return r.json(); })
+            .then(function (data) {
+                var html = '';
+                data.schedule.forEach(function (f) {
+                    f.csrf_pagar = data.csrf_pagar;
+                    html += renderRow(f);
+                });
+                tbody.innerHTML = html;
+
+                var elTot = document.getElementById('stat-total-pagado');
+                var elCnt = document.getElementById('stat-cuotas-pagadas');
+                var elCur = document.getElementById('stat-cuota-actual');
+                if (elTot) elTot.textContent = fmtL(data.total_pagado);
+                if (elCnt) elCnt.textContent = data.cuotas_pagadas;
+                if (elCur) {
+                    var cur = data.cuota_actual || '\u2014';
+                    elCur.innerHTML = cur + (MESES_FIN ? ' <span style="font-size:13px;font-weight:400;color:#64748b;">/ ' + MESES_FIN + '</span>' : '');
+                }
+            });
+    }
+
+    // ── Event delegation sobre tbody (funciona tras re-render) ───────────────
+    document.querySelector('.schedule-table').addEventListener('click', function (e) {
+        var btnPagar    = e.target.closest('.js-det-pagar');
+        var btnRevertir = e.target.closest('.js-det-revertir');
+
+        if (btnPagar) {
+            var anio  = btnPagar.dataset.anio;
+            var mes   = btnPagar.dataset.mes;
+            var monto = parseFloat(btnPagar.dataset.monto);
+            var label = btnPagar.dataset.label;
+            var token = btnPagar.dataset.token;
+
+            Swal.fire({
+                title: 'Pagar — ' + label,
+                html: '<div class="text-start">'
+                    + '<label class="form-label small">Fecha de pago</label>'
+                    + '<input type="date" id="det-fecha" class="form-control form-control-sm mb-2" value="' + anio + '-' + pad2(mes) + '-01">'
+                    + '<label class="form-label small">Monto (L)</label>'
+                    + '<input type="number" id="det-monto" class="form-control form-control-sm" step="0.01" value="' + monto.toFixed(2) + '">'
+                    + '</div>',
+                showCancelButton: true,
+                confirmButtonText: 'Registrar',
+                cancelButtonText: 'Cancelar',
+                customClass: { popup: 'swal-grova' },
+                preConfirm: function () {
+                    var f = document.getElementById('det-fecha').value;
+                    var m = parseFloat(document.getElementById('det-monto').value);
+                    if (!f || isNaN(m) || m <= 0) {
+                        Swal.showValidationMessage('Fecha y monto son obligatorios.');
+                        return false;
+                    }
+                    return { fecha: f, monto: m };
+                }
+            }).then(function (res) {
+                if (!res.isConfirmed) { return; }
+                var fd = new FormData();
+                fd.append('_token', token);
+                fd.append('fecha', res.value.fecha);
+                fd.append('monto', res.value.monto);
+                fd.append('anio',  anio);
+                fd.append('mes',   mes);
+                fetch(PAGAR_URL, { method: 'POST', credentials: 'same-origin', body: fd })
+                    .then(function (r) { return r.json(); })
+                    .then(function (data) {
+                        if (data.success) {
+                            Swal.fire({ icon: 'success', title: data.message, timer: 1500, showConfirmButton: false, customClass: { popup: 'swal-grova' } })
+                                .then(fetchSchedule);
+                        } else {
+                            Swal.fire({ icon: 'error', title: data.message, customClass: { popup: 'swal-grova' } });
+                        }
+                    });
+            });
+        }
+
+        if (btnRevertir) {
+            var pagoId = btnRevertir.dataset.pagoId;
+            var label  = btnRevertir.dataset.label;
+            var token  = btnRevertir.dataset.token;
+            var url    = REVERTIR_BASE.replace('__ID__', pagoId);
+
+            Swal.fire({
+                title: 'Revertir pago',
+                text: '\u00bfRevertir el pago de ' + label + '? Se eliminar\u00e1 el movimiento de Wallet.',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonText: 'S\u00ed, revertir',
+                cancelButtonText: 'Cancelar',
+                customClass: { popup: 'swal-grova' }
+            }).then(function (res) {
+                if (!res.isConfirmed) { return; }
+                var fd = new FormData();
+                fd.append('_token', token);
+                fetch(url, { method: 'POST', credentials: 'same-origin', body: fd })
+                    .then(function (r) { return r.json(); })
+                    .then(function (data) {
+                        if (data.success) {
+                            Swal.fire({ icon: 'success', title: 'Pago revertido.', timer: 1200, showConfirmButton: false, customClass: { popup: 'swal-grova' } })
+                                .then(fetchSchedule);
+                        } else {
+                            Swal.fire({ icon: 'error', title: data.message, customClass: { popup: 'swal-grova' } });
+                        }
+                    });
+            });
+        }
+    });
+})();
+</script>
+{% endblock %}

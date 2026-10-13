@@ -1,0 +1,62 @@
+{# Partial: fila de una casa en la lista #}
+<div class="casa-row">
+    <span class="casa-numero">{{ casa.numero }}</span>
+    <span class="badge badge-casa {{ casa.estado == 'habitada' ? 'badge-habitada' : 'badge-vacia' }}">{{ casa.estadoLabel }}</span>
+    <span class="text-muted small">{{ casa.tipoLabel }}</span>
+    {% set propietario = casa.propietario %}
+    {% if propietario %}
+        <span class="small"><i class="bi bi-person me-1"></i>{{ propietario.nombreCompleto }}</span>
+    {% endif %}
+    <div class="ms-auto d-flex gap-1">
+        <button class="btn btn-xs btn-outline-primary"
+                data-bs-toggle="modal" data-bs-target="#modalEditarCasa{{ casa.id }}">
+            <i class="bi bi-pencil"></i>
+        </button>
+        <form method="post" action="{{ path('grova_residencial_admin_casa_delete', {id: casa.id, _locale: app.request.locale}) }}"
+              onsubmit="return confirm('¿Eliminar casa {{ casa.numero }}?')">
+            <input type="hidden" name="_token" value="{{ csrf_token('residencial_casa_del_' ~ casa.id) }}">
+            <button type="submit" class="btn btn-xs btn-outline-danger"><i class="bi bi-trash"></i></button>
+        </form>
+    </div>
+</div>
+
+{# Modal editar esta casa #}
+<div class="modal fade" id="modalEditarCasa{{ casa.id }}" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="post" action="{{ path('grova_residencial_admin_casa_edit', {id: casa.id, _locale: app.request.locale}) }}">
+                <input type="hidden" name="_token" value="{{ csrf_token('residencial_casa_edit_' ~ casa.id) }}">
+                <div class="modal-header">
+                    <h5 class="modal-title">Editar casa {{ casa.numero }}</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row g-2">
+                        <div class="col-6">
+                            <label class="form-label">Número</label>
+                            <input type="text" name="numero" class="form-control" required value="{{ casa.numero }}">
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label">Tipo</label>
+                            <select name="tipo" class="form-select">
+                                <option value="casa" {{ casa.tipo == 'casa' ? 'selected' : '' }}>Casa</option>
+                                <option value="apartamento" {{ casa.tipo == 'apartamento' ? 'selected' : '' }}>Apartamento</option>
+                            </select>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label">Estado</label>
+                            <select name="estado" class="form-select">
+                                <option value="vacia" {{ casa.estado == 'vacia' ? 'selected' : '' }}>Vacía</option>
+                                <option value="habitada" {{ casa.estado == 'habitada' ? 'selected' : '' }}>Habitada</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-sm btn-primary">Guardar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

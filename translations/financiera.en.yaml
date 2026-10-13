@@ -1,0 +1,158 @@
+module:
+  nombre: 'Financial Planning'
+  descripcion: 'Budget control, commitments, goals and investments'
+
+nav:
+  dashboard:    'Dashboard'
+  presupuesto:  'Budget'
+  compromisos:  'Commitments'
+  gastos:       'Expenses'
+  metas:        'Goals'
+  inversiones:  'Investments'
+  acreedores:   'Creditors'
+  eventos:      'Events'
+  salud:        'Financial health'
+
+bolsa:
+  tipos:
+    necesidad: 'Needs'
+    gusto:     'Wants'
+    ahorro:    'Savings'
+    deuda:     'Debts'
+    inversion: 'Investments'
+    familia:   'Family'
+
+presupuesto:
+  tipos:
+    libre:     'Free'
+    babilonia: 'Babylon'
+  plantillas:
+    babilonia_dabasir:  'Dabasir 70/10/20'
+    estandar_50_30_20:  'Harvard 50/30/20'
+    personalizada:      'Custom'
+  estados:
+    borrador: 'Draft'
+    activo:   'Active'
+    cerrado:  'Closed'
+
+compromiso:
+  tipos:
+    servicio:      'Service'
+    suscripcion:   'Subscription'
+    prestamo:      'Loan'
+    credito:       'Credit'
+    deuda_persona: 'Personal debt'
+  frecuencias:
+    mensual:   'Monthly'
+    quincenal: 'Biweekly'
+    anual:     'Annual'
+    unica:     'One-time'
+
+cuota:
+  estados:
+    pendiente: 'Pending'
+    parcial:   'Partial'
+    pagado:    'Paid'
+    vencido:   'Overdue'
+
+gasto:
+  naturaleza:
+    necesidad: 'Need'
+    deseo:     'Want'
+    ahorro:    'Saving'
+    deuda:     'Debt'
+
+meta:
+  tipos:
+    emergencia: 'Emergency fund'
+    vivienda:   'Housing'
+    retiro:     'Retirement'
+    inversion:  'Investment'
+    compra:     'Purchase'
+    viaje:      'Travel'
+    educacion:  'Education'
+    otro:       'Other'
+
+inversion:
+  tipos:
+    acciones:       'Stocks'
+    fondo:          'Investment fund'
+    cripto:         'Crypto'
+    deposito_plazo: 'Time deposit'
+    bien_raiz:      'Real estate'
+    negocio:        'Business'
+    otro:           'Other'
+
+acreedor:
+  tipos:
+    prestamo: 'Loan'
+    credito:  'Credit'
+    persona:  'Person'
+
+salud:
+  estados:
+    positivo: 'Positive'
+    neutro:   'Neutral'
+    negativo: 'Negative'
+
+evento:
+  tipos:
+    viaje:       'Trip'
+    celebracion: 'Celebration'
+    proyecto:    'Project'
+    otro:        'Other'
+
+regla:
+  babilonia_10:      'Babylon rule: save 10% of everything you earn'
+  dabasir_70_10_20:  'Dabasir plan: 70% needs, 10% savings, 20% debts'
+  harvard_50_30_20:  'Harvard rule: 50% needs, 30% wants, 20% savings/debts'
+  aviso_exceso:      'This expense exceeds the limit for your %bolsa% bucket'
+  aviso_sin_presup:  'You have no active budget for this month'
+
+field:
+  nombre:              'Name'
+  descripcion:         'Description'
+  tipo:                'Type'
+  bolsa:               'Bucket'
+  monto:               'Amount'
+  moneda:              'Currency'
+  tasa_cambio:         'Exchange rate'
+  fecha:               'Date'
+  fecha_inicio:        'Start date'
+  fecha_fin:           'End date'
+  fecha_vencimiento:   'Due date'
+  dia_pago:            'Payment day'
+  frecuencia:          'Frequency'
+  capital:             'Principal'
+  interes:             'Interest'
+  tasa_anual:          'Annual rate (%)'
+  plazo_meses:         'Term (months)'
+  cuota_fija:          'Fixed payment'
+  saldo:               'Balance'
+  monto_objetivo:      'Target amount'
+  monto_acumulado:     'Accumulated'
+  aporte_mensual:      'Monthly contribution'
+  porcentaje_avance:   '% progress'
+  rendimiento_esperado: 'Expected return (%)'
+  rendimiento_real:    'Actual return (%)'
+  naturaleza:          'Nature'
+  metodo_pago:         'Payment method'
+  comprobante:         'Receipt'
+  nota:                'Note'
+  presupuesto_estimado: 'Estimated budget'
+  activo:              'Active'
+  activa:              'Active'
+
+action:
+  crear_presupuesto:   'New budget'
+  registrar_ingreso:   'Record income'
+  registrar_gasto:     'Record expense'
+  agregar_compromiso:  'Add commitment'
+  registrar_pago:      'Record payment'
+  agregar_meta:        'New goal'
+  agregar_inversion:   'New investment'
+  abonar_meta:         'Contribute to goal'
+  ver_amortizacion:    'View amortization table'
+  calcular_cuota:      'Calculate payment'
+  cerrar_mes:          'Close month'
+  autoevaluar:         'Monthly self-assessment'

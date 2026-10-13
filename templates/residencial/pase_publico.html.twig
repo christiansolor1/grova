@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pase de acceso — {{ pase.casaDestino.residencial.nombre }}</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <style>
+        body { background:#0f172a; color:#e2e8f0; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif; min-height:100vh; display:flex; align-items:center; justify-content:center; padding:1.5rem; }
+        .pase-card { background:#111827; border:1px solid #1e293b; border-radius:20px; padding:2rem; max-width:420px; width:100%; }
+        .pase-header { text-align:center; margin-bottom:1.5rem; }
+        .pase-logo { font-size:2rem; font-weight:800; color:#3b82f6; letter-spacing:-.05em; }
+        .pase-residencial { font-size:.85rem; color:#64748b; }
+        .qr-wrap { background:#fff; border-radius:16px; padding:1.25rem; display:flex; align-items:center; justify-content:center; margin:1.25rem 0; }
+        .qr-wrap img { max-width:220px; width:100%; }
+        .pase-info-row { display:flex; align-items:center; gap:.75rem; padding:.6rem 0; border-bottom:1px solid #1e293b; }
+        .pase-info-row:last-child { border-bottom:none; }
+        .pase-info-icon { color:#64748b; font-size:1.1rem; width:24px; text-align:center; }
+        .pase-info-label { font-size:.7rem; color:#64748b; }
+        .pase-info-value { font-weight:600; }
+        .estado-ok   { background:#16a34a22; color:#4ade80; border:1px solid #16a34a44; }
+        .estado-fail { background:#dc262622; color:#f87171; border:1px solid #dc262644; }
+        .estado-badge { border-radius:10px; padding:.35rem 1rem; font-size:.8rem; font-weight:600; display:inline-block; }
+
+        @keyframes pulso { 0%,100%{opacity:1} 50%{opacity:.6} }
+        .pulso { animation: pulso 2s ease-in-out infinite; }
+
+        /* Mapa SVG simple */
+        .mapa-mini { position:relative; background:#0f172a; border:1px solid #1e293b; border-radius:12px; padding:1rem; margin-top:1rem; min-height:160px; overflow:hidden; }
+        .mapa-casa { position:absolute; width:50px; height:50px; background:#1e293b; border:2px solid #334155; border-radius:6px; display:flex; flex-direction:column; align-items:center; justify-content:center; font-size:10px; color:#64748b; }
+        .mapa-casa.destino { border-color:#22c55e; background:#14532d; color:#4ade80; box-shadow:0 0 12px #22c55e55; }
+        .mapa-casa-num { font-weight:700; font-size:12px; }
+    </style>
+</head>
+<body>
+
+<div class="pase-card">
+    <div class="pase-header">
+        <div class="pase-logo">grova</div>
+        <div class="pase-residencial">{{ pase.casaDestino.residencial.nombre }}</div>
+    </div>
+
+    {# Estado del pase #}
+    <div class="text-center mb-3">
+        {% if pase.estado == 'pendiente' %}
+            <span class="estado-badge estado-ok pulso"><i class="bi bi-check-circle me-1"></i>Pase válido</span>
+        {% elseif pase.estado == 'usado' %}
+            <span class="estado-badge estado-ok"><i class="bi bi-check-circle me-1"></i>Pase usado</span>
+        {% else %}
+            <span class="estado-badge estado-fail"><i class="bi bi-x-circle me-1"></i>Pase {{ pase.estadoLabel|lower }}</span>
+        {% endif %}
+    </div>
+
+    {# QR #}
+    {% if pase.estado == 'pendiente' %}
+    <div class="qr-wrap">
+        {# Generado por el controlador como imagen base64 si se implementa, por ahora mostramos el token #}
+        <div class="text-center">
+            <div id="qr-container"></div>
+            <div class="small mt-2" style="color:#64748b;font-size:10px;">{{ pase.qrToken }}</div>
+        </div>
+    </div>
+    {% endif %}
+
+    {# Información del pase #}
+    <div class="mb-3">
+        {% if pase.visitante %}
+        <div class="pase-info-row">
+            <span class="pase-info-icon"><i class="bi bi-person"></i></span>
+            <div>
+                <div class="pase-info-label">Visitante</div>
+                <div class="pase-info-value">{{ pase.visitante.nombreCompleto }}</div>
+            </div>
+        </div>
+        {% endif %}
+
+        <div class="pase-info-row">
+            <span class="pase-info-icon"><i class="bi bi-house"></i></span>
+            <div>
+                <div class="pase-info-label">Casa destino</div>
+                <div class="pase-info-value">{{ pase.casaDestino.label }}</div>
+                {% set propietario = pase.casaDestino.propietario %}
+                {% if propietario %}
+                <div class="pase-info-label">{{ propietario.nombreCompleto }}</div>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="pase-info-row">
+            <span class="pase-info-icon"><i class="bi bi-person-badge"></i></span>
+            <div>
+                <div class="pase-info-label">Invitado por</div>
+                <div class="pase-info-value">{{ pase.residente.nombreCompleto }}</div>
+            </div>
+        </div>
+
+        {% if pase.fechaInicio or pase.fechaFin %}
+        <div class="pase-info-row">
+            <span class="pase-info-icon"><i class="bi bi-calendar"></i></span>
+            <div>
+                <div class="pase-info-label">Vigencia</div>
+                <div class="pase-info-value">
+                    {{ pase.fechaInicio ? pase.fechaInicio|date('d/m/Y') : '—' }}
+                    {% if pase.fechaFin %} al {{ pase.fechaFin|date('d/m/Y') }}{% endif %}
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        {% if pase.horaInicio %}
+        <div class="pase-info-row">
+            <span class="pase-info-icon"><i class="bi bi-clock"></i></span>
+            <div>
+                <div class="pase-info-label">Horario</div>
+                <div class="pase-info-value">{{ pase.horaInicio }} – {{ pase.horaFin }}</div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    {# Botón Google Maps si hay coordenadas #}
+    {% set residencial = pase.casaDestino.residencial %}
+    {% if residencial.coordenadasLat and residencial.coordenadasLng %}
+    <a href="https://www.google.com/maps/dir/?api=1&destination={{ residencial.coordenadasLat }},{{ residencial.coordenadasLng }}"
+       target="_blank" class="btn btn-outline-light w-100 mb-2">
+        <i class="bi bi-map me-2"></i>Cómo llegar al residencial
+    </a>
+    {% endif %}
+
+    {# Mapa interno SVG si está configurado #}
+    {% set mapaJson = residencial.mapaJson %}
+    {% if mapaJson and mapaJson.casas is defined and mapaJson.casas|length > 0 %}
+    <div class="mapa-mini" id="mapa-mini">
+        {% for pos in mapaJson.casas %}
+        <div class="mapa-casa {% if pos.id == pase.casaDestino.id %}destino{% endif %}"
+             style="left:{{ [pos.x * 0.6, 5]|max }}px; top:{{ [pos.y * 0.5, 5]|max }}px;"
+             title="Casa {{ pos.id }}">
+            <span class="mapa-casa-num">{{ pos.id }}</span>
+        </div>
+        {% endfor %}
+        <div class="text-center mt-2" style="position:absolute;bottom:6px;left:0;right:0;font-size:9px;color:#475569;">
+            Tu casa destino está resaltada en verde
+        </div>
+    </div>
+    {% endif %}
+
+</div>
+
+{# QR generado en JS con qrcode.js (ligero, sin backend) #}
+<script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+<script>
+(function () {
+    const token = {{ pase.qrToken|json_encode|raw }};
+    const cont  = document.getElementById('qr-container');
+    if (!cont) return;
+    QRCode.toCanvas(document.createElement('canvas'), token, { width: 200, margin: 1 }, function (error, canvas) {
+        if (!error) cont.appendChild(canvas);
+    });
+})();
+</script>
+
+</body>
+</html>

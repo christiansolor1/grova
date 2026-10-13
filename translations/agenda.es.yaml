@@ -1,0 +1,96 @@
+# ══ MÓDULO: Agenda ══════════════════════════════════════════════════════════════
+# Dominio: agenda  |  Uso: {{ 'clave'|trans({}, 'agenda') }}
+
+agenda.page_title: "Agenda"
+agenda.subtitle: "Eventos, cumpleaños y recordatorios"
+
+# ── Botones ────────────────────────────────────────────────────────────────────
+agenda.btn_agregar: "+ Agregar evento"
+agenda.btn_guardar: "Guardar"
+agenda.btn_cancelar: "Cancelar"
+agenda.btn_editar: "Editar"
+agenda.btn_eliminar: "Eliminar"
+
+# ── Secciones ──────────────────────────────────────────────────────────────────
+agenda.section_proximos: "Próximos eventos"
+agenda.section_todos: "Todos los eventos"
+agenda.proximos_dias: "próximos %dias% días"
+
+# ── Tabla ──────────────────────────────────────────────────────────────────────
+agenda.col_acciones: "Acciones"
+agenda.col_fecha: "Fecha"
+agenda.col_tipo: "Tipo"
+agenda.col_nombre: "Nombre"
+agenda.col_recurrente: "Recurrente"
+agenda.col_notificaciones: "Notificaciones"
+agenda.col_notas: "Notas"
+
+# ── Tipos ──────────────────────────────────────────────────────────────────────
+agenda.tipo_cumpleanios: "Cumpleaños"
+agenda.tipo_evento: "Evento"
+agenda.tipo_recordatorio: "Recordatorio"
+
+# ── Días restantes ─────────────────────────────────────────────────────────────
+agenda.badge_hoy: "Hoy"
+agenda.badge_manana: "Mañana"
+agenda.badge_dias: "%dias% días"
+
+# ── Recurrente ─────────────────────────────────────────────────────────────────
+agenda.recurrente_si: "Anual"
+agenda.recurrente_no: "—"
+agenda.recurrente_tooltip: "Se repite cada año"
+
+# ── Notificaciones ─────────────────────────────────────────────────────────────
+agenda.notif_correo: "Correo"
+agenda.notif_push: "Push"
+agenda.notif_ninguna: "Ninguna"
+agenda.notif_dias_anticipacion: "con %dias% día(s) de anticipación"
+
+# ── Vacío ──────────────────────────────────────────────────────────────────────
+agenda.empty_proximos_title: "Sin eventos próximos"
+agenda.empty_proximos_desc: "No hay eventos en los próximos 60 días."
+agenda.empty_todos_title: "Sin eventos registrados"
+agenda.empty_todos_desc: "Agrega tu primer evento, cumpleaños o recordatorio."
+
+# ── Modal agregar ──────────────────────────────────────────────────────────────
+agenda.modal_add_title: "Agregar evento"
+agenda.modal_edit_title: "Editar evento"
+agenda.field_nombre: "Nombre"
+agenda.field_nombre_placeholder: "Ej. Cumpleaños de mamá"
+agenda.field_apodo: "Apodo / Como lo llamas"
+agenda.field_apodo_placeholder: "Ej. Mami, Tato..."
+agenda.field_parentesco: "Parentesco"
+agenda.field_parentesco_placeholder: "Ej. Familia, Amigo, Compañero..."
+agenda.field_fecha: "Fecha"
+agenda.field_tipo: "Tipo"
+agenda.field_hora: "Hora"
+agenda.field_lugar: "Lugar"
+agenda.field_lugar_placeholder: "Ej. Casa de mamá, Sala de conferencias..."
+agenda.field_url: "Link (opcional)"
+agenda.field_url_placeholder: "https://meet.google.com/..."
+agenda.field_recurrente: "Repite cada año"
+agenda.field_recurrente_help: "Activa esto para cumpleaños y aniversarios"
+agenda.field_color: "Color"
+agenda.field_notas: "Notas"
+agenda.field_notas_placeholder: "Notas opcionales..."
+agenda.section_notificaciones: "Notificaciones"
+agenda.field_notificar_correo: "Correo electrónico"
+agenda.field_notificar_push: "Notificación push"
+agenda.field_avisos: "Avisos (hasta 3)"
+agenda.aviso_ninguno: "— Ninguno"
+agenda.aviso_0:  "El mismo día"
+agenda.aviso_1:  "1 día antes"
+agenda.aviso_3:  "3 días antes"
+agenda.aviso_7:  "1 semana antes"
+agenda.aviso_14: "2 semanas antes"
+agenda.aviso_30: "1 mes antes"
+
+# ── Confirmaciones ─────────────────────────────────────────────────────────────
+agenda.confirm_delete: "¿Eliminar este evento?"
+
+# ── Flash ──────────────────────────────────────────────────────────────────────
+agenda.flash_token_invalid: "Token de seguridad inválido. Intenta de nuevo."
+agenda.flash_nombre_requerido: "El nombre del evento es requerido."
+agenda.flash_evento_creado: "Evento creado correctamente."
+agenda.flash_evento_actualizado: "Evento actualizado correctamente."
+agenda.flash_evento_eliminado: "Evento eliminado."

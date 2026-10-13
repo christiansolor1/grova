@@ -1,0 +1,42 @@
+{% extends 'workspace/app_layout.html.twig' %}
+{% block page_title %}Buscar visitante{% endblock %}
+{% block app_page_subtitle %}Buscar por nombre o DNI{% endblock %}
+
+{% block app_main %}
+
+<div class="content-card" style="max-width:600px;">
+    <div class="content-card-header">
+        <a href="{{ path('grova_residencial_guardia_garita', {_locale: app.request.locale}) }}" class="btn btn-sm btn-outline-secondary me-2">
+            <i class="bi bi-arrow-left"></i>
+        </a>
+        Buscar visitante
+    </div>
+    <div class="content-card-body">
+        <form method="get" class="mb-3">
+            <div class="input-group">
+                <input type="search" name="q" class="form-control form-control-lg" value="{{ termino }}"
+                       placeholder="Nombre o DNI…" autofocus>
+                <button type="submit" class="btn btn-primary"><i class="bi bi-search"></i></button>
+            </div>
+        </form>
+
+        {% if termino and visitantes is empty %}
+            <p class="text-muted text-center py-3">No se encontraron visitantes con "{{ termino }}".</p>
+        {% endif %}
+
+        {% for visitante in visitantes %}
+        <div style="background:#111827;border:1px solid #1e293b;border-radius:10px;padding:.85rem 1rem;margin-bottom:.4rem;display:flex;align-items:center;gap:.75rem;">
+            <div>
+                <div class="fw-semibold">{{ visitante.nombreCompleto }}</div>
+                {% if visitante.dni %}<div class="small text-muted">DNI: {{ visitante.dni }}</div>{% endif %}
+                {% if visitante.telefono %}<div class="small text-muted">Tel: {{ visitante.telefono }}</div>{% endif %}
+            </div>
+            <div class="ms-auto small text-muted">
+                {{ visitante.creadoEn|date('d/m/Y') }}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+{% endblock %}

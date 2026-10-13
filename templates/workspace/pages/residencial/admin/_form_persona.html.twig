@@ -1,0 +1,53 @@
+{# Partial: campos del formulario de Persona (crear/editar) #}
+<div class="mb-2">
+    <label class="form-label">Nombre completo</label>
+    <input type="text" name="nombre_completo" class="form-control" required
+           value="{{ persona ? persona.nombreCompleto : '' }}">
+</div>
+<div class="row g-2 mb-2">
+    <div class="col-6">
+        <label class="form-label">DNI / Identidad</label>
+        <input type="text" name="dni" class="form-control"
+               value="{{ persona ? persona.dni : '' }}">
+    </div>
+    <div class="col-6">
+        <label class="form-label">Teléfono</label>
+        <input type="text" name="telefono" class="form-control"
+               value="{{ persona ? persona.telefono : '' }}">
+    </div>
+</div>
+<div class="mb-2">
+    <label class="form-label">Correo electrónico</label>
+    <input type="email" name="email" class="form-control"
+           value="{{ persona ? persona.email : '' }}">
+</div>
+<div class="row g-2 mb-2">
+    <div class="col-6">
+        <label class="form-label">Tipo</label>
+        <select name="tipo" class="form-select">
+            <option value="propietario"        {{ persona and persona.tipo == 'propietario'         ? 'selected' : '' }}>Propietario</option>
+            <option value="inquilino"          {{ persona and persona.tipo == 'inquilino'           ? 'selected' : '' }}>Inquilino</option>
+            <option value="familiar"           {{ persona and persona.tipo == 'familiar'            ? 'selected' : '' }}>Familiar</option>
+            <option value="personal_recurrente"{{ persona and persona.tipo == 'personal_recurrente' ? 'selected' : '' }}>Personal recurrente</option>
+        </select>
+    </div>
+    <div class="col-6">
+        <label class="form-label">Estado</label>
+        <select name="estado" class="form-select">
+            <option value="activo"   {{ persona and persona.estado == 'activo'   ? 'selected' : '' }}>Activo</option>
+            <option value="inactivo" {{ persona and persona.estado == 'inactivo' ? 'selected' : '' }}>Inactivo</option>
+        </select>
+    </div>
+</div>
+<div class="mb-2">
+    <label class="form-label">Casa asignada</label>
+    <select name="casa_id" class="form-select">
+        <option value="0">Sin casa asignada</option>
+        {% for casa in casas %}
+            <option value="{{ casa.id }}"
+                    {{ persona and persona.casa and persona.casa.id == casa.id ? 'selected' : '' }}>
+                {{ casa.label }}
+            </option>
+        {% endfor %}
+    </select>
+</div>

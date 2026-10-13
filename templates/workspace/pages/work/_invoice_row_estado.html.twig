@@ -1,0 +1,13 @@
+{# Columna estado de la fila de factura #}
+{% if inv.estado == 'enviada' %}
+    <span class="inv-estado-inline">
+        <span class="inv-status-sent">
+            <i class="bi bi-check-circle me-1"></i>{{ 'work.status_sent'|trans({}, 'work') }}
+        </span>
+        {% if inv.enviadaAt %}
+            <span class="inv-paid-at text-nowrap" title="{{ 'work.invoice_sent_at_tooltip'|trans({'%fecha%': inv.enviadaAt|date('d/m/Y')}, 'work') }}">{{ inv.enviadaAt|date('d/m/y') }}</span>
+        {% endif %}
+    </span>
+{% else %}
+    <span class="badge-borrador">{{ 'work.status_draft'|trans({}, 'work') }}</span>
+{% endif %}

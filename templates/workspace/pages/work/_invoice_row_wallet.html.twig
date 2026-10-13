@@ -1,0 +1,33 @@
+{# Variables esperadas: inv (WorkInvoice), sync_url, unsync_url, invoice_year #}
+<div id="work-inv-wallet-cell-{{ inv.id }}">
+{% if inv.syncedToWallet %}
+    <div class="d-flex align-items-center gap-1">
+        <span class="text-success" title="Sincronizado con Wallet (entry #{{ inv.walletEntryId }})">
+            <i class="bi bi-check-circle-fill"></i>
+        </span>
+        <button type="button"
+                class="btn btn-link btn-sm p-0 text-muted js-work-unsync-wallet"
+                title="Revertir sync"
+                data-invoice-id="{{ inv.id }}"
+                data-unsync-url="{{ unsync_url }}"
+                data-unsync-token="{{ csrf_token('work_invoice_unsync_wallet_' ~ inv.id) }}">
+            <i class="bi bi-arrow-counterclockwise" style="font-size:11px;"></i>
+        </button>
+    </div>
+{% elseif inv.isPagada %}
+    <button type="button"
+            class="btn btn-link btn-sm p-0 text-warning js-work-sync-wallet"
+            title="Registrar en Wallet"
+            data-invoice-id="{{ inv.id }}"
+            data-sync-url="{{ sync_url }}"
+            data-sync-token="{{ csrf_token('work_invoice_sync_wallet_' ~ inv.id) }}"
+            data-client-cuenta-id="{{ inv.client.walletCuenta ? inv.client.walletCuenta.id : '' }}"
+            data-client-cuenta-nombre="{{ inv.client.walletCuenta ? (inv.client.walletCuenta.nombre ~ (inv.client.walletCuenta.institucionNombre ? ' · ' ~ inv.client.walletCuenta.institucionNombre : '')) : '' }}"
+            data-client-banc-nombre="{{ inv.client.bancNombre }}"
+            data-client-banc-digitos="{{ inv.client.bancCuenta ? inv.client.bancCuenta|decrypt : '' }}">
+        <i class="bi bi-wallet2"></i>
+    </button>
+{% else %}
+    <span class="text-muted">—</span>
+{% endif %}
+</div>

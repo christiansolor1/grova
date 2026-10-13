@@ -1,0 +1,53 @@
+{% extends 'workspace/app_layout.html.twig' %}
+{% block page_title %}Mis visitas{% endblock %}
+{% block app_page_subtitle %}Historial de visitantes a tu casa{% endblock %}
+
+{% block app_main %}
+
+<div class="content-card">
+    <div class="content-card-header">Historial de invitaciones — {{ pases|length }}</div>
+    <div class="content-card-body p-0">
+        {% if pases is empty %}
+            <p class="text-muted text-center py-4">Aún no hay visitas registradas.</p>
+        {% else %}
+        <div class="table-responsive">
+            <table class="table table-sm mb-0">
+                <thead>
+                    <tr>
+                        <th>Visitante</th>
+                        <th>Tipo</th>
+                        <th>Vigencia</th>
+                        <th>Estado</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for pase in pases %}
+                    <tr>
+                        <td>{{ pase.visitante ? pase.visitante.nombreCompleto : '—' }}</td>
+                        <td>{{ pase.tipoLabel }}</td>
+                        <td class="small">
+                            {{ pase.fechaInicio ? pase.fechaInicio|date('d/m/Y') : '—' }}
+                            {% if pase.fechaFin %} – {{ pase.fechaFin|date('d/m/Y') }}{% endif %}
+                        </td>
+                        <td>
+                            <span class="badge {{ pase.estado == 'usado' ? 'bg-success' : (pase.estado == 'pendiente' ? 'bg-primary' : 'bg-secondary') }}">
+                                {{ pase.estadoLabel }}
+                            </span>
+                        </td>
+                        <td>
+                            <a href="{{ path('grova_residencial_residente_ver_pase', {id: pase.id, _locale: app.request.locale}) }}"
+                               class="btn btn-xs btn-outline-secondary">
+                                <i class="bi bi-qr-code"></i>
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+{% endblock %}

@@ -1,0 +1,63 @@
+{# Columna operaciones de la fila de factura #}
+<div class="inv-ops-row">
+    {% if inv_can_edit_bono %}
+    <button type="button"
+            class="btn btn-outline-warning btn-sm"
+            data-bs-toggle="modal"
+            data-bs-target="#modal-work-inv-manual-bono"
+            data-inv-url="{{ path('grova_work_invoice_manual_bonus', {id: inv.id, _locale: locale}) }}"
+            data-csrf="{{ csrf_token('work_invoice_manual_bonus_' ~ inv.id) }}"
+            data-bonus-lines="{{ inv.extraBonusLinesPayload|json_encode(15)|e('html_attr') }}"
+            title="{{ 'work.invoice_manual_bonus_btn_title'|trans({}, 'work') }}">
+        <i class="bi bi-gift"></i>
+    </button>
+    {% endif %}
+    <a href="{{ path('grova_work_invoice_pdf', {id: inv.id, _locale: locale}) }}"
+       class="btn btn-outline-secondary btn-sm"
+       title="{{ 'work.invoice_pdf_internal'|trans({}, 'work') }}" target="_blank"><i class="bi bi-filetype-pdf"></i></a>
+    <a href="{{ path('grova_work_invoice_pdf_external', {id: inv.id, _locale: locale}) }}"
+       class="btn btn-outline-primary btn-sm"
+       title="{{ 'work.invoice_pdf_client'|trans({}, 'work') }}" target="_blank"><i class="bi bi-receipt"></i></a>
+    {% if inv.estado == 'borrador' %}
+    <form method="post" action="{{ path('grova_work_invoice_send', {id: inv.id, _locale: locale}) }}"
+          class="d-inline js-work-swal-confirm"
+          data-work-swal-title="{{ 'work.confirm_send_invoice'|trans({}, 'work') }}"
+          data-work-swal-icon="question"
+          data-work-swal-confirm-text="{{ 'work.confirm_yes_send'|trans({}, 'work') }}"
+          data-work-swal-cancel-text="{{ 'work.confirm_cancel'|trans({}, 'work') }}"
+          data-work-swal-confirm-color="#2563eb"
+          data-work-loading-title="{{ 'work.swal_loading_send'|trans({}, 'work') }}">
+        <input type="hidden" name="_token" value="{{ csrf_token('work_invoice_send_' ~ inv.id) }}">
+        <button type="submit"
+                class="btn btn-outline-primary btn-sm"
+                title="{{ inv.pagadaAt ? ('work.locked_paid_invoice'|trans({}, 'work')) : ('work.tooltip_op_send_invoice'|trans({}, 'work')) }}"
+                {{ inv.pagadaAt ? 'disabled' : '' }}>
+            <i class="bi bi-send"></i>
+        </button>
+    </form>
+    {% endif %}
+    {% set inv_past_year = inv.anio < vigente_year %}
+    {% if inv_past_year or inv.pagadaAt %}
+        <button type="button"
+                class="btn btn-outline-danger btn-sm"
+                title="{{ inv_past_year ? 'work.locked_delete_past_year'|trans({}, 'work') : ('work.locked_paid_invoice'|trans({}, 'work')) }}"
+                disabled>
+            <i class="bi bi-trash3"></i>
+        </button>
+    {% else %}
+        <form method="post" action="{{ path('grova_work_invoice_delete', {id: inv.id, _locale: locale}) }}"
+              class="d-inline js-work-swal-confirm"
+              data-work-swal-title="{{ 'work.confirm_delete_invoice'|trans({}, 'work') }}"
+              data-work-swal-icon="warning"
+              data-work-swal-confirm-text="{{ 'work.confirm_yes_delete'|trans({}, 'work') }}"
+              data-work-swal-cancel-text="{{ 'work.confirm_cancel'|trans({}, 'work') }}"
+              data-work-loading-title="{{ 'work.swal_loading_delete'|trans({}, 'work') }}">
+            <input type="hidden" name="_token" value="{{ csrf_token('work_invoice_delete_' ~ inv.id) }}">
+            <button type="submit"
+                    class="btn btn-outline-danger btn-sm"
+                    title="{{ 'work.tooltip_op_delete_invoice'|trans({}, 'work') }}">
+                <i class="bi bi-trash3"></i>
+            </button>
+        </form>
+    {% endif %}
+</div>

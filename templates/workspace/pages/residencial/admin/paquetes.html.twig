@@ -1,0 +1,63 @@
+{% extends 'workspace/app_layout.html.twig' %}
+{% block page_title %}Paquetes{% endblock %}
+{% block app_page_subtitle %}Paquetes recibidos pendientes de entrega{% endblock %}
+
+{% block app_main %}
+
+{% for label, messages in app.flashes %}
+    {% for message in messages %}
+        <div class="alert alert-{{ label == 'danger' ? 'danger' : 'success' }} mb-3">{{ message }}</div>
+    {% endfor %}
+{% endfor %}
+
+<div class="content-card">
+    <div class="content-card-header">
+        Paquetes pendientes — {{ paquetes|length }}
+    </div>
+    <div class="content-card-body p-0">
+        {% if paquetes is empty %}
+            <p class="text-muted text-center py-4">No hay paquetes pendientes.</p>
+        {% else %}
+        <div class="table-responsive">
+            <table class="table table-sm mb-0">
+                <thead>
+                    <tr>
+                        <th>Residente</th>
+                        <th>Casa</th>
+                        <th>Empresa</th>
+                        <th>Recibido</th>
+                        <th>Estado</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for paquete in paquetes %}
+                    <tr>
+                        <td>{{ paquete.residente.nombreCompleto }}</td>
+                        <td>{{ paquete.casa.label }}</td>
+                        <td>{{ paquete.empresaMensajeria ?? '—' }}</td>
+                        <td>{{ paquete.recibidoEn|date('d/m/Y H:i') }}</td>
+                        <td>
+                            <span class="badge {{ paquete.estado == 'entregado' ? 'bg-success' : 'bg-warning text-dark' }}">
+                                {{ paquete.estadoLabel }}
+                            </span>
+                        </td>
+                        <td>
+                            {% if paquete.estado != 'entregado' %}
+                            <form method="post" action="{{ path('grova_residencial_guardia_paquete_recibir', {_locale: app.request.locale}) }}">
+                                <input type="hidden" name="_token" value="{{ csrf_token('residencial_paquete') }}">
+                                <input type="hidden" name="paquete_id" value="{{ paquete.id }}">
+                                <button type="submit" class="btn btn-xs btn-success">Marcar entregado</button>
+                            </form>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+{% endblock %}

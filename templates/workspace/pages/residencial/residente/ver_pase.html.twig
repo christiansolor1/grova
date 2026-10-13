@@ -1,0 +1,64 @@
+{% extends 'workspace/app_layout.html.twig' %}
+{% block page_title %}Pase QR{% endblock %}
+{% block app_page_subtitle %}Muestra este código al guardia{% endblock %}
+
+{% block app_main %}
+
+<div class="text-center" style="max-width:400px; margin:0 auto;">
+    <div class="content-card">
+        <div class="content-card-header justify-content-center">
+            <a href="{{ path('grova_residencial_residente_index', {_locale: app.request.locale}) }}" class="btn btn-sm btn-outline-secondary me-2">
+                <i class="bi bi-arrow-left"></i>
+            </a>
+            Pase de acceso
+        </div>
+        <div class="content-card-body text-center">
+
+            <div class="mb-3 d-flex justify-content-center">
+                <img src="{{ path('grova_residencial_pase_publico', {token: pase.qrToken}) }}"
+                     alt="QR Pase" style="display:none" id="qr-preview">
+                {# El QR se muestra en la vista pública — aquí mostramos el enlace #}
+                <div style="padding:1.5rem;background:#fff;border-radius:12px;display:inline-block;">
+                    <div class="small text-muted mb-2" style="color:#333;">Enlace del pase:</div>
+                    <code style="color:#333;font-size:12px;word-break:break-all;">
+                        {{ url('grova_residencial_pase_publico', {token: pase.qrToken}) }}
+                    </code>
+                </div>
+            </div>
+
+            <div class="mb-2">
+                <span class="badge {{ pase.estado == 'pendiente' ? 'bg-success' : 'bg-secondary' }} mb-2">
+                    {{ pase.estadoLabel }}
+                </span>
+                <div class="fw-semibold">{{ pase.visitante ? pase.visitante.nombreCompleto : 'Sin visitante específico' }}</div>
+                <div class="small text-muted">
+                    <i class="bi bi-house me-1"></i>{{ pase.casaDestino.label }}
+                    · {{ pase.tipoLabel }}
+                </div>
+                {% if pase.fechaInicio or pase.fechaFin %}
+                <div class="small text-muted">
+                    <i class="bi bi-calendar me-1"></i>
+                    {{ pase.fechaInicio ? pase.fechaInicio|date('d/m/Y') : '' }}
+                    {% if pase.fechaFin %} – {{ pase.fechaFin|date('d/m/Y') }}{% endif %}
+                </div>
+                {% endif %}
+            </div>
+
+            <a href="{{ path('grova_residencial_pase_publico', {token: pase.qrToken}) }}"
+               target="_blank" class="btn btn-primary mt-2 w-100">
+                <i class="bi bi-box-arrow-up-right me-1"></i>Abrir vista del visitante
+            </a>
+
+            {% if pase.estado == 'pendiente' %}
+            <form method="post" class="mt-2"
+                  action="{{ path('grova_residencial_residente_cancelar_pase', {id: pase.id, _locale: app.request.locale}) }}"
+                  onsubmit="return confirm('¿Cancelar este pase?')">
+                <input type="hidden" name="_token" value="{{ csrf_token('residencial_cancelar_pase_' ~ pase.id) }}">
+                <button type="submit" class="btn btn-outline-danger w-100">Cancelar pase</button>
+            </form>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+{% endblock %}

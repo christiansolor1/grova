@@ -1,0 +1,73 @@
+{% extends 'workspace/app_layout.html.twig' %}
+{% block page_title %}Historial{% endblock %}
+{% block app_page_subtitle %}Registro de entradas y salidas{% endblock %}
+
+{% block app_main %}
+
+<div class="content-card mb-3">
+    <div class="content-card-header">Filtrar historial</div>
+    <div class="content-card-body">
+        <form method="get" class="row g-2 align-items-end">
+            <div class="col-sm-4">
+                <label class="form-label">Desde</label>
+                <input type="date" name="desde" class="form-control" value="{{ desde|date('Y-m-d') }}">
+            </div>
+            <div class="col-sm-4">
+                <label class="form-label">Hasta</label>
+                <input type="date" name="hasta" class="form-control" value="{{ hasta|date('Y-m-d') }}">
+            </div>
+            <div class="col-sm-4">
+                <button type="submit" class="btn btn-primary w-100">Filtrar</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="content-card">
+    <div class="content-card-header">
+        Entradas — {{ registros|length }} resultado{{ registros|length != 1 ? 's' : '' }}
+    </div>
+    <div class="content-card-body p-0">
+        {% if registros is empty %}
+            <p class="text-muted text-center py-4">No hay registros en este período.</p>
+        {% else %}
+        <div class="table-responsive">
+            <table class="table table-sm mb-0">
+                <thead>
+                    <tr>
+                        <th>Visitante</th>
+                        <th>Tipo</th>
+                        <th>Casa destino</th>
+                        <th>Entrada</th>
+                        <th>Salida</th>
+                        <th>Guardia</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for registro in registros %}
+                    <tr>
+                        <td>
+                            {{ registro.visitante.nombreCompleto }}
+                            {% if registro.esPrimeraVez %}
+                                <span class="badge bg-info ms-1" style="font-size:9px;">1ª vez</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <span class="badge {{ registro.tipoEntrada == 'qr' ? 'bg-success' : 'bg-secondary' }}">
+                                {{ registro.tipoEntradaLabel }}
+                            </span>
+                        </td>
+                        <td>{{ registro.pase ? registro.pase.casaDestino.label : '—' }}</td>
+                        <td>{{ registro.horaEntrada|date('d/m/Y H:i') }}</td>
+                        <td>{{ registro.horaSalida ? registro.horaSalida|date('H:i') : '—' }}</td>
+                        <td>{{ registro.guardia.nombreCompleto }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+{% endblock %}

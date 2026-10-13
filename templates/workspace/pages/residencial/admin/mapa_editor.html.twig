@@ -1,0 +1,171 @@
+{% extends 'workspace/app_layout.html.twig' %}
+{% block page_title %}Editor de mapa{% endblock %}
+{% block app_page_subtitle %}Dibuja el mapa interno de la colonia{% endblock %}
+
+{% block page_styles %}
+<style>
+#mapa-canvas {
+    position: relative;
+    width: 100%;
+    min-height: 500px;
+    background: #0f172a;
+    border: 1px solid #1e293b;
+    border-radius: 10px;
+    overflow: hidden;
+}
+body.light-mode #mapa-canvas { background: #f1f5f9; border-color: #e2e8f0; }
+
+.mapa-casa {
+    position: absolute;
+    width: 60px;
+    height: 60px;
+    background: #1e293b;
+    border: 2px solid #334155;
+    border-radius: 8px;
+    cursor: grab;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    color: #94a3b8;
+    user-select: none;
+    transition: border-color .2s;
+}
+.mapa-casa:hover { border-color: #3b82f6; }
+.mapa-casa.activa { border-color: #3b82f6; background: #1e3a5f; }
+.mapa-casa-numero { font-weight: 700; font-size: 13px; color: #e2e8f0; }
+.mapa-casa-residente { font-size: 9px; color: #64748b; max-width: 56px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+</style>
+{% endblock %}
+
+{% block app_main %}
+
+{% if residencial is null %}
+    <div class="alert alert-warning">No hay un residencial activo. <a href="{{ path('grova_residencial_admin_dashboard', {_locale: app.request.locale}) }}">Configúralo primero.</a></div>
+{% else %}
+
+<div class="row g-3">
+    <div class="col-lg-9">
+        <div class="content-card">
+            <div class="content-card-header">
+                Mapa — {{ residencial.nombre }}
+                <div class="ms-auto d-flex gap-2">
+                    <button id="btn-guardar-mapa" class="btn btn-sm btn-primary">
+                        <i class="bi bi-floppy me-1"></i>Guardar posiciones
+                    </button>
+                </div>
+            </div>
+            <div class="content-card-body p-2">
+                <div id="mapa-canvas">
+                    {% for casa in casas %}
+                    {% set pos = residencial.mapaJson and residencial.mapaJson.casas is defined
+                        ? residencial.mapaJson.casas|filter(c => c.id == casa.id)|first
+                        : null %}
+                    <div class="mapa-casa"
+                         data-casa-id="{{ casa.id }}"
+                         style="left:{{ pos ? pos.x : loop.index0 * 75 + 10 }}px; top:{{ pos ? pos.y : (loop.index0 // 8) * 80 + 10 }}px;">
+                        <span class="mapa-casa-numero">{{ casa.numero }}</span>
+                        {% set propietario = casa.propietario %}
+                        <span class="mapa-casa-residente">{{ propietario ? propietario.nombreCompleto|u.truncate(12) : '—' }}</span>
+                    </div>
+                    {% endfor %}
+                </div>
+                <div class="small text-muted mt-2">Arrastra las casas para posicionarlas. Haz clic en "Guardar posiciones" cuando termines.</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-3">
+        <div class="content-card">
+            <div class="content-card-header">Casas</div>
+            <div class="content-card-body" style="max-height:500px;overflow-y:auto;">
+                {% for casa in casas %}
+                <div class="d-flex align-items-center gap-2 mb-2 small">
+                    <i class="bi bi-house text-muted"></i>
+                    <span>{{ casa.label }}</span>
+                    <span class="badge {{ casa.estado == 'habitada' ? 'bg-success' : 'bg-secondary' }} ms-auto" style="font-size:9px;">{{ casa.estadoLabel }}</span>
+                </div>
+                {% else %}
+                <p class="text-muted small">No hay casas.</p>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endif %}
+
+{% endblock %}
+
+{% block app_page_scripts %}
+<script>
+(function () {
+    const canvas  = document.getElementById('mapa-canvas');
+    if (!canvas) return;
+
+    const csrfToken = "{{ csrf_token('residencial_mapa') }}";
+    const guardarUrl = "{{ path('grova_residencial_admin_mapa_guardar', {_locale: app.request.locale}) }}";
+
+    // Drag-and-drop vanilla JS
+    let arrastrando = null;
+    let offsetX = 0, offsetY = 0;
+
+    canvas.addEventListener('mousedown', (e) => {
+        const objetivo = e.target.closest('.mapa-casa');
+        if (!objetivo) return;
+        arrastrando = objetivo;
+        arrastrando.classList.add('activa');
+        const rect = arrastrando.getBoundingClientRect();
+        const canvasRect = canvas.getBoundingClientRect();
+        offsetX = e.clientX - rect.left;
+        offsetY = e.clientY - rect.top;
+        e.preventDefault();
+    });
+
+    document.addEventListener('mousemove', (e) => {
+        if (!arrastrando) return;
+        const canvasRect = canvas.getBoundingClientRect();
+        let x = e.clientX - canvasRect.left - offsetX;
+        let y = e.clientY - canvasRect.top  - offsetY;
+        x = Math.max(0, Math.min(x, canvasRect.width  - arrastrando.offsetWidth));
+        y = Math.max(0, Math.min(y, canvasRect.height - arrastrando.offsetHeight));
+        arrastrando.style.left = x + 'px';
+        arrastrando.style.top  = y + 'px';
+    });
+
+    document.addEventListener('mouseup', () => {
+        if (arrastrando) {
+            arrastrando.classList.remove('activa');
+            arrastrando = null;
+        }
+    });
+
+    // Guardar posiciones
+    document.getElementById('btn-guardar-mapa').addEventListener('click', async () => {
+        const casas = [];
+        canvas.querySelectorAll('.mapa-casa').forEach(el => {
+            casas.push({
+                id: parseInt(el.dataset.casaId),
+                x:  parseFloat(el.style.left),
+                y:  parseFloat(el.style.top),
+            });
+        });
+
+        const body = new FormData();
+        body.append('_token', csrfToken);
+        body.append('mapa_json', JSON.stringify({ casas }));
+
+        const resp = await fetch(guardarUrl, { method: 'POST', body });
+        const data = await resp.json();
+
+        if (data.ok) {
+            const btn = document.getElementById('btn-guardar-mapa');
+            btn.textContent = '✓ Guardado';
+            btn.classList.replace('btn-primary', 'btn-success');
+            setTimeout(() => { btn.textContent = 'Guardar posiciones'; btn.classList.replace('btn-success', 'btn-primary'); }, 2000);
+        }
+    });
+})();
+</script>
+{% endblock %}

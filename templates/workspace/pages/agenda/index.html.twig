@@ -1,0 +1,632 @@
+{% extends 'workspace/app_layout.html.twig' %}
+{% block page_title %}{{ 'agenda.page_title'|trans({}, 'agenda') }}{% endblock %}
+{% block app_page_subtitle %}{{ 'agenda.subtitle'|trans({}, 'agenda') }}{% endblock %}
+
+{% block page_styles %}
+<style>
+/* ── Stats / tarjetas próximos ── */
+.agenda-proximmo-card {
+    background: #111827;
+    border: 1px solid #1e293b;
+    border-radius: 12px;
+    padding: 1rem 1.25rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    transition: border-color .15s;
+}
+body.light-mode .agenda-proximmo-card { background: #fff; border-color: #e2e8f0; }
+.agenda-proximmo-card:hover { border-color: rgba(100,116,139,.5); }
+.agenda-badge-dias {
+    min-width: 52px;
+    text-align: center;
+    border-radius: 8px;
+    padding: .35rem .5rem;
+    font-size: 11px;
+    font-weight: 700;
+    line-height: 1.2;
+    flex-shrink: 0;
+}
+.agenda-badge-dias--hoy    { background: #16a34a22; color: #4ade80; border: 1px solid #16a34a44; }
+body.light-mode .agenda-badge-dias--hoy { color: #15803d; }
+.agenda-badge-dias--manana { background: #ca8a0422; color: #fbbf24; border: 1px solid #ca8a0444; }
+body.light-mode .agenda-badge-dias--manana { color: #92400e; }
+.agenda-badge-dias--semana { background: #ea580c22; color: #fb923c; border: 1px solid #ea580c44; }
+body.light-mode .agenda-badge-dias--semana { color: #9a3412; }
+.agenda-badge-dias--lejos  { background: #1e293b; color: #94a3b8; border: 1px solid #334155; }
+body.light-mode .agenda-badge-dias--lejos { background: #f1f5f9; color: #475569; border-color: #cbd5e1; }
+.agenda-proximo-nombre { font-size: 14px; font-weight: 600; color: #f1f5f9; }
+body.light-mode .agenda-proximo-nombre { color: #0f172a; }
+.agenda-proximo-meta { font-size: 11px; color: #64748b; margin-top: 2px; }
+/* ── Tipo chips ── */
+.agenda-tipo { display: inline-flex; align-items: center; gap: .3rem; font-size: 11px; padding: 2px 8px; border-radius: 20px; font-weight: 600; white-space: nowrap; }
+.agenda-tipo--cumpleanios { background: #e91e6322; color: #f48fb1; border: 1px solid #e91e6344; }
+.agenda-tipo--evento      { background: #2196f322; color: #64b5f6; border: 1px solid #2196f344; }
+.agenda-tipo--recordatorio{ background: #ff980022; color: #ffcc02; border: 1px solid #ff980044; }
+body.light-mode .agenda-tipo--cumpleanios { color: #c2185b; }
+body.light-mode .agenda-tipo--evento      { color: #1565c0; }
+body.light-mode .agenda-tipo--recordatorio{ color: #e65100; }
+/* ── Tabla ── */
+.agenda-table th { font-size: 11px; text-transform: uppercase; letter-spacing: .05em; color: #64748b; font-weight: 600; padding: .5rem .75rem; border-bottom: 1px solid #1e293b; }
+body.light-mode .agenda-table th { border-bottom-color: #e2e8f0; }
+.agenda-table td { font-size: 13px; padding: .6rem .75rem; vertical-align: middle; border-bottom: 1px solid rgba(30,41,59,.5); }
+body.light-mode .agenda-table td { border-bottom-color: #f1f5f9; }
+.agenda-table tr:last-child td { border-bottom: none; }
+/* ── Dot color ── */
+.agenda-dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 4px; vertical-align: middle; flex-shrink: 0; }
+/* ── Color picker swatch ── */
+.agenda-color-preview { width: 20px; height: 20px; border-radius: 50%; border: 2px solid #334155; display: inline-block; vertical-align: middle; cursor: pointer; }
+body.light-mode .agenda-color-preview { border-color: #cbd5e1; }
+/* ── Recurrente badge ── */
+.badge-recurrente { background: #6366f122; color: #a5b4fc; border: 1px solid #6366f144; font-size: 10px; padding: 1px 7px; border-radius: 10px; }
+body.light-mode .badge-recurrente { color: #4338ca; }
+/* ── Notif chips ── */
+.notif-chip { display: inline-flex; align-items: center; gap: 2px; font-size: 10px; padding: 1px 6px; border-radius: 10px; background: #1e293b; color: #94a3b8; }
+body.light-mode .notif-chip { background: #f1f5f9; color: #475569; }
+.notif-chip--active { background: #0891b222; color: #67e8f9; border: 1px solid #0891b244; }
+body.light-mode .notif-chip--active { color: #0e7490; }
+/* ── Mes separador ── */
+.agenda-mes-header { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; color: #64748b; padding: .5rem .75rem .25rem; }
+</style>
+{% endblock %}
+
+{% block app_main %}
+
+{# ── Header ── #}
+<div class="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-2">
+    <div></div>
+    <button type="button" class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#modal-add-evento">
+        <i class="bi bi-plus-lg me-1"></i>{{ 'agenda.btn_agregar'|trans({}, 'agenda') }}
+    </button>
+</div>
+
+{# ── Sección próximos ── #}
+<div class="content-card mb-4">
+    <div class="content-card-header">
+        <i class="bi bi-calendar-event me-2"></i>{{ 'agenda.section_proximos'|trans({}, 'agenda') }}
+        <span class="text-muted fw-normal" style="font-size:12px; margin-left:.5rem;">— {{ 'agenda.proximos_dias'|trans({'%dias%': 60}, 'agenda') }}</span>
+    </div>
+    <div class="content-card-body">
+        {% if proximos is not empty %}
+            <div class="row g-2">
+                {% for evento in proximos %}
+                {% set diasRestantes = evento.diasRestantes() %}
+                <div class="col-sm-6 col-lg-4">
+                    <div class="agenda-proximmo-card">
+                        {# Badge días restantes #}
+                        {% if diasRestantes == 0 %}
+                            <div class="agenda-badge-dias agenda-badge-dias--hoy">{{ 'agenda.badge_hoy'|trans({}, 'agenda') }}</div>
+                        {% elseif diasRestantes == 1 %}
+                            <div class="agenda-badge-dias agenda-badge-dias--manana">{{ 'agenda.badge_manana'|trans({}, 'agenda') }}</div>
+                        {% elseif diasRestantes <= 7 %}
+                            <div class="agenda-badge-dias agenda-badge-dias--semana">{{ 'agenda.badge_dias'|trans({'%dias%': diasRestantes}, 'agenda') }}</div>
+                        {% else %}
+                            <div class="agenda-badge-dias agenda-badge-dias--lejos">{{ 'agenda.badge_dias'|trans({'%dias%': diasRestantes}, 'agenda') }}</div>
+                        {% endif %}
+                        <div class="flex-grow-1 overflow-hidden">
+                            <div class="agenda-proximo-nombre text-truncate">
+                                {% if evento.color %}
+                                    <span class="agenda-dot" style="background:{{ evento.color }};"></span>
+                                {% endif %}
+                                {{ evento.nombreVisible }}
+                            </div>
+                            <div class="agenda-proximo-meta">
+                                <span class="agenda-tipo agenda-tipo--{{ evento.tipo }}">
+                                    {% if evento.tipo == 'cumpleanios' %}
+                                        <i class="bi bi-balloon"></i> {{ 'agenda.tipo_cumpleanios'|trans({}, 'agenda') }}
+                                    {% elseif evento.tipo == 'recordatorio' %}
+                                        <i class="bi bi-bell"></i> {{ 'agenda.tipo_recordatorio'|trans({}, 'agenda') }}
+                                    {% else %}
+                                        <i class="bi bi-calendar2-check"></i> {{ 'agenda.tipo_evento'|trans({}, 'agenda') }}
+                                    {% endif %}
+                                </span>
+                                <span class="ms-2">{{ evento.fecha|date('d/m') }}{% if not evento.recurrente %}/{{ evento.fecha|date('Y') }}{% endif %}</span>
+                            </div>
+                        </div>
+                        <div class="d-flex gap-1 flex-shrink-0">
+                            <button type="button" class="btn btn-outline-secondary btn-sm px-2 py-1"
+                                    data-bs-toggle="modal" data-bs-target="#modal-edit-evento-{{ evento.id }}"
+                                    title="{{ 'agenda.btn_editar'|trans({}, 'agenda') }}">
+                                <i class="bi bi-pencil"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="grova-empty-state">
+                <div class="grova-empty-icon"><i class="bi bi-calendar2"></i></div>
+                <div class="grova-empty-title">{{ 'agenda.empty_proximos_title'|trans({}, 'agenda') }}</div>
+                <div class="grova-empty-desc">{{ 'agenda.empty_proximos_desc'|trans({}, 'agenda') }}</div>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+{# ── Tabla todos los eventos ── #}
+<div class="content-card">
+    <div class="content-card-header">
+        <i class="bi bi-list-ul me-2"></i>{{ 'agenda.section_todos'|trans({}, 'agenda') }}
+    </div>
+    <div class="content-card-body p-0">
+        {% if todos is not empty %}
+            <div class="table-responsive">
+                <table class="table table-hover mb-0 agenda-table">
+                    <thead>
+                        <tr>
+                            <th>{{ 'agenda.col_acciones'|trans({}, 'agenda') }}</th>
+                            <th>{{ 'agenda.col_fecha'|trans({}, 'agenda') }}</th>
+                            <th>{{ 'agenda.col_tipo'|trans({}, 'agenda') }}</th>
+                            <th>{{ 'agenda.col_nombre'|trans({}, 'agenda') }}</th>
+                            <th>{{ 'agenda.col_recurrente'|trans({}, 'agenda') }}</th>
+                            <th>{{ 'agenda.col_notificaciones'|trans({}, 'agenda') }}</th>
+                            <th>{{ 'agenda.col_notas'|trans({}, 'agenda') }}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for evento in todos %}
+                        <tr>
+                            <td>
+                                <div class="d-flex gap-1">
+                                    <button type="button" class="btn btn-outline-secondary btn-sm px-2 py-1"
+                                            data-bs-toggle="modal" data-bs-target="#modal-edit-evento-{{ evento.id }}"
+                                            title="{{ 'agenda.btn_editar'|trans({}, 'agenda') }}">
+                                        <i class="bi bi-pencil"></i>
+                                    </button>
+                                    <button type="button" class="btn btn-outline-danger btn-sm px-2 py-1 js-agenda-delete"
+                                            data-id="{{ evento.id }}"
+                                            data-nombre="{{ evento.nombre|e('html_attr') }}"
+                                            data-confirm="{{ 'agenda.confirm_delete'|trans({}, 'agenda') }}"
+                                            data-action="{{ path('grova_agenda_delete', {id: evento.id, _locale: app.request.locale}) }}"
+                                            data-token="{{ csrf_token('agenda_evento_delete_' ~ evento.id) }}"
+                                            title="{{ 'agenda.btn_eliminar'|trans({}, 'agenda') }}">
+                                        <i class="bi bi-trash3"></i>
+                                    </button>
+                                </div>
+                            </td>
+                            <td class="text-nowrap">
+                                {% if evento.recurrente %}
+                                    {{ evento.fecha|date('d/m') }}
+                                {% else %}
+                                    {{ evento.fecha|date('d/m/Y') }}
+                                {% endif %}
+                            </td>
+                            <td>
+                                <span class="agenda-tipo agenda-tipo--{{ evento.tipo }}">
+                                    {% if evento.tipo == 'cumpleanios' %}
+                                        <i class="bi bi-balloon"></i> {{ 'agenda.tipo_cumpleanios'|trans({}, 'agenda') }}
+                                    {% elseif evento.tipo == 'recordatorio' %}
+                                        <i class="bi bi-bell"></i> {{ 'agenda.tipo_recordatorio'|trans({}, 'agenda') }}
+                                    {% else %}
+                                        <i class="bi bi-calendar2-check"></i> {{ 'agenda.tipo_evento'|trans({}, 'agenda') }}
+                                    {% endif %}
+                                </span>
+                            </td>
+                            <td>
+                                {% if evento.color %}
+                                    <span class="agenda-dot" style="background:{{ evento.color }};"></span>
+                                {% endif %}
+                                {{ evento.nombreVisible }}
+                                {% if evento.apodo and evento.apodo != evento.nombre %}
+                                    <div class="text-muted" style="font-size:11px;">{{ evento.nombre }}</div>
+                                {% endif %}
+                                {% if evento.hora %}
+                                    <div class="text-muted" style="font-size:11px;"><i class="bi bi-clock me-1"></i>{{ evento.hora }}</div>
+                                {% endif %}
+                                {% if evento.lugar %}
+                                    <div class="text-muted" style="font-size:11px;"><i class="bi bi-geo-alt me-1"></i>{{ evento.lugar }}</div>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if evento.recurrente %}
+                                    <span class="badge-recurrente" title="{{ 'agenda.recurrente_tooltip'|trans({}, 'agenda') }}">
+                                        <i class="bi bi-arrow-repeat me-1"></i>{{ 'agenda.recurrente_si'|trans({}, 'agenda') }}
+                                    </span>
+                                {% else %}
+                                    <span class="text-muted">{{ 'agenda.recurrente_no'|trans({}, 'agenda') }}</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div class="d-flex gap-1 flex-wrap">
+                                    {% if evento.notificarCorreo %}
+                                        <span class="notif-chip notif-chip--active"><i class="bi bi-envelope"></i> {{ 'agenda.notif_correo'|trans({}, 'agenda') }}</span>
+                                    {% endif %}
+                                    {% if evento.notificarPush %}
+                                        <span class="notif-chip notif-chip--active"><i class="bi bi-bell"></i> {{ 'agenda.notif_push'|trans({}, 'agenda') }}</span>
+                                    {% endif %}
+                                    {% if not evento.notificarCorreo and not evento.notificarPush %}
+                                        <span class="notif-chip text-muted">{{ 'agenda.notif_ninguna'|trans({}, 'agenda') }}</span>
+                                    {% endif %}
+                                </div>
+                            </td>
+                            <td class="text-muted" style="max-width:200px;">
+                                {% if evento.notas %}
+                                    <span class="d-inline-block text-truncate" style="max-width:180px;" title="{{ evento.notas|e('html_attr') }}">{{ evento.notas }}</span>
+                                {% else %}
+                                    —
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <div class="grova-empty-state">
+                <div class="grova-empty-icon"><i class="bi bi-calendar2-plus"></i></div>
+                <div class="grova-empty-title">{{ 'agenda.empty_todos_title'|trans({}, 'agenda') }}</div>
+                <div class="grova-empty-desc">{{ 'agenda.empty_todos_desc'|trans({}, 'agenda') }}</div>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+{# ══════════════════════════════════════════════════════════════════════════════
+   MODAL: AGREGAR EVENTO
+══════════════════════════════════════════════════════════════════════════════ #}
+<div class="modal fade grova-modal--macos" id="modal-add-evento" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <form method="post" action="{{ path('grova_agenda_create', {_locale: app.request.locale}) }}">
+                <input type="hidden" name="_token" value="{{ csrf_token('agenda_evento') }}">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="bi bi-calendar-plus me-2"></i>{{ 'agenda.modal_add_title'|trans({}, 'agenda') }}</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row g-3">
+                        <div class="col-12">
+                            <label class="form-label">{{ 'agenda.field_nombre'|trans({}, 'agenda') }}</label>
+                            <input type="text" class="form-control form-control-sm" name="nombre"
+                                   placeholder="{{ 'agenda.field_nombre_placeholder'|trans({}, 'agenda') }}"
+                                   maxlength="200" required>
+                        </div>
+                        <div class="col-sm-6">
+                            <label class="form-label">{{ 'agenda.field_apodo'|trans({}, 'agenda') }}</label>
+                            <input type="text" class="form-control form-control-sm" name="apodo"
+                                   placeholder="{{ 'agenda.field_apodo_placeholder'|trans({}, 'agenda') }}"
+                                   maxlength="100">
+                        </div>
+                        <div class="col-sm-6">
+                            <label class="form-label">{{ 'agenda.field_fecha'|trans({}, 'agenda') }}</label>
+                            <input type="date" class="form-control form-control-sm" name="fecha"
+                                   value="{{ 'now'|date('Y-m-d') }}" required>
+                        </div>
+                        <div class="col-sm-6">
+                            <label class="form-label">{{ 'agenda.field_tipo'|trans({}, 'agenda') }}</label>
+                            <select class="form-select form-select-sm js-agenda-tipo-add" name="tipo">
+                                <option value="evento">{{ 'agenda.tipo_evento'|trans({}, 'agenda') }}</option>
+                                <option value="cumpleanios">{{ 'agenda.tipo_cumpleanios'|trans({}, 'agenda') }}</option>
+                                <option value="recordatorio">{{ 'agenda.tipo_recordatorio'|trans({}, 'agenda') }}</option>
+                            </select>
+                        </div>
+                        <div class="col-sm-6 js-add-wrap-cumple" style="display:none;">
+                            <label class="form-label">{{ 'agenda.field_parentesco'|trans({}, 'agenda') }}</label>
+                            <input type="text" class="form-control form-control-sm" name="parentesco"
+                                   placeholder="{{ 'agenda.field_parentesco_placeholder'|trans({}, 'agenda') }}"
+                                   maxlength="50">
+                        </div>
+                        <div class="col-sm-6 js-add-wrap-evento">
+                            <label class="form-label">{{ 'agenda.field_hora'|trans({}, 'agenda') }}</label>
+                            <input type="time" class="form-control form-control-sm" name="hora">
+                        </div>
+                        <div class="col-12 js-add-wrap-evento">
+                            <label class="form-label">{{ 'agenda.field_lugar'|trans({}, 'agenda') }}</label>
+                            <input type="text" class="form-control form-control-sm" name="lugar"
+                                   placeholder="{{ 'agenda.field_lugar_placeholder'|trans({}, 'agenda') }}"
+                                   maxlength="200">
+                        </div>
+                        <div class="col-12 js-add-wrap-evento">
+                            <label class="form-label">{{ 'agenda.field_url'|trans({}, 'agenda') }}</label>
+                            <input type="url" class="form-control form-control-sm" name="url"
+                                   placeholder="{{ 'agenda.field_url_placeholder'|trans({}, 'agenda') }}"
+                                   maxlength="300">
+                        </div>
+                        <div class="col-sm-6">
+                            <label class="form-label">{{ 'agenda.field_color'|trans({}, 'agenda') }}</label>
+                            <input type="color" class="form-control form-control-color form-control-sm w-100 js-agenda-color-add"
+                                   name="color" value="#2196f3">
+                        </div>
+                        <div class="col-sm-6 d-flex align-items-end">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="recurrente" id="add-recurrente" value="1">
+                                <label class="form-check-label" for="add-recurrente">
+                                    {{ 'agenda.field_recurrente'|trans({}, 'agenda') }}
+                                    <div class="form-text">{{ 'agenda.field_recurrente_help'|trans({}, 'agenda') }}</div>
+                                </label>
+                            </div>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label">{{ 'agenda.field_notas'|trans({}, 'agenda') }}</label>
+                            <textarea class="form-control form-control-sm" name="notas" rows="2" maxlength="500"
+                                      placeholder="{{ 'agenda.field_notas_placeholder'|trans({}, 'agenda') }}"></textarea>
+                        </div>
+                        <div class="col-12">
+                            <div class="form-label mb-2">{{ 'agenda.section_notificaciones'|trans({}, 'agenda') }}</div>
+                            <div class="d-flex flex-wrap gap-3 mb-2">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="notificar_correo" id="add-notif-correo" value="1" checked>
+                                    <label class="form-check-label" for="add-notif-correo">{{ 'agenda.field_notificar_correo'|trans({}, 'agenda') }}</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="notificar_push" id="add-notif-push" value="1">
+                                    <label class="form-check-label" for="add-notif-push">{{ 'agenda.field_notificar_push'|trans({}, 'agenda') }}</label>
+                                </div>
+                            </div>
+                            <div class="form-label mb-1">{{ 'agenda.field_avisos'|trans({}, 'agenda') }}</div>
+                            <div class="row g-2">
+                                <div class="col-4">
+                                    <select class="form-select form-select-sm" name="aviso_1">
+                                        <option value="-1">{{ 'agenda.aviso_ninguno'|trans({}, 'agenda') }}</option>
+                                        <option value="0">{{ 'agenda.aviso_0'|trans({}, 'agenda') }}</option>
+                                        <option value="1" selected>{{ 'agenda.aviso_1'|trans({}, 'agenda') }}</option>
+                                        <option value="3">{{ 'agenda.aviso_3'|trans({}, 'agenda') }}</option>
+                                        <option value="7">{{ 'agenda.aviso_7'|trans({}, 'agenda') }}</option>
+                                        <option value="14">{{ 'agenda.aviso_14'|trans({}, 'agenda') }}</option>
+                                        <option value="30">{{ 'agenda.aviso_30'|trans({}, 'agenda') }}</option>
+                                    </select>
+                                </div>
+                                <div class="col-4">
+                                    <select class="form-select form-select-sm" name="aviso_2">
+                                        <option value="-1" selected>{{ 'agenda.aviso_ninguno'|trans({}, 'agenda') }}</option>
+                                        <option value="0">{{ 'agenda.aviso_0'|trans({}, 'agenda') }}</option>
+                                        <option value="1">{{ 'agenda.aviso_1'|trans({}, 'agenda') }}</option>
+                                        <option value="3">{{ 'agenda.aviso_3'|trans({}, 'agenda') }}</option>
+                                        <option value="7">{{ 'agenda.aviso_7'|trans({}, 'agenda') }}</option>
+                                        <option value="14">{{ 'agenda.aviso_14'|trans({}, 'agenda') }}</option>
+                                        <option value="30">{{ 'agenda.aviso_30'|trans({}, 'agenda') }}</option>
+                                    </select>
+                                </div>
+                                <div class="col-4">
+                                    <select class="form-select form-select-sm" name="aviso_3">
+                                        <option value="-1" selected>{{ 'agenda.aviso_ninguno'|trans({}, 'agenda') }}</option>
+                                        <option value="0">{{ 'agenda.aviso_0'|trans({}, 'agenda') }}</option>
+                                        <option value="1">{{ 'agenda.aviso_1'|trans({}, 'agenda') }}</option>
+                                        <option value="3">{{ 'agenda.aviso_3'|trans({}, 'agenda') }}</option>
+                                        <option value="7">{{ 'agenda.aviso_7'|trans({}, 'agenda') }}</option>
+                                        <option value="14">{{ 'agenda.aviso_14'|trans({}, 'agenda') }}</option>
+                                        <option value="30">{{ 'agenda.aviso_30'|trans({}, 'agenda') }}</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">{{ 'agenda.btn_cancelar'|trans({}, 'agenda') }}</button>
+                    <button type="submit" class="btn btn-primary btn-sm">{{ 'agenda.btn_guardar'|trans({}, 'agenda') }}</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+{# ══════════════════════════════════════════════════════════════════════════════
+   MODALES: EDITAR EVENTO (uno por evento)
+══════════════════════════════════════════════════════════════════════════════ #}
+{% for evento in todos %}
+<div class="modal fade grova-modal--macos" id="modal-edit-evento-{{ evento.id }}" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <form method="post" action="{{ path('grova_agenda_edit', {id: evento.id, _locale: app.request.locale}) }}">
+                <input type="hidden" name="_token" value="{{ csrf_token('agenda_evento_edit_' ~ evento.id) }}">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="bi bi-pencil-square me-2"></i>{{ 'agenda.modal_edit_title'|trans({}, 'agenda') }}</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row g-3">
+                        <div class="col-12">
+                            <label class="form-label">{{ 'agenda.field_nombre'|trans({}, 'agenda') }}</label>
+                            <input type="text" class="form-control form-control-sm" name="nombre"
+                                   value="{{ evento.nombre|e('html_attr') }}"
+                                   maxlength="200" required>
+                        </div>
+                        <div class="col-sm-6">
+                            <label class="form-label">{{ 'agenda.field_apodo'|trans({}, 'agenda') }}</label>
+                            <input type="text" class="form-control form-control-sm" name="apodo"
+                                   value="{{ evento.apodo|e('html_attr') }}"
+                                   placeholder="{{ 'agenda.field_apodo_placeholder'|trans({}, 'agenda') }}"
+                                   maxlength="100">
+                        </div>
+                        <div class="col-sm-6">
+                            <label class="form-label">{{ 'agenda.field_fecha'|trans({}, 'agenda') }}</label>
+                            <input type="date" class="form-control form-control-sm" name="fecha"
+                                   value="{{ evento.fecha|date('Y-m-d') }}" required>
+                        </div>
+                        <div class="col-sm-6">
+                            <label class="form-label">{{ 'agenda.field_tipo'|trans({}, 'agenda') }}</label>
+                            <select class="form-select form-select-sm js-agenda-tipo-edit" name="tipo"
+                                    data-id="{{ evento.id }}"
+                                    data-color-input="#edit-color-{{ evento.id }}">
+                                <option value="evento" {{ evento.tipo == 'evento' ? 'selected' : '' }}>{{ 'agenda.tipo_evento'|trans({}, 'agenda') }}</option>
+                                <option value="cumpleanios" {{ evento.tipo == 'cumpleanios' ? 'selected' : '' }}>{{ 'agenda.tipo_cumpleanios'|trans({}, 'agenda') }}</option>
+                                <option value="recordatorio" {{ evento.tipo == 'recordatorio' ? 'selected' : '' }}>{{ 'agenda.tipo_recordatorio'|trans({}, 'agenda') }}</option>
+                            </select>
+                        </div>
+                        <div class="col-sm-6 js-edit-wrap-cumple-{{ evento.id }}" {{ evento.tipo != 'cumpleanios' ? 'style="display:none;"' : '' }}>
+                            <label class="form-label">{{ 'agenda.field_parentesco'|trans({}, 'agenda') }}</label>
+                            <input type="text" class="form-control form-control-sm" name="parentesco"
+                                   value="{{ evento.parentesco|e('html_attr') }}"
+                                   placeholder="{{ 'agenda.field_parentesco_placeholder'|trans({}, 'agenda') }}"
+                                   maxlength="50">
+                        </div>
+                        <div class="col-sm-6 js-edit-wrap-evento-{{ evento.id }}" {{ evento.tipo == 'cumpleanios' ? 'style="display:none;"' : '' }}>
+                            <label class="form-label">{{ 'agenda.field_hora'|trans({}, 'agenda') }}</label>
+                            <input type="time" class="form-control form-control-sm" name="hora"
+                                   value="{{ evento.hora ?? '' }}">
+                        </div>
+                        <div class="col-12 js-edit-wrap-evento-{{ evento.id }}" {{ evento.tipo == 'cumpleanios' ? 'style="display:none;"' : '' }}>
+                            <label class="form-label">{{ 'agenda.field_lugar'|trans({}, 'agenda') }}</label>
+                            <input type="text" class="form-control form-control-sm" name="lugar"
+                                   value="{{ evento.lugar|e('html_attr') }}"
+                                   placeholder="{{ 'agenda.field_lugar_placeholder'|trans({}, 'agenda') }}"
+                                   maxlength="200">
+                        </div>
+                        <div class="col-12 js-edit-wrap-evento-{{ evento.id }}" {{ evento.tipo == 'cumpleanios' ? 'style="display:none;"' : '' }}>
+                            <label class="form-label">{{ 'agenda.field_url'|trans({}, 'agenda') }}</label>
+                            <input type="url" class="form-control form-control-sm" name="url"
+                                   value="{{ evento.url ?? '' }}"
+                                   placeholder="{{ 'agenda.field_url_placeholder'|trans({}, 'agenda') }}"
+                                   maxlength="300">
+                        </div>
+                        <div class="col-sm-6">
+                            <label class="form-label">{{ 'agenda.field_color'|trans({}, 'agenda') }}</label>
+                            <input type="color" class="form-control form-control-color form-control-sm w-100"
+                                   id="edit-color-{{ evento.id }}" name="color"
+                                   value="{{ evento.color ?? '#2196f3' }}">
+                        </div>
+                        <div class="col-sm-6 d-flex align-items-end">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="recurrente"
+                                       id="edit-recurrente-{{ evento.id }}" value="1"
+                                       {{ evento.recurrente ? 'checked' : '' }}>
+                                <label class="form-check-label" for="edit-recurrente-{{ evento.id }}">
+                                    {{ 'agenda.field_recurrente'|trans({}, 'agenda') }}
+                                    <div class="form-text">{{ 'agenda.field_recurrente_help'|trans({}, 'agenda') }}</div>
+                                </label>
+                            </div>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label">{{ 'agenda.field_notas'|trans({}, 'agenda') }}</label>
+                            <textarea class="form-control form-control-sm" name="notas" rows="2" maxlength="500"
+                                      placeholder="{{ 'agenda.field_notas_placeholder'|trans({}, 'agenda') }}">{{ evento.notas }}</textarea>
+                        </div>
+                        <div class="col-12">
+                            <div class="form-label mb-2">{{ 'agenda.section_notificaciones'|trans({}, 'agenda') }}</div>
+                            <div class="d-flex flex-wrap gap-3 mb-2">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="notificar_correo"
+                                           id="edit-notif-correo-{{ evento.id }}" value="1"
+                                           {{ evento.notificarCorreo ? 'checked' : '' }}>
+                                    <label class="form-check-label" for="edit-notif-correo-{{ evento.id }}">{{ 'agenda.field_notificar_correo'|trans({}, 'agenda') }}</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="notificar_push"
+                                           id="edit-notif-push-{{ evento.id }}" value="1"
+                                           {{ evento.notificarPush ? 'checked' : '' }}>
+                                    <label class="form-check-label" for="edit-notif-push-{{ evento.id }}">{{ 'agenda.field_notificar_push'|trans({}, 'agenda') }}</label>
+                                </div>
+                            </div>
+                            <div class="form-label mb-1">{{ 'agenda.field_avisos'|trans({}, 'agenda') }}</div>
+                            {% set avisosSlots = evento.avisos %}
+                            <div class="row g-2">
+                                {% for slot in 1..3 %}
+                                {% set slotVal = avisosSlots[loop.index0] is defined ? avisosSlots[loop.index0] : -1 %}
+                                <div class="col-4">
+                                    <select class="form-select form-select-sm" name="aviso_{{ slot }}">
+                                        <option value="-1" {{ slotVal == -1 ? 'selected' : '' }}>{{ 'agenda.aviso_ninguno'|trans({}, 'agenda') }}</option>
+                                        <option value="0"  {{ slotVal == 0  ? 'selected' : '' }}>{{ 'agenda.aviso_0'|trans({}, 'agenda') }}</option>
+                                        <option value="1"  {{ slotVal == 1  ? 'selected' : '' }}>{{ 'agenda.aviso_1'|trans({}, 'agenda') }}</option>
+                                        <option value="3"  {{ slotVal == 3  ? 'selected' : '' }}>{{ 'agenda.aviso_3'|trans({}, 'agenda') }}</option>
+                                        <option value="7"  {{ slotVal == 7  ? 'selected' : '' }}>{{ 'agenda.aviso_7'|trans({}, 'agenda') }}</option>
+                                        <option value="14" {{ slotVal == 14 ? 'selected' : '' }}>{{ 'agenda.aviso_14'|trans({}, 'agenda') }}</option>
+                                        <option value="30" {{ slotVal == 30 ? 'selected' : '' }}>{{ 'agenda.aviso_30'|trans({}, 'agenda') }}</option>
+                                    </select>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">{{ 'agenda.btn_cancelar'|trans({}, 'agenda') }}</button>
+                    <button type="submit" class="btn btn-primary btn-sm">{{ 'agenda.btn_guardar'|trans({}, 'agenda') }}</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endfor %}
+
+{# ══════════════════════════════════════════════════════════════════════════════
+   FORMS OCULTOS: ELIMINAR EVENTO
+══════════════════════════════════════════════════════════════════════════════ #}
+<div id="agenda-delete-forms" style="display:none;">
+    {% for evento in todos %}
+    <form id="form-delete-evento-{{ evento.id }}" method="post"
+          action="{{ path('grova_agenda_delete', {id: evento.id, _locale: app.request.locale}) }}">
+        <input type="hidden" name="_token" value="{{ csrf_token('agenda_evento_delete_' ~ evento.id) }}">
+    </form>
+    {% endfor %}
+</div>
+
+{% endblock %}
+
+{% block page_scripts %}
+<script>
+(function () {
+    'use strict';
+
+    var colorPorTipo = { evento: '#2196f3', cumpleanios: '#e91e63', recordatorio: '#ff9800' };
+
+    // ── Modal AGREGAR: toggle de campos según tipo ──
+    function toggleAddFields(tipo) {
+        var esCumple  = tipo === 'cumpleanios';
+        document.querySelectorAll('.js-add-wrap-cumple').forEach(function (el) {
+            el.style.display = esCumple ? '' : 'none';
+        });
+        document.querySelectorAll('.js-add-wrap-evento').forEach(function (el) {
+            el.style.display = esCumple ? 'none' : '';
+        });
+    }
+
+    var tipoAddSelect = document.querySelector('.js-agenda-tipo-add');
+    var colorAddInput = document.querySelector('.js-agenda-color-add');
+    if (tipoAddSelect) {
+        toggleAddFields(tipoAddSelect.value);
+        tipoAddSelect.addEventListener('change', function () {
+            toggleAddFields(this.value);
+            if (colorAddInput && colorPorTipo[this.value]) {
+                colorAddInput.value = colorPorTipo[this.value];
+            }
+        });
+    }
+
+    // ── Modales EDITAR: toggle de campos según tipo ──
+    document.querySelectorAll('.js-agenda-tipo-edit').forEach(function (sel) {
+        var id = sel.dataset.id;
+        function toggleEditFields(tipo) {
+            var esCumple = tipo === 'cumpleanios';
+            document.querySelectorAll('.js-edit-wrap-cumple-' + id).forEach(function (el) {
+                el.style.display = esCumple ? '' : 'none';
+            });
+            document.querySelectorAll('.js-edit-wrap-evento-' + id).forEach(function (el) {
+                el.style.display = esCumple ? 'none' : '';
+            });
+        }
+        toggleEditFields(sel.value);
+        sel.addEventListener('change', function () {
+            toggleEditFields(this.value);
+            var colorInput = document.querySelector(this.dataset.colorInput);
+            if (colorInput && colorPorTipo[this.value]) {
+                colorInput.value = colorPorTipo[this.value];
+            }
+        });
+    });
+
+    // ── Confirmación de eliminación ──
+    document.querySelectorAll('.js-agenda-delete').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            var id      = this.dataset.id;
+            var confirm = this.dataset.confirm;
+            var nombre  = this.dataset.nombre;
+            var doDelete = function () {
+                var form = document.getElementById('form-delete-evento-' + id);
+                if (form) { form.submit(); }
+            };
+            if (typeof Swal !== 'undefined') {
+                Swal.fire({
+                    title: confirm, text: nombre, icon: 'warning',
+                    showCancelButton: true, confirmButtonText: 'Eliminar',
+                    cancelButtonText: 'Cancelar', confirmButtonColor: '#ef4444',
+                }).then(function (result) { if (result.isConfirmed) { doDelete(); } });
+            } else {
+                if (window.confirm(confirm + '\n' + nombre)) { doDelete(); }
+            }
+        });
+    });
+})();
+</script>
+{% endblock %}

@@ -1,0 +1,81 @@
+{% extends 'workspace/app_layout.html.twig' %}
+{% block page_title %}Paquetes{% endblock %}
+{% block app_page_subtitle %}Recibir y entregar paquetes{% endblock %}
+
+{% block app_main %}
+
+{% for label, messages in app.flashes %}
+    {% for message in messages %}
+        <div class="alert alert-{{ label == 'danger' ? 'danger' : 'success' }} mb-3">{{ message }}</div>
+    {% endfor %}
+{% endfor %}
+
+<div class="row g-3">
+    <div class="col-md-5">
+        <div class="content-card">
+            <div class="content-card-header">Registrar paquete recibido</div>
+            <div class="content-card-body">
+                <form method="post" action="{{ path('grova_residencial_guardia_paquete_recibir', {_locale: app.request.locale}) }}">
+                    <input type="hidden" name="_token" value="{{ csrf_token('residencial_paquete') }}">
+                    <div class="mb-2">
+                        <label class="form-label">Residente</label>
+                        <select name="residente_id" class="form-select" required>
+                            <option value="0">— Seleccionar —</option>
+                            {% for persona in personas %}
+                                <option value="{{ persona.id }}">{{ persona.nombreCompleto }}{% if persona.casa %} ({{ persona.casa.label }}){% endif %}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-2">
+                        <label class="form-label">Casa</label>
+                        <select name="casa_id" class="form-select" required>
+                            <option value="0">— Seleccionar —</option>
+                            {% for casa in casas %}
+                                <option value="{{ casa.id }}">{{ casa.label }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-2">
+                        <label class="form-label">Empresa mensajería</label>
+                        <input type="text" name="empresa_mensajeria" class="form-control" placeholder="DHL, FedEx, etc.">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Descripción</label>
+                        <input type="text" name="descripcion" class="form-control" placeholder="Caja pequeña, sobre, etc.">
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="bi bi-box-seam me-1"></i>Registrar paquete
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-7">
+        <div class="content-card">
+            <div class="content-card-header">Paquetes pendientes — {{ paquetes|length }}</div>
+            <div class="content-card-body p-0">
+                {% if paquetes is empty %}
+                    <p class="text-muted text-center py-4">Sin paquetes pendientes.</p>
+                {% else %}
+                <div class="table-responsive">
+                    <table class="table table-sm mb-0">
+                        <thead><tr><th>Residente</th><th>Casa</th><th>Recibido</th></tr></thead>
+                        <tbody>
+                            {% for paquete in paquetes %}
+                            <tr>
+                                <td>{{ paquete.residente.nombreCompleto }}</td>
+                                <td>{{ paquete.casa.label }}</td>
+                                <td>{{ paquete.recibidoEn|date('d/m H:i') }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

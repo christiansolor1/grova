@@ -1,0 +1,104 @@
+{% extends 'workspace/app_layout.html.twig' %}
+{% block page_title %}Residentes{% endblock %}
+{% block app_page_subtitle %}Propietarios, inquilinos y personal del residencial{% endblock %}
+
+{% block page_styles %}
+<style>
+.persona-row { background:#111827; border:1px solid #1e293b; border-radius:10px; padding:.85rem 1rem; margin-bottom:.4rem; display:flex; align-items:center; gap:.75rem; flex-wrap:wrap; }
+body.light-mode .persona-row { background:#fff; border-color:#e2e8f0; }
+.tipo-propietario     { background:#3b82f622; color:#60a5fa; }
+.tipo-inquilino       { background:#8b5cf622; color:#a78bfa; }
+.tipo-familiar        { background:#10b98122; color:#34d399; }
+.tipo-personal_recurrente { background:#f59e0b22; color:#fbbf24; }
+.tipo-badge { font-size:10px; padding:2px 8px; border-radius:8px; font-weight:600; }
+</style>
+{% endblock %}
+
+{% block app_main %}
+
+{% for label, messages in app.flashes %}
+    {% for message in messages %}
+        <div class="alert alert-{{ label == 'danger' ? 'danger' : 'success' }} mb-3">{{ message }}</div>
+    {% endfor %}
+{% endfor %}
+
+<div class="content-card">
+    <div class="content-card-header">
+        Residentes y personal
+        <button class="btn btn-sm btn-primary ms-auto" data-bs-toggle="modal" data-bs-target="#modalNuevaPersona">
+            <i class="bi bi-plus-lg me-1"></i>Agregar
+        </button>
+    </div>
+    <div class="content-card-body">
+        {% if personas is empty %}
+            <p class="text-muted text-center py-4">Aún no hay residentes registrados.</p>
+        {% else %}
+            {% for persona in personas %}
+            <div class="persona-row">
+                <div>
+                    <div class="fw-semibold">{{ persona.nombreCompleto }}</div>
+                    {% if persona.casa %}
+                        <div class="small text-muted"><i class="bi bi-house me-1"></i>{{ persona.casa.label }}</div>
+                    {% endif %}
+                </div>
+                <span class="tipo-badge tipo-{{ persona.tipo }}">{{ persona.tipoLabel }}</span>
+                {% if persona.telefono %}
+                    <span class="small text-muted"><i class="bi bi-telephone me-1"></i>{{ persona.telefono }}</span>
+                {% endif %}
+                <div class="ms-auto">
+                    <button class="btn btn-xs btn-outline-primary"
+                            data-bs-toggle="modal" data-bs-target="#modalEditarPersona{{ persona.id }}">
+                        <i class="bi bi-pencil"></i>
+                    </button>
+                </div>
+            </div>
+
+            {# Modal editar #}
+            <div class="modal fade" id="modalEditarPersona{{ persona.id }}" tabindex="-1">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <form method="post" action="{{ path('grova_residencial_admin_residente_edit', {id: persona.id, _locale: app.request.locale}) }}">
+                            <input type="hidden" name="_token" value="{{ csrf_token('residencial_residente_edit_' ~ persona.id) }}">
+                            <div class="modal-header">
+                                <h5 class="modal-title">Editar residente</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                            </div>
+                            <div class="modal-body">
+                                {% include 'workspace/pages/residencial/admin/_form_persona.html.twig' with {persona: persona, casas: casas} %}
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+                                <button type="submit" class="btn btn-sm btn-primary">Guardar</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        {% endif %}
+    </div>
+</div>
+
+{# Modal nueva persona #}
+<div class="modal fade" id="modalNuevaPersona" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="post" action="{{ path('grova_residencial_admin_residente_create', {_locale: app.request.locale}) }}">
+                <input type="hidden" name="_token" value="{{ csrf_token('residencial_residente') }}">
+                <div class="modal-header">
+                    <h5 class="modal-title">Agregar residente</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    {% include 'workspace/pages/residencial/admin/_form_persona.html.twig' with {persona: null, casas: casas} %}
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-sm btn-primary">Guardar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

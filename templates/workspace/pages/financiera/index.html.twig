@@ -1,0 +1,1741 @@
+{% extends 'workspace/app_layout.html.twig' %}
+
+{% block page_title %}Planificación Financiera{% endblock %}
+{% block app_page_subtitle %}{{ anio }}/{{ '%02d'|format(mes) }}{% endblock %}
+
+{% block page_styles %}
+<style>
+/* ── Cards KPI ── */
+.fin-kpi { background:#111827; border:1px solid #1e293b; border-radius:12px; padding:1rem 1.25rem; }
+body.light-mode .fin-kpi { background:#fff; border-color:#e2e8f0; }
+.fin-kpi-label { font-size:11px; text-transform:uppercase; letter-spacing:.06em; color:#64748b; font-weight:600; }
+.fin-kpi-value { font-size:22px; font-weight:700; color:#f1f5f9; margin-top:.2rem; }
+body.light-mode .fin-kpi-value { color:#0f172a; }
+.fin-kpi-sub { font-size:11px; color:#64748b; margin-top:.2rem; }
+/* ── Bolsa progress ── */
+.fin-bolsa-row { display:flex; align-items:center; gap:.75rem; padding:.5rem 0; border-bottom:1px solid rgba(30,41,59,.5); }
+body.light-mode .fin-bolsa-row { border-bottom-color:#f1f5f9; }
+.fin-bolsa-row:last-child { border-bottom:none; }
+.fin-bolsa-dot { width:10px; height:10px; border-radius:50%; flex-shrink:0; }
+.fin-bolsa-nombre { font-size:13px; color:#cbd5e1; flex:1; }
+body.light-mode .fin-bolsa-nombre { color:#334155; }
+.fin-bolsa-monto { font-size:13px; font-weight:600; color:#f1f5f9; white-space:nowrap; }
+body.light-mode .fin-bolsa-monto { color:#0f172a; }
+.fin-bolsa-pct { font-size:11px; color:#64748b; white-space:nowrap; }
+/* ── Cuotas próximas ── */
+.fin-cuota-row { display:flex; align-items:center; gap:.75rem; padding:.55rem .75rem; border-bottom:1px solid rgba(30,41,59,.4); }
+body.light-mode .fin-cuota-row { border-bottom-color:#f1f5f9; }
+.fin-cuota-row:last-child { border-bottom:none; }
+.fin-vence-badge { min-width:48px; text-align:center; border-radius:8px; padding:.3rem .4rem; font-size:10px; font-weight:700; line-height:1.2; flex-shrink:0; }
+.fin-vence--hoy     { background:#ef444422; color:#f87171; border:1px solid #ef444444; }
+.fin-vence--pronto  { background:#f9731622; color:#fb923c; border:1px solid #f9731644; }
+.fin-vence--normal  { background:#1e293b;   color:#94a3b8; border:1px solid #334155; }
+body.light-mode .fin-vence--hoy    { color:#dc2626; }
+body.light-mode .fin-vence--pronto { color:#c2410c; }
+body.light-mode .fin-vence--normal { background:#f1f5f9; color:#475569; border-color:#cbd5e1; }
+.fin-cuota-nombre { font-size:13px; font-weight:600; color:#f1f5f9; }
+body.light-mode .fin-cuota-nombre { color:#0f172a; }
+.fin-cuota-sub { font-size:11px; color:#64748b; }
+/* ── Estado cuota ── */
+.fin-estado { display:inline-flex; align-items:center; gap:.3rem; font-size:11px; padding:2px 8px; border-radius:20px; font-weight:600; white-space:nowrap; }
+.fin-estado--pendiente { background:#1e293b; color:#94a3b8; border:1px solid #334155; }
+.fin-estado--parcial   { background:#ca8a0422; color:#fbbf24; border:1px solid #ca8a0444; }
+.fin-estado--pagado    { background:#16a34a22; color:#4ade80; border:1px solid #16a34a44; }
+.fin-estado--vencido   { background:#ef444422; color:#f87171; border:1px solid #ef444444; }
+body.light-mode .fin-estado--pendiente { background:#f1f5f9; color:#475569; border-color:#cbd5e1; }
+body.light-mode .fin-estado--parcial   { color:#92400e; }
+body.light-mode .fin-estado--pagado    { color:#15803d; }
+body.light-mode .fin-estado--vencido   { color:#dc2626; }
+/* ── Tabla movimientos ── */
+.fin-table th { font-size:11px; text-transform:uppercase; letter-spacing:.05em; color:#64748b; font-weight:600; padding:.5rem .75rem; border-bottom:1px solid #1e293b; }
+body.light-mode .fin-table th { border-bottom-color:#e2e8f0; }
+.fin-table td { font-size:13px; padding:.55rem .75rem; vertical-align:middle; border-bottom:1px solid rgba(30,41,59,.5); }
+body.light-mode .fin-table td { border-bottom-color:#f1f5f9; }
+.fin-table tr:last-child td { border-bottom:none; }
+/* ── Naturaleza ── */
+.fin-nat { display:inline-flex; align-items:center; font-size:10px; padding:1px 7px; border-radius:10px; font-weight:600; }
+.fin-nat--necesidad { background:#3b82f622; color:#93c5fd; border:1px solid #3b82f644; }
+.fin-nat--deseo     { background:#f9731622; color:#fdba74; border:1px solid #f9731644; }
+.fin-nat--ahorro    { background:#22c55e22; color:#86efac; border:1px solid #22c55e44; }
+.fin-nat--deuda     { background:#ef444422; color:#fca5a5; border:1px solid #ef444444; }
+body.light-mode .fin-nat--necesidad { color:#1d4ed8; }
+body.light-mode .fin-nat--deseo     { color:#c2410c; }
+body.light-mode .fin-nat--ahorro    { color:#15803d; }
+body.light-mode .fin-nat--deuda     { color:#dc2626; }
+/* ── Nav tabs ── */
+.fin-tabs { display:flex; gap:.25rem; border-bottom:1px solid #1e293b; margin-bottom:1.25rem; }
+body.light-mode .fin-tabs { border-bottom-color:#e2e8f0; }
+.fin-tab { padding:.45rem .9rem; font-size:13px; font-weight:500; color:#64748b; border:none; background:none; cursor:pointer; border-bottom:2px solid transparent; transition:.15s; }
+.fin-tab:hover { color:#f1f5f9; }
+body.light-mode .fin-tab:hover { color:#0f172a; }
+.fin-tab.active { color:#6366f1; border-bottom-color:#6366f1; }
+/* ── Score badge ── */
+.fin-score-badge { display:inline-flex; align-items:center; font-size:12px; font-weight:700; padding:2px 10px; border-radius:20px; }
+.fin-score--verde    { background:#16a34a22; color:#4ade80; border:1px solid #16a34a44; }
+.fin-score--amarillo { background:#ca8a0422; color:#fbbf24; border:1px solid #ca8a0444; }
+.fin-score--rojo     { background:#ef444422; color:#f87171; border:1px solid #ef444444; }
+body.light-mode .fin-score--verde    { color:#15803d; }
+body.light-mode .fin-score--amarillo { color:#92400e; }
+body.light-mode .fin-score--rojo     { color:#dc2626; }
+/* ── Score ring ── */
+.fin-score-ring { width:72px; height:72px; border-radius:50%; display:flex; flex-direction:column; align-items:center; justify-content:center; border:3px solid; flex-shrink:0; }
+.fin-score-ring--verde    { border-color:#16a34a; background:#16a34a11; }
+.fin-score-ring--amarillo { border-color:#ca8a04; background:#ca8a0411; }
+.fin-score-ring--rojo     { border-color:#ef4444; background:#ef444411; }
+.fin-score-num { font-size:22px; font-weight:800; line-height:1; color:#f1f5f9; }
+body.light-mode .fin-score-num { color:#0f172a; }
+.fin-score-den { font-size:10px; color:#64748b; }
+/* ── Regla chips ── */
+.fin-regla-chip { display:inline-flex; align-items:center; font-size:12px; font-weight:600; padding:3px 10px; border-radius:20px; }
+.fin-regla-chip--ok   { background:#16a34a22; color:#4ade80; border:1px solid #16a34a44; }
+.fin-regla-chip--fail { background:#ef444422; color:#f87171; border:1px solid #ef444444; }
+body.light-mode .fin-regla-chip--ok   { color:#15803d; }
+body.light-mode .fin-regla-chip--fail { color:#dc2626; }
+.fin-regla-ref { font-size:12px; color:#64748b; font-weight:500; }
+/* ── Progress bars bolsa ── */
+.fin-bolsa-barra { background:#111827; border:1px solid #1e293b; border-radius:10px; padding:.75rem 1rem; }
+body.light-mode .fin-bolsa-barra { background:#f8fafc; border-color:#e2e8f0; }
+.fin-bolsa-barra-label { font-size:12px; font-weight:600; color:#cbd5e1; display:flex; align-items:center; gap:.4rem; }
+body.light-mode .fin-bolsa-barra-label { color:#334155; }
+.fin-bolsa-barra-nums { font-size:12px; }
+.fin-bolsa-barra-real { font-weight:700; }
+.fin-bolsa-barra-real--verde    { color:#4ade80; }
+.fin-bolsa-barra-real--amarillo { color:#fbbf24; }
+.fin-bolsa-barra-real--rojo     { color:#f87171; }
+.fin-bolsa-barra-real--neutro   { color:#94a3b8; }
+body.light-mode .fin-bolsa-barra-real--verde    { color:#15803d; }
+body.light-mode .fin-bolsa-barra-real--amarillo { color:#92400e; }
+body.light-mode .fin-bolsa-barra-real--rojo     { color:#dc2626; }
+.fin-progress-track { position:relative; height:6px; background:#1e293b; border-radius:3px; overflow:hidden; }
+body.light-mode .fin-progress-track { background:#e2e8f0; }
+.fin-progress-obj  { position:absolute; top:0; left:0; height:100%; background:#334155; border-radius:3px; }
+body.light-mode .fin-progress-obj { background:#cbd5e1; }
+.fin-progress-real { position:absolute; top:0; left:0; height:100%; border-radius:3px; transition:width .4s ease; }
+.fin-progress-real--verde    { background:#16a34a; }
+.fin-progress-real--amarillo { background:#ca8a04; }
+.fin-progress-real--rojo     { background:#ef4444; }
+.fin-progress-real--neutro   { background:#6366f1; }
+.fin-bolsa-barra-monto { font-size:11px; color:#64748b; margin-top:.3rem; }
+/* ── Nav meses ── */
+.fin-mes-nav { display:flex; align-items:center; gap:.5rem; }
+.fin-mes-label { font-size:14px; font-weight:600; color:#f1f5f9; min-width:110px; text-align:center; }
+body.light-mode .fin-mes-label { color:#0f172a; }
+/* ── Metas ── */
+.fin-meta-card { background:#111827; border:1px solid #1e293b; border-radius:12px; padding:1rem; }
+body.light-mode .fin-meta-card { background:#fff; border-color:#e2e8f0; }
+.fin-meta-card.inactiva { opacity:.5; }
+.fin-meta-nombre { font-size:14px; font-weight:700; color:#f1f5f9; }
+body.light-mode .fin-meta-nombre { color:#0f172a; }
+.fin-meta-tipo { font-size:11px; color:#64748b; }
+.fin-meta-pct { font-size:22px; font-weight:800; line-height:1; }
+.fin-meta-track { height:8px; background:#1e293b; border-radius:4px; overflow:hidden; margin:.5rem 0; }
+body.light-mode .fin-meta-track { background:#e2e8f0; }
+.fin-meta-fill { height:100%; border-radius:4px; transition:width .4s ease; }
+.fin-meta-fill--ok   { background:linear-gradient(90deg,#16a34a,#4ade80); }
+.fin-meta-fill--mid  { background:linear-gradient(90deg,#ca8a04,#fbbf24); }
+.fin-meta-fill--low  { background:linear-gradient(90deg,#6366f1,#a5b4fc); }
+.fin-meta-fill--done { background:linear-gradient(90deg,#16a34a,#86efac); }
+.fin-meta-nums { font-size:12px; color:#64748b; }
+.fin-meta-nums strong { color:#94a3b8; }
+body.light-mode .fin-meta-nums strong { color:#475569; }
+/* ── Acreedores ── */
+.fin-acr-row { display:flex; align-items:center; gap:.75rem; padding:.65rem .75rem; border-bottom:1px solid rgba(30,41,59,.4); }
+body.light-mode .fin-acr-row { border-bottom-color:#f1f5f9; }
+.fin-acr-row:last-child { border-bottom:none; }
+.fin-acr-row.inactiva { opacity:.5; }
+.fin-acr-nombre { font-size:13px; font-weight:600; color:#f1f5f9; }
+body.light-mode .fin-acr-nombre { color:#0f172a; }
+.fin-acr-sub { font-size:11px; color:#64748b; }
+.fin-acr-saldo { font-size:15px; font-weight:700; color:#f87171; white-space:nowrap; }
+body.light-mode .fin-acr-saldo { color:#dc2626; }
+.fin-acr-saldo--pagado { color:#4ade80; }
+body.light-mode .fin-acr-saldo--pagado { color:#15803d; }
+/* ── Inversiones ── */
+.fin-inv-card { background:#111827; border:1px solid #1e293b; border-radius:12px; padding:1rem; }
+body.light-mode .fin-inv-card { background:#fff; border-color:#e2e8f0; }
+.fin-inv-card.inactiva { opacity:.5; }
+.fin-inv-nombre { font-size:14px; font-weight:700; color:#f1f5f9; }
+body.light-mode .fin-inv-nombre { color:#0f172a; }
+.fin-inv-inst { font-size:11px; color:#64748b; }
+.fin-inv-valor { font-size:22px; font-weight:800; line-height:1; color:#f1f5f9; }
+body.light-mode .fin-inv-valor { color:#0f172a; }
+.fin-inv-ganancia { font-size:12px; font-weight:700; }
+.fin-inv-ganancia--pos { color:#4ade80; }
+.fin-inv-ganancia--neg { color:#f87171; }
+body.light-mode .fin-inv-ganancia--pos { color:#15803d; }
+body.light-mode .fin-inv-ganancia--neg { color:#dc2626; }
+/* ── Resumen general ── */
+.fin-global { background:linear-gradient(135deg,#0f172a 0%,#111827 100%); border:1px solid #1e293b; border-radius:14px; padding:1.1rem 1.25rem; }
+body.light-mode .fin-global { background:linear-gradient(135deg,#f8fafc 0%,#fff 100%); border-color:#e2e8f0; }
+.fin-global-title { font-size:11px; text-transform:uppercase; letter-spacing:.07em; color:#64748b; font-weight:600; margin-bottom:.65rem; }
+.fin-global-saldo { font-size:28px; font-weight:800; line-height:1; }
+.fin-global-meta { font-size:11px; color:#64748b; margin-top:.2rem; }
+.fin-global-item { display:flex; align-items:baseline; justify-content:space-between; padding:.3rem 0; border-bottom:1px solid rgba(30,41,59,.4); }
+body.light-mode .fin-global-item { border-bottom-color:#f1f5f9; }
+.fin-global-item:last-child { border-bottom:none; }
+.fin-global-item-label { font-size:12px; color:#64748b; }
+.fin-global-item-val { font-size:13px; font-weight:700; }
+/* ── Documentos ── */
+.fin-doc-list { list-style:none; padding:0; margin:.5rem 0 0; }
+.fin-doc-item { display:flex; align-items:center; gap:.5rem; padding:.25rem 0; border-bottom:1px solid rgba(30,41,59,.3); font-size:12px; color:#94a3b8; }
+body.light-mode .fin-doc-item { border-bottom-color:#f1f5f9; color:#475569; }
+.fin-doc-item:last-child { border-bottom:none; }
+.fin-doc-item a { color:#6366f1; text-decoration:none; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:160px; }
+.fin-doc-item a:hover { text-decoration:underline; }
+.fin-doc-size { font-size:10px; color:#475569; flex-shrink:0; }
+.fin-doc-desc { font-size:10px; color:#64748b; flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+</style>
+{% endblock %}
+
+{% set meses = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'] %}
+{% set mesAnterior = mes == 1 ? 12 : mes - 1 %}
+{% set anioAnterior = mes == 1 ? anio - 1 : anio %}
+{% set mesSiguiente = mes == 12 ? 1 : mes + 1 %}
+{% set anioSiguiente = mes == 12 ? anio + 1 : anio %}
+
+{% block app_main %}
+
+{# ── Header ── #}
+<div class="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-2">
+    <div class="fin-mes-nav">
+        <a href="{{ path('grova_financiera_index', {_locale: app.request.locale, anio: anioAnterior, mes: mesAnterior}) }}" class="btn btn-outline-secondary btn-sm px-2"><i class="bi bi-chevron-left"></i></a>
+        <span class="fin-mes-label">{{ meses[mes - 1] }} {{ anio }}</span>
+        <a href="{{ path('grova_financiera_index', {_locale: app.request.locale, anio: anioSiguiente, mes: mesSiguiente}) }}" class="btn btn-outline-secondary btn-sm px-2"><i class="bi bi-chevron-right"></i></a>
+    </div>
+    <div class="d-flex gap-2">
+        <button type="button" class="btn btn-success btn-sm" data-bs-toggle="modal" data-bs-target="#modal-ingreso">
+            <i class="bi bi-plus-circle me-1"></i>Ingreso
+        </button>
+        <button type="button" class="btn btn-danger btn-sm" data-bs-toggle="modal" data-bs-target="#modal-gasto">
+            <i class="bi bi-dash-circle me-1"></i>Gasto
+        </button>
+        <button type="button" class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#modal-compromiso">
+            <i class="bi bi-calendar-check me-1"></i>Compromiso
+        </button>
+        <form method="post" action="{{ path('grova_financiera_cuotas_generar', {_locale: app.request.locale}) }}">
+            <input type="hidden" name="_token" value="{{ csrf_token('fin_generar_cuotas') }}">
+            <input type="hidden" name="anio" value="{{ anio }}">
+            <input type="hidden" name="mes" value="{{ mes }}">
+            <button type="submit" class="btn btn-outline-secondary btn-sm" title="Generar cuotas del mes">
+                <i class="bi bi-lightning-charge me-1"></i>Generar cuotas
+            </button>
+        </form>
+    </div>
+</div>
+
+{# ── Resumen general (todo el tiempo) ── #}
+<div class="row g-3 mb-4">
+    <div class="col-12 col-md-4">
+        <div class="fin-global h-100">
+            <div class="fin-global-title"><i class="bi bi-wallet2 me-1"></i>Saldo disponible</div>
+            <div class="fin-global-saldo {{ globalSaldo >= 0 ? 'text-success' : 'text-danger' }}">
+                L {{ globalSaldo|number_format(2) }}
+            </div>
+            <div class="fin-global-meta">Ingresos − gastos registrados (histórico)</div>
+        </div>
+    </div>
+    <div class="col-12 col-md-4">
+        <div class="fin-global h-100">
+            <div class="fin-global-title"><i class="bi bi-piggy-bank me-1"></i>Babilonia acumulado</div>
+            <div class="fin-global-saldo text-info">L {{ globalAhorro|number_format(2) }}</div>
+            <div class="fin-global-meta">10% reservado en todos los ingresos</div>
+        </div>
+    </div>
+    <div class="col-12 col-md-4">
+        <div class="fin-global h-100">
+            <div class="fin-global-title"><i class="bi bi-graph-down-arrow me-1"></i>Panorama de deuda</div>
+            <div class="fin-global-item mt-2">
+                <span class="fin-global-item-label">Deuda activa (acreedores)</span>
+                <span class="fin-global-item-val text-danger">L {{ globalDeuda|number_format(2) }}</span>
+            </div>
+            <div class="fin-global-item">
+                <span class="fin-global-item-label">Compromisos fijos / mes</span>
+                <span class="fin-global-item-val text-warning">L {{ cuotaMensual|number_format(2) }}</span>
+            </div>
+            <div class="fin-global-item">
+                <span class="fin-global-item-label">Total ingresos</span>
+                <span class="fin-global-item-val text-success">L {{ globalIngresos|number_format(2) }}</span>
+            </div>
+            <div class="fin-global-item">
+                <span class="fin-global-item-label">Total gastos</span>
+                <span class="fin-global-item-val text-danger">L {{ globalGastos|number_format(2) }}</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+{# ── KPIs ── #}
+<div class="row g-3 mb-4">
+    <div class="col-6 col-md-3">
+        <div class="fin-kpi">
+            <div class="fin-kpi-label"><i class="bi bi-arrow-down-circle me-1 text-success"></i>Ingresos</div>
+            <div class="fin-kpi-value text-success">L {{ totalIngresos|number_format(2) }}</div>
+            <div class="fin-kpi-sub">{{ ingresos|length }} registro{{ ingresos|length != 1 ? 's' }}</div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="fin-kpi">
+            <div class="fin-kpi-label"><i class="bi bi-arrow-up-circle me-1 text-danger"></i>Gastos</div>
+            <div class="fin-kpi-value text-danger">L {{ totalGastos|number_format(2) }}</div>
+            <div class="fin-kpi-sub">{{ gastos|length }} registro{{ gastos|length != 1 ? 's' }}</div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        {% set flujo = totalIngresos - totalGastos %}
+        <div class="fin-kpi">
+            <div class="fin-kpi-label"><i class="bi bi-activity me-1"></i>Flujo neto</div>
+            <div class="fin-kpi-value {{ flujo >= 0 ? 'text-success' : 'text-danger' }}">L {{ flujo|number_format(2) }}</div>
+            <div class="fin-kpi-sub">{{ flujo >= 0 ? 'Positivo' : 'Negativo' }}</div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="fin-kpi">
+            <div class="fin-kpi-label"><i class="bi bi-calendar-check me-1"></i>Compromisos</div>
+            <div class="fin-kpi-value">{{ compromisos|length }}</div>
+            <div class="fin-kpi-sub">{{ proximas|length }} cuota{{ proximas|length != 1 ? 's' }} próximas</div>
+        </div>
+    </div>
+</div>
+
+{# ── Salud Financiera Babilonia ── #}
+<div class="content-card mb-4">
+    <div class="content-card-header d-flex align-items-center justify-content-between" style="cursor:pointer;" data-bs-toggle="collapse" data-bs-target="#fin-salud-body">
+        <span>
+            <i class="bi bi-heart-pulse me-2"></i>Salud financiera
+            {% if not salud.sinDatos %}
+            <span class="ms-2 fin-score-badge fin-score--{{ salud.estadoGlobal }}">{{ salud.puntuacion }}/100</span>
+            {% endif %}
+        </span>
+        <i class="bi bi-chevron-down" style="font-size:12px;color:#64748b;"></i>
+    </div>
+    <div class="collapse show" id="fin-salud-body">
+        <div class="content-card-body">
+        {% if salud.sinDatos %}
+            <p class="text-muted mb-0" style="font-size:13px;"><i class="bi bi-info-circle me-1"></i>Registra un ingreso del mes para ver tu salud financiera.</p>
+        {% else %}
+
+        {# Fila: score + Babilonia #}
+        <div class="row g-3 mb-4 align-items-center">
+            <div class="col-auto">
+                <div class="fin-score-ring fin-score-ring--{{ salud.estadoGlobal }}">
+                    <span class="fin-score-num">{{ salud.puntuacion }}</span>
+                    <span class="fin-score-den">/100</span>
+                </div>
+            </div>
+            <div class="col">
+                <div class="d-flex flex-column gap-2">
+                    {# Babilonia 10% #}
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="fin-regla-chip fin-regla-chip--{{ salud.cumpleBabilonia ? 'ok' : 'fail' }}">
+                            <i class="bi bi-{{ salud.cumpleBabilonia ? 'check-circle-fill' : 'x-circle-fill' }} me-1"></i>
+                            Ley de Babilonia — 10% ahorro
+                        </span>
+                        <span class="text-muted" style="font-size:12px;">
+                            L {{ salud.ahorroReservado|number_format(2) }} / L {{ salud.objetivo10pct|number_format(2) }}
+                        </span>
+                    </div>
+                    {# Distribución Dabasir #}
+                    {% set necesidad = 0 %}{% set deuda = 0 %}{% set ahorro = 0 %}
+                    {% for bd in salud.bolsasData %}
+                        {% if bd.bolsa.tipo == 'necesidad' %}{% set necesidad = bd.pctReal %}{% endif %}
+                        {% if bd.bolsa.tipo == 'deuda' %}{% set deuda = bd.pctReal %}{% endif %}
+                        {% if bd.bolsa.tipo == 'ahorro' %}{% set ahorro = bd.pctReal %}{% endif %}
+                    {% endfor %}
+                    <div class="d-flex align-items-center gap-2 flex-wrap">
+                        <span class="fin-regla-ref">Plan Dabasir 70/10/20:</span>
+                        <span style="font-size:12px;color:#94a3b8;">
+                            Necesidades <strong class="{{ necesidad <= 72 ? 'text-success' : 'text-danger' }}">{{ necesidad }}%</strong> ·
+                            Ahorro <strong class="{{ ahorro >= 8 ? 'text-success' : 'text-warning' }}">{{ ahorro }}%</strong> ·
+                            Deudas <strong class="{{ deuda <= 22 ? 'text-success' : 'text-danger' }}">{{ deuda }}%</strong>
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {# Barras por bolsa #}
+        <div class="row g-2">
+        {% for bd in salud.bolsasData %}
+        {% if bd.pctObj > 0 or bd.gastado > 0 %}
+        <div class="col-md-6">
+            <div class="fin-bolsa-barra">
+                <div class="d-flex justify-content-between align-items-center mb-1">
+                    <span class="fin-bolsa-barra-label">
+                        <span class="fin-bolsa-dot" style="background:{{ bd.bolsa.color ?? '#64748b' }};"></span>
+                        {{ bd.bolsa.nombre }}
+                    </span>
+                    <span class="fin-bolsa-barra-nums">
+                        <span class="fin-bolsa-barra-real fin-bolsa-barra-real--{{ bd.estado }}">{{ bd.pctReal }}%</span>
+                        {% if bd.pctObj > 0 %}<span class="text-muted"> / {{ bd.pctObj }}%</span>{% endif %}
+                    </span>
+                </div>
+                <div class="fin-progress-track">
+                    <div class="fin-progress-obj" style="width:{{ bd.pctObj > 100 ? 100 : bd.pctObj }}%;"></div>
+                    <div class="fin-progress-real fin-progress-real--{{ bd.estado }}" style="width:{{ bd.pctReal > 100 ? 100 : bd.pctReal }}%;"></div>
+                </div>
+                <div class="fin-bolsa-barra-monto">L {{ bd.gastado|number_format(2) }}</div>
+            </div>
+        </div>
+        {% endif %}
+        {% endfor %}
+        </div>
+        {% endif %}
+        </div>
+    </div>
+</div>
+
+{# ── Metas de ahorro ── #}
+<div class="content-card mb-4">
+    <div class="content-card-header d-flex align-items-center justify-content-between" style="cursor:pointer;" data-bs-toggle="collapse" data-bs-target="#fin-metas-body">
+        <span><i class="bi bi-bullseye me-2"></i>Metas de ahorro
+            {% if metas is not empty %}
+            <span class="ms-1 text-muted" style="font-size:12px;">({{ metas|length }})</span>
+            {% endif %}
+        </span>
+        <div class="d-flex align-items-center gap-2">
+            <button type="button" class="btn btn-sm btn-outline-primary" style="font-size:11px;padding:2px 10px;"
+                data-bs-toggle="modal" data-bs-target="#modal-meta" onclick="event.stopPropagation()">
+                <i class="bi bi-plus-lg me-1"></i>Nueva meta
+            </button>
+            <i class="bi bi-chevron-down" style="font-size:12px;color:#64748b;"></i>
+        </div>
+    </div>
+    <div class="collapse show" id="fin-metas-body">
+        <div class="content-card-body">
+        {% if metas is empty %}
+            <p class="text-muted mb-0" style="font-size:13px;"><i class="bi bi-info-circle me-1"></i>Sin metas todavía. Crea una para empezar a planificar tu ahorro.</p>
+        {% else %}
+        <div class="row g-3">
+        {% for meta in metas %}
+        {% set pct = meta.porcentajeAvance %}
+        {% set fillClass = pct >= 100 ? 'done' : (pct >= 60 ? 'ok' : (pct >= 30 ? 'mid' : 'low')) %}
+        {% set tipoIconos = {
+            'emergencia': 'shield-exclamation',
+            'vivienda':   'house',
+            'retiro':     'sunset',
+            'inversion':  'graph-up-arrow',
+            'compra':     'cart3',
+            'viaje':      'airplane',
+            'educacion':  'book',
+            'otro':       'star'
+        } %}
+        {% set icono = tipoIconos[meta.tipo] ?? 'star' %}
+        <div class="col-md-6 col-lg-4">
+            <div class="fin-meta-card {{ not meta.activa ? 'inactiva' }}">
+                <div class="d-flex align-items-start justify-content-between mb-2">
+                    <div>
+                        <div class="fin-meta-nombre">
+                            <i class="bi bi-{{ icono }} me-1 text-info" style="font-size:12px;"></i>{{ meta.nombre }}
+                        </div>
+                        <div class="fin-meta-tipo">{{ meta.tipo|replace({'_': ' '})|capitalize }}
+                            {% if meta.fechaObjetivo %}
+                            · meta {{ meta.fechaObjetivo|date('M Y') }}
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="fin-meta-pct {{ pct >= 100 ? 'text-success' : (pct >= 60 ? 'text-success' : (pct >= 30 ? 'text-warning' : 'text-info')) }}">{{ pct }}%</div>
+                </div>
+
+                <div class="fin-meta-track">
+                    <div class="fin-meta-fill fin-meta-fill--{{ fillClass }}" style="width:{{ pct > 100 ? 100 : pct }}%;"></div>
+                </div>
+
+                <div class="fin-meta-nums mb-2">
+                    <strong>L {{ meta.montoAcumulado|number_format(2) }}</strong>
+                    <span class="text-muted"> / L {{ meta.montoObjetivo|number_format(2) }}</span>
+                    {% if meta.faltante > 0 %}
+                    · falta <strong>L {{ meta.faltante|number_format(2) }}</strong>
+                    {% endif %}
+                </div>
+
+                {% if meta.aporteMensualSugerido > 0 %}
+                <div style="font-size:11px;color:#64748b;margin-bottom:.75rem;">
+                    <i class="bi bi-calendar-month me-1"></i>Aporte sugerido: <strong style="color:#94a3b8;">L {{ meta.aporteMensualSugerido|number_format(2) }}/mes</strong>
+                </div>
+                {% endif %}
+
+                <div class="d-flex gap-1 justify-content-end">
+                    {% if meta.activa and meta.faltante > 0 %}
+                    <button type="button" class="btn btn-success btn-sm" style="font-size:11px;padding:2px 10px;"
+                        data-bs-toggle="modal" data-bs-target="#modal-meta-abonar-{{ meta.id }}">
+                        <i class="bi bi-plus-lg me-1"></i>Abonar
+                    </button>
+                    {% endif %}
+                    <form method="post" action="{{ path('grova_financiera_meta_toggle', {_locale: app.request.locale, id: meta.id}) }}" class="d-inline">
+                        <input type="hidden" name="_token" value="{{ csrf_token('fin_meta_toggle_' ~ meta.id) }}">
+                        <button type="submit" class="btn btn-link btn-sm p-0 ms-1" title="{{ meta.activa ? 'Pausar' : 'Reactivar' }}" style="font-size:15px;">
+                            <i class="bi bi-{{ meta.activa ? 'pause-circle text-warning' : 'play-circle text-success' }}"></i>
+                        </button>
+                    </form>
+                    <form method="post" action="{{ path('grova_financiera_meta_delete', {_locale: app.request.locale, id: meta.id}) }}" class="d-inline"
+                        onsubmit="return confirm('¿Eliminar meta «{{ meta.nombre }}»?')">
+                        <input type="hidden" name="_token" value="{{ csrf_token('fin_meta_delete_' ~ meta.id) }}">
+                        <button type="submit" class="btn btn-link btn-sm p-0 ms-1 text-danger" title="Eliminar" style="font-size:15px;">
+                            <i class="bi bi-trash3"></i>
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+        </div>
+        {% endif %}
+        </div>
+    </div>
+</div>
+
+{# ── Acreedores ── #}
+<div class="content-card mb-4">
+    <div class="content-card-header d-flex align-items-center justify-content-between" style="cursor:pointer;" data-bs-toggle="collapse" data-bs-target="#fin-acr-body">
+        <span>
+            <i class="bi bi-credit-card me-2"></i>Deudas / Acreedores
+            {% set totalDeuda = 0 %}
+            {% for a in acreedores %}{% if a.activo %}{% set totalDeuda = totalDeuda + a.saldoHnl %}{% endif %}{% endfor %}
+            {% if totalDeuda > 0 %}
+            <span class="ms-2" style="font-size:12px;font-weight:700;color:#f87171;">L {{ totalDeuda|number_format(2) }}</span>
+            {% endif %}
+        </span>
+        <div class="d-flex align-items-center gap-2">
+            <button type="button" class="btn btn-sm btn-outline-danger" style="font-size:11px;padding:2px 10px;"
+                data-bs-toggle="modal" data-bs-target="#modal-acreedor" onclick="event.stopPropagation()">
+                <i class="bi bi-plus-lg me-1"></i>Nueva deuda
+            </button>
+            <i class="bi bi-chevron-down" style="font-size:12px;color:#64748b;"></i>
+        </div>
+    </div>
+    <div class="collapse show" id="fin-acr-body">
+        <div class="content-card-body p-0">
+        {% if acreedores is empty %}
+            <p class="text-muted text-center py-4 mb-0" style="font-size:13px;"><i class="bi bi-check-circle me-1 text-success"></i>Sin deudas registradas.</p>
+        {% else %}
+        {% for a in acreedores %}
+        <div class="fin-acr-row {{ not a.activo ? 'inactiva' }}">
+            <div class="flex-grow-1 overflow-hidden">
+                <div class="fin-acr-nombre text-truncate">{{ a.nombre }}</div>
+                <div class="fin-acr-sub">
+                    {{ a.tipo|replace({'_': ' '})|capitalize }}
+                    {% if a.tasaAnual > 0 %} · {{ (a.tasaAnual * 100)|round(2) }}%/año{% endif %}
+                    {% if a.compromiso %} · <i class="bi bi-calendar-check" title="Vinculado a compromiso"></i> {{ a.compromiso.nombre }}{% endif %}
+                    {% if not a.activo %} · <span class="text-success">Pagada</span>{% endif %}
+                </div>
+            </div>
+            <div class="fin-acr-saldo {{ not a.activo ? 'fin-acr-saldo--pagado' }}">
+                L {{ a.saldoHnl|number_format(2) }}
+            </div>
+            <div class="d-flex gap-1 flex-shrink-0">
+                <button type="button" class="btn btn-link btn-sm p-0 text-muted" title="Editar"
+                    data-bs-toggle="modal" data-bs-target="#modal-acr-edit-{{ a.id }}" style="font-size:15px;">
+                    <i class="bi bi-pencil"></i>
+                </button>
+                <form method="post" action="{{ path('grova_financiera_acreedor_toggle', {_locale: app.request.locale, id: a.id}) }}" class="d-inline">
+                    <input type="hidden" name="_token" value="{{ csrf_token('fin_acreedor_toggle_' ~ a.id) }}">
+                    <button type="submit" class="btn btn-link btn-sm p-0 ms-1" style="font-size:15px;"
+                        title="{{ a.activo ? 'Marcar como pagada' : 'Reactivar' }}">
+                        <i class="bi bi-{{ a.activo ? 'check-circle text-success' : 'arrow-counterclockwise text-warning' }}"></i>
+                    </button>
+                </form>
+                <form method="post" action="{{ path('grova_financiera_acreedor_delete', {_locale: app.request.locale, id: a.id}) }}" class="d-inline"
+                    onsubmit="return confirm('¿Eliminar «{{ a.nombre }}»?')">
+                    <input type="hidden" name="_token" value="{{ csrf_token('fin_acreedor_delete_' ~ a.id) }}">
+                    <button type="submit" class="btn btn-link btn-sm p-0 ms-1 text-danger" style="font-size:15px;" title="Eliminar">
+                        <i class="bi bi-trash3"></i>
+                    </button>
+                </form>
+            </div>
+        </div>
+        {% endfor %}
+        {% endif %}
+        </div>
+    </div>
+</div>
+
+{# ── Inversiones ── #}
+<div class="content-card mb-4">
+    <div class="content-card-header d-flex align-items-center justify-content-between" style="cursor:pointer;" data-bs-toggle="collapse" data-bs-target="#fin-inv-body">
+        <span>
+            <i class="bi bi-graph-up-arrow me-2"></i>Inversiones
+            {% if inversiones is not empty %}
+            {% set invGanancia = invValorTotal - invInvertido %}
+            <span class="ms-2 fin-inv-ganancia fin-inv-ganancia--{{ invGanancia >= 0 ? 'pos' : 'neg' }}">
+                {{ invGanancia >= 0 ? '+' }}L {{ invGanancia|number_format(2) }}
+            </span>
+            {% endif %}
+        </span>
+        <div class="d-flex align-items-center gap-2">
+            <button type="button" class="btn btn-sm btn-outline-primary" style="font-size:11px;padding:2px 10px;"
+                data-bs-toggle="modal" data-bs-target="#modal-inversion" onclick="event.stopPropagation()">
+                <i class="bi bi-plus-lg me-1"></i>Nueva
+            </button>
+            <i class="bi bi-chevron-down" style="font-size:12px;color:#64748b;"></i>
+        </div>
+    </div>
+    <div class="collapse show" id="fin-inv-body">
+        <div class="content-card-body">
+        {% if inversiones is empty %}
+            <p class="text-muted mb-0" style="font-size:13px;"><i class="bi bi-info-circle me-1"></i>Sin inversiones registradas. Añade la primera para seguir tu portafolio.</p>
+        {% else %}
+        {# Resumen portafolio #}
+        {% set invGanancia = invValorTotal - invInvertido %}
+        {% set invPct = invInvertido > 0 ? ((invGanancia / invInvertido) * 100)|round(2) : 0 %}
+        <div class="row g-2 mb-3">
+            <div class="col-auto">
+                <div style="font-size:11px;color:#64748b;text-transform:uppercase;letter-spacing:.06em;">Valor portafolio</div>
+                <div class="fin-inv-valor">L {{ invValorTotal|number_format(2) }}</div>
+            </div>
+            <div class="col-auto ms-3">
+                <div style="font-size:11px;color:#64748b;text-transform:uppercase;letter-spacing:.06em;">Invertido</div>
+                <div style="font-size:16px;font-weight:700;color:#94a3b8;">L {{ invInvertido|number_format(2) }}</div>
+            </div>
+            <div class="col-auto ms-3">
+                <div style="font-size:11px;color:#64748b;text-transform:uppercase;letter-spacing:.06em;">Ganancia / Pérdida</div>
+                <div class="fin-inv-ganancia fin-inv-ganancia--{{ invGanancia >= 0 ? 'pos' : 'neg' }}" style="font-size:16px;">
+                    {{ invGanancia >= 0 ? '+' }}L {{ invGanancia|number_format(2) }}
+                    <span style="font-size:12px;font-weight:500;">({{ invGanancia >= 0 ? '+' }}{{ invPct }}%)</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="row g-3">
+        {% set tiposInv = {
+            'acciones':      'bar-chart',
+            'fondo':         'collection',
+            'cripto':        'currency-bitcoin',
+            'deposito_plazo':'bank',
+            'bien_raiz':     'building',
+            'negocio':       'briefcase',
+            'otro':          'graph-up'
+        } %}
+        {% for inv in inversiones %}
+        {% set ganancia = inv.gananciaHnl %}
+        {% set pctRet = inv.porcentajeRetorno %}
+        {% set icono = tiposInv[inv.tipo] ?? 'graph-up' %}
+        <div class="col-md-6 col-lg-4">
+            <div class="fin-inv-card {{ not inv.activa ? 'inactiva' }}">
+                <div class="d-flex align-items-start justify-content-between mb-2">
+                    <div>
+                        <div class="fin-inv-nombre">
+                            <i class="bi bi-{{ icono }} me-1" style="font-size:12px;color:#6366f1;"></i>{{ inv.nombre }}
+                        </div>
+                        <div class="fin-inv-inst">
+                            {{ inv.tipo|replace({'_': ' '})|capitalize }}
+                            {% if inv.institucion %} · {{ inv.institucion }}{% endif %}
+                            {% if inv.fechaInicio %} · desde {{ inv.fechaInicio|date('M Y') }}{% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="d-flex align-items-baseline gap-3 mb-2">
+                    <div>
+                        <div style="font-size:10px;color:#64748b;text-transform:uppercase;letter-spacing:.05em;">Valor actual</div>
+                        <div style="font-size:18px;font-weight:800;color:#f1f5f9;">L {{ inv.valorActualHnl|number_format(2) }}</div>
+                    </div>
+                    <div>
+                        <div style="font-size:10px;color:#64748b;text-transform:uppercase;letter-spacing:.05em;">Invertido</div>
+                        <div style="font-size:13px;font-weight:600;color:#94a3b8;">L {{ inv.montoInvertidoHnl|number_format(2) }}</div>
+                    </div>
+                </div>
+
+                <div class="d-flex align-items-center gap-2 mb-2">
+                    <span class="fin-inv-ganancia fin-inv-ganancia--{{ ganancia >= 0 ? 'pos' : 'neg' }}">
+                        {{ ganancia >= 0 ? '+' }}L {{ ganancia|number_format(2) }}
+                        ({{ ganancia >= 0 ? '+' }}{{ pctRet }}%)
+                    </span>
+                    {% if inv.rendimientoEsperado > 0 %}
+                    <span style="font-size:11px;color:#64748b;">· esperado {{ (inv.rendimientoEsperado * 100)|round(1) }}%/año</span>
+                    {% endif %}
+                </div>
+
+                {% if inv.nota %}
+                <div style="font-size:11px;color:#64748b;margin-bottom:.5rem;">{{ inv.nota }}</div>
+                {% endif %}
+
+                {# Documentos de esta inversión #}
+                {% set invDocs = documentos['inversion'][inv.id] ?? [] %}
+                {% if invDocs is not empty %}
+                <ul class="fin-doc-list">
+                    {% for d in invDocs %}
+                    <li class="fin-doc-item">
+                        <i class="bi bi-{{ d.esPdf ? 'file-earmark-pdf text-danger' : 'image text-info' }}" style="font-size:13px;flex-shrink:0;"></i>
+                        <a href="{{ path('grova_financiera_documento_ver', {_locale: app.request.locale, id: d.id}) }}" target="_blank" title="{{ d.nombreOriginal }}">{{ d.nombreOriginal }}</a>
+                        {% if d.descripcion %}<span class="fin-doc-desc">· {{ d.descripcion }}</span>{% endif %}
+                        <span class="fin-doc-size">{{ d.tamanoLegible() }}</span>
+                        <form method="post" action="{{ path('grova_financiera_documento_eliminar', {_locale: app.request.locale, id: d.id}) }}" class="d-inline ms-auto" onsubmit="return confirm('¿Eliminar «{{ d.nombreOriginal }}»?')">
+                            <input type="hidden" name="_token" value="{{ csrf_token('fin_doc_del_' ~ d.id) }}">
+                            <button type="submit" class="btn btn-link p-0 text-danger" style="font-size:12px;" title="Eliminar"><i class="bi bi-trash3"></i></button>
+                        </form>
+                    </li>
+                    {% endfor %}
+                </ul>
+                {% endif %}
+                <button type="button" class="btn btn-link p-0 mt-1" style="font-size:11px;color:#6366f1;"
+                    data-bs-toggle="modal" data-bs-target="#modal-doc-inv-{{ inv.id }}">
+                    <i class="bi bi-paperclip me-1"></i>Subir documento
+                </button>
+
+                <div class="d-flex gap-1 justify-content-end">
+                    {% if inv.activa %}
+                    <button type="button" class="btn btn-outline-secondary btn-sm" style="font-size:11px;padding:2px 10px;"
+                        data-bs-toggle="modal" data-bs-target="#modal-inv-upd-{{ inv.id }}">
+                        <i class="bi bi-pencil me-1"></i>Actualizar
+                    </button>
+                    {% endif %}
+                    <form method="post" action="{{ path('grova_financiera_inversion_toggle', {_locale: app.request.locale, id: inv.id}) }}" class="d-inline">
+                        <input type="hidden" name="_token" value="{{ csrf_token('fin_inversion_toggle_' ~ inv.id) }}">
+                        <button type="submit" class="btn btn-link btn-sm p-0 ms-1" style="font-size:15px;" title="{{ inv.activa ? 'Cerrar posición' : 'Reactivar' }}">
+                            <i class="bi bi-{{ inv.activa ? 'pause-circle text-warning' : 'play-circle text-success' }}"></i>
+                        </button>
+                    </form>
+                    <form method="post" action="{{ path('grova_financiera_inversion_delete', {_locale: app.request.locale, id: inv.id}) }}" class="d-inline"
+                        onsubmit="return confirm('¿Eliminar «{{ inv.nombre }}»?')">
+                        <input type="hidden" name="_token" value="{{ csrf_token('fin_inversion_delete_' ~ inv.id) }}">
+                        <button type="submit" class="btn btn-link btn-sm p-0 ms-1 text-danger" style="font-size:15px;" title="Eliminar">
+                            <i class="bi bi-trash3"></i>
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+        </div>
+        {% endif %}
+        </div>
+    </div>
+</div>
+
+{# ── Cuerpo: 2 columnas ── #}
+<div class="row g-3">
+    {# Columna izquierda ─ cuotas + movimientos #}
+    <div class="col-lg-8">
+
+        {# Cuotas próximas #}
+        {% if proximas is not empty %}
+        <div class="content-card mb-3">
+            <div class="content-card-header"><i class="bi bi-clock-history me-2"></i>Cuotas pendientes / próximas</div>
+            <div class="content-card-body p-0">
+                {% for cuota in proximas %}
+                {% set dias = (cuota.fechaVencimiento|date('U') - 'now'|date('U')) // 86400 %}
+                <div class="fin-cuota-row">
+                    <div class="fin-vence-badge {{ dias < 0 ? 'fin-vence--hoy' : (dias <= 7 ? 'fin-vence--pronto' : 'fin-vence--normal') }}">
+                        {% if dias < 0 %}
+                            <div>Venció</div><div>{{ cuota.fechaVencimiento|date('d/M') }}</div>
+                        {% elseif dias == 0 %}
+                            <div>Hoy</div>
+                        {% elseif dias == 1 %}
+                            <div>Mañana</div>
+                        {% else %}
+                            <div>{{ dias }}d</div><div>{{ cuota.fechaVencimiento|date('d/M') }}</div>
+                        {% endif %}
+                    </div>
+                    <div class="flex-grow-1 overflow-hidden">
+                        <div class="fin-cuota-nombre text-truncate">{{ cuota.compromiso.nombre }}</div>
+                        <div class="fin-cuota-sub">L {{ cuota.montoTotal|number_format(2) }} · cuota #{{ cuota.numero }}</div>
+                    </div>
+                    <span class="fin-estado fin-estado--{{ cuota.estado }}">{{ cuota.estado|capitalize }}</span>
+                    {% if cuota.estado != 'pagado' %}
+                    <button type="button" class="btn btn-outline-success btn-sm px-2" title="Registrar pago"
+                        data-bs-toggle="modal" data-bs-target="#modal-pagar-{{ cuota.id }}">
+                        <i class="bi bi-check-lg"></i>
+                    </button>
+                    {% endif %}
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+        {# Tabs movimientos #}
+        <div class="content-card">
+            <div class="content-card-header"><i class="bi bi-list-ul me-2"></i>Movimientos — {{ meses[mes - 1] }} {{ anio }}</div>
+            <div class="content-card-body">
+                <div class="fin-tabs" id="fin-tabs">
+                    <button class="fin-tab active" onclick="finTab('gastos', this)">Gastos ({{ gastos|length }})</button>
+                    <button class="fin-tab" onclick="finTab('ingresos', this)">Ingresos ({{ ingresos|length }})</button>
+                </div>
+
+                {# Gastos #}
+                <div id="fin-panel-gastos">
+                    {% if gastos is empty %}
+                        <p class="text-muted text-center py-4 mb-0" style="font-size:13px;">Sin gastos este mes.</p>
+                    {% else %}
+                    <div class="table-responsive">
+                        <table class="table fin-table mb-0">
+                            <thead><tr>
+                                <th>Fecha</th><th>Descripción</th><th>Bolsa</th><th>Naturaleza</th><th class="text-end">Monto</th><th></th>
+                            </tr></thead>
+                            <tbody>
+                            {% for g in gastos %}
+                            <tr>
+                                <td class="text-muted">{{ g.fecha|date('d/m') }}</td>
+                                <td>{{ g.descripcion }}</td>
+                                <td>
+                                    <span style="display:inline-flex;align-items:center;gap:.3rem;">
+                                        {% if g.bolsa.color %}<span style="width:8px;height:8px;border-radius:50%;background:{{ g.bolsa.color }};flex-shrink:0;"></span>{% endif %}
+                                        {{ g.bolsa.nombre }}
+                                    </span>
+                                </td>
+                                <td><span class="fin-nat fin-nat--{{ g.naturaleza }}">{{ g.naturaleza|capitalize }}</span></td>
+                                <td class="text-end fw-semibold text-danger">
+                                    {% if g.moneda != 'HNL' %}<span class="text-muted" style="font-size:11px;">{{ g.moneda }} {{ g.monto|number_format(2) }} → </span>{% endif %}
+                                    L {{ g.montoHnl|number_format(2) }}
+                                </td>
+                                <td class="text-end">
+                                    <form method="post" action="{{ path('grova_financiera_gasto_delete', {_locale: app.request.locale, id: g.id}) }}" onsubmit="return confirm('¿Eliminar gasto?')">
+                                        <input type="hidden" name="_token" value="{{ csrf_token('fin_gasto_delete_' ~ g.id) }}">
+                                        <button type="submit" class="btn btn-link btn-sm text-danger p-0"><i class="bi bi-trash3"></i></button>
+                                    </form>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                            </tbody>
+                            <tfoot><tr>
+                                <td colspan="4" class="text-end fw-semibold" style="font-size:12px;color:#64748b;">Total gastos</td>
+                                <td class="text-end fw-bold text-danger">L {{ totalGastos|number_format(2) }}</td>
+                                <td></td>
+                            </tr></tfoot>
+                        </table>
+                    </div>
+                    {% endif %}
+                </div>
+
+                {# Ingresos #}
+                <div id="fin-panel-ingresos" style="display:none;">
+                    {% if ingresos is empty %}
+                        <p class="text-muted text-center py-4 mb-0" style="font-size:13px;">Sin ingresos este mes.</p>
+                    {% else %}
+                    <div class="table-responsive">
+                        <table class="table fin-table mb-0">
+                            <thead><tr>
+                                <th>Fecha</th><th>Fuente</th><th class="text-end">Bruto</th><th class="text-end">Neto HNL</th><th class="text-end">Babilonia</th><th></th>
+                            </tr></thead>
+                            <tbody>
+                            {% for i in ingresos %}
+                            <tr>
+                                <td class="text-muted">{{ i.fecha|date('d/m') }}</td>
+                                <td>{{ i.fuente }}</td>
+                                <td class="text-end">
+                                    {% if i.moneda != 'HNL' %}<span class="text-muted" style="font-size:11px;">{{ i.moneda }} </span>{% endif %}
+                                    {{ i.montoBruto|number_format(2) }}
+                                </td>
+                                <td class="text-end fw-semibold text-success">L {{ i.netoHnl|number_format(2) }}</td>
+                                <td class="text-end">
+                                    {% if i.ahorroReservadoHnl > 0 %}
+                                        <span class="text-success" style="font-size:12px;">L {{ i.ahorroReservadoHnl|number_format(2) }}</span>
+                                    {% else %}
+                                        <span class="text-muted">—</span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-end">
+                                    <form method="post" action="{{ path('grova_financiera_ingreso_delete', {_locale: app.request.locale, id: i.id}) }}" onsubmit="return confirm('¿Eliminar ingreso?')">
+                                        <input type="hidden" name="_token" value="{{ csrf_token('fin_ingreso_delete_' ~ i.id) }}">
+                                        <button type="submit" class="btn btn-link btn-sm text-danger p-0"><i class="bi bi-trash3"></i></button>
+                                    </form>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                            </tbody>
+                            <tfoot><tr>
+                                <td colspan="3" class="text-end fw-semibold" style="font-size:12px;color:#64748b;">Total ingresos</td>
+                                <td class="text-end fw-bold text-success">L {{ totalIngresos|number_format(2) }}</td>
+                                <td></td><td></td>
+                            </tr></tfoot>
+                        </table>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {# Columna derecha ─ compromisos + bolsas #}
+    <div class="col-lg-4">
+
+        {# Gastos por bolsa #}
+        {% if totalIngresos > 0 or totalGastos > 0 %}
+        <div class="content-card mb-3">
+            <div class="content-card-header"><i class="bi bi-pie-chart me-2"></i>Gastos por bolsa</div>
+            <div class="content-card-body">
+                {% for bolsa in bolsas %}
+                {% set gastoBolsa = gastosPorBolsa[bolsa.id] ?? 0 %}
+                {% if gastoBolsa > 0 %}
+                <div class="fin-bolsa-row">
+                    <span class="fin-bolsa-dot" style="background:{{ bolsa.color ?? '#64748b' }};"></span>
+                    <span class="fin-bolsa-nombre">{{ bolsa.nombre }}</span>
+                    <span class="fin-bolsa-pct">
+                        {% if totalIngresos > 0 %}{{ ((gastoBolsa / totalIngresos) * 100)|round(1) }}%{% endif %}
+                    </span>
+                    <span class="fin-bolsa-monto">L {{ gastoBolsa|number_format(2) }}</span>
+                </div>
+                {% endif %}
+                {% endfor %}
+                {% set gastosTotal = 0 %}
+                {% for v in gastosPorBolsa %} {% set gastosTotal = gastosTotal + v %} {% endfor %}
+                {% if gastosTotal == 0 %}
+                    <p class="text-muted mb-0" style="font-size:13px;">Sin gastos registrados.</p>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+
+        {# Compromisos #}
+        <div class="content-card">
+            <div class="content-card-header d-flex align-items-center justify-content-between">
+                <span><i class="bi bi-calendar-check me-2"></i>Compromisos</span>
+                <span class="badge bg-secondary">{{ compromisos|length }}</span>
+            </div>
+            <div class="content-card-body p-0">
+                {% if compromisos is empty %}
+                    <p class="text-muted text-center py-4 mb-0" style="font-size:13px;">Sin compromisos activos.</p>
+                {% else %}
+                {% for c in compromisos %}
+                {% set rc = resumenCuotas[c.id] ?? null %}
+                {% set pagoExtra = pagosSinCuota[c.id] ?? 0 %}
+                {% set totalPagadoComp = rc ? (rc.pagado + pagoExtra) : pagoExtra %}
+                {% set totalPlan = c.totalPlan %}
+                <div class="fin-cuota-row" style="flex-wrap:wrap;gap:.35rem;">
+                    <div class="flex-grow-1 overflow-hidden">
+                        <div class="fin-cuota-nombre text-truncate">{{ c.nombre }}</div>
+                        <div class="fin-cuota-sub">{{ c.tipo|replace({'_': ' '})|capitalize }} · día {{ c.diaPago }}
+                            {% if c.fechaFin %} · hasta {{ c.fechaFin|date('M Y') }}{% endif %}
+                        </div>
+                        {% if c.tipo in ['prestamo', 'credito', 'deuda_persona'] and totalPlan > 0 %}
+                        {% set pct = ((totalPagadoComp / totalPlan) * 100)|round(1) %}
+                        {% set pct = pct > 100 ? 100 : pct %}
+                        <div style="margin-top:.35rem;">
+                            <div style="display:flex;justify-content:space-between;font-size:10px;color:#64748b;margin-bottom:.2rem;">
+                                <span>Pagado L {{ totalPagadoComp|number_format(2) }} de L {{ totalPlan|number_format(2) }}</span>
+                                <span>{{ pct }}%</span>
+                            </div>
+                            <div style="height:4px;background:#1e293b;border-radius:2px;overflow:hidden;">
+                                <div style="height:100%;width:{{ pct }}%;background:linear-gradient(90deg,#6366f1,#818cf8);border-radius:2px;"></div>
+                            </div>
+                            <div style="font-size:10px;color:#f87171;margin-top:.2rem;">Falta L {{ (totalPlan - totalPagadoComp)|number_format(2) }}</div>
+                        </div>
+                        {% endif %}
+                        {% if c.tipo == 'ahorro' and totalPagadoComp > 0 %}
+                        <div style="font-size:10px;color:#4ade80;margin-top:.3rem;">Ahorrado L {{ totalPagadoComp|number_format(2) }}</div>
+                        {% endif %}
+                    </div>
+                    <div class="text-end flex-shrink-0">
+                        <div style="font-size:13px;font-weight:600;color:#f1f5f9;">L {{ c.montoCuota|number_format(2) }}</div>
+                        <div style="font-size:11px;color:#64748b;">{{ c.moneda }}/mes</div>
+                    </div>
+                    <div class="d-flex gap-1 align-items-center">
+                        {% set compDocs = documentos['compromiso'][c.id] ?? [] %}
+                        {% if c.tipo in ['prestamo', 'credito', 'deuda_persona'] %}
+                        <a href="{{ path('grova_financiera_compromiso_plan', {_locale: app.request.locale, id: c.id}) }}"
+                           class="btn btn-link btn-sm p-0" style="font-size:11px;color:#6366f1;" title="Ver plan de pago">
+                            <i class="bi bi-list-ol me-1"></i>Plan
+                        </a>
+                        {% endif %}
+                        <button type="button" class="btn btn-link btn-sm p-0 text-muted" title="Documentos ({{ compDocs|length }})"
+                            data-bs-toggle="modal" data-bs-target="#modal-doc-comp-{{ c.id }}">
+                            <i class="bi bi-paperclip{{ compDocs is not empty ? ' text-info' : '' }}"></i>
+                            {% if compDocs is not empty %}<span style="font-size:10px;color:#38bdf8;">{{ compDocs|length }}</span>{% endif %}
+                        </button>
+                        <button type="button" class="btn btn-link btn-sm p-0 text-muted" title="Editar"
+                            data-bs-toggle="modal" data-bs-target="#modal-edit-compromiso-{{ c.id }}">
+                            <i class="bi bi-pencil"></i>
+                        </button>
+                        <form method="post" action="{{ path('grova_financiera_compromiso_toggle', {_locale: app.request.locale, id: c.id}) }}">
+                            <input type="hidden" name="_token" value="{{ csrf_token('fin_toggle_' ~ c.id) }}">
+                            <button type="submit" class="btn btn-link btn-sm p-0 text-muted" title="Desactivar">
+                                <i class="bi bi-toggle-on text-success"></i>
+                            </button>
+                        </form>
+                    </div>
+                </div>
+                {% endfor %}
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+{# ═══════════════════════════════════════════════════════════════ MODALES #}
+
+{# ── Modal: Registrar Ingreso ── #}
+<div class="modal fade" id="modal-ingreso" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="bi bi-arrow-down-circle text-success me-2"></i>Registrar ingreso</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="post" action="{{ path('grova_financiera_ingreso_crear', {_locale: app.request.locale}) }}">
+                <input type="hidden" name="_token" value="{{ csrf_token('fin_ingreso') }}">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Fuente *</label>
+                        <input type="text" name="fuente" class="form-control" placeholder="Ej: Trabajo nocturno, Freelance" required>
+                    </div>
+                    <div class="row g-2 mb-3">
+                        <div class="col-6">
+                            <label class="form-label">Fecha *</label>
+                            <input type="date" name="fecha" class="form-control" value="{{ 'now'|date('Y-m-d') }}" required>
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label">Moneda</label>
+                            <select name="moneda" class="form-select" id="ing-moneda" onchange="toggleIngTC()">
+                                <option value="HNL" selected>HNL</option>
+                                <option value="USD">USD</option>
+                                <option value="EUR">EUR</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="row g-2 mb-3">
+                        <div class="col-4">
+                            <label class="form-label">Monto bruto *</label>
+                            <input type="number" name="monto_bruto" class="form-control" step="0.01" min="0" required>
+                        </div>
+                        <div class="col-4">
+                            <label class="form-label">Comisiones</label>
+                            <input type="number" name="comisiones" class="form-control" step="0.01" min="0" value="0">
+                        </div>
+                        <div class="col-4">
+                            <label class="form-label">Retenciones</label>
+                            <input type="number" name="retenciones" class="form-control" step="0.01" min="0" value="0">
+                        </div>
+                    </div>
+                    <div class="mb-3" id="ing-tc-wrap" style="display:none;">
+                        <label class="form-label">Tipo de cambio (a HNL)</label>
+                        <input type="number" name="tasa_cambio" class="form-control" step="0.00001" min="0.00001" value="1" id="ing-tc">
+                    </div>
+                    <div class="mb-3">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="babilonia" id="ing-babilonia" value="1">
+                            <label class="form-check-label" for="ing-babilonia">
+                                Reservar 10% Babilonia
+                                <small class="text-muted d-block">Separa automáticamente el 10% para ahorro</small>
+                            </label>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Nota</label>
+                        <input type="text" name="nota" class="form-control" placeholder="Opcional">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-success">Registrar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+{# ── Modal: Registrar Gasto ── #}
+<div class="modal fade" id="modal-gasto" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="bi bi-dash-circle text-danger me-2"></i>Registrar gasto</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="post" action="{{ path('grova_financiera_gasto_crear', {_locale: app.request.locale}) }}">
+                <input type="hidden" name="_token" value="{{ csrf_token('fin_gasto') }}">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Descripción *</label>
+                        <input type="text" name="descripcion" class="form-control" required>
+                    </div>
+                    <div class="row g-2 mb-3">
+                        <div class="col-6">
+                            <label class="form-label">Fecha *</label>
+                            <input type="date" name="fecha" class="form-control" value="{{ 'now'|date('Y-m-d') }}" required>
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label">Bolsa *</label>
+                            <select name="bolsa_id" class="form-select" required>
+                                {% for b in bolsas %}
+                                <option value="{{ b.id }}">{{ b.nombre }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                    <div class="row g-2 mb-3">
+                        <div class="col-5">
+                            <label class="form-label">Monto *</label>
+                            <input type="number" name="monto" class="form-control" step="0.01" min="0" required>
+                        </div>
+                        <div class="col-4">
+                            <label class="form-label">Moneda</label>
+                            <select name="moneda" class="form-select" id="gto-moneda" onchange="toggleGtoTC()">
+                                <option value="HNL" selected>HNL</option>
+                                <option value="USD">USD</option>
+                                <option value="EUR">EUR</option>
+                            </select>
+                        </div>
+                        <div class="col-3">
+                            <label class="form-label">TC</label>
+                            <input type="number" name="tasa_cambio" class="form-control" step="0.00001" value="1" id="gto-tc" readonly>
+                        </div>
+                    </div>
+                    <div class="row g-2 mb-3">
+                        <div class="col-6">
+                            <label class="form-label">Naturaleza</label>
+                            <select name="naturaleza" class="form-select">
+                                <option value="necesidad">Necesidad</option>
+                                <option value="deseo">Deseo</option>
+                                <option value="ahorro">Ahorro</option>
+                                <option value="deuda">Deuda</option>
+                            </select>
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label">Método</label>
+                            <input type="text" name="metodo" class="form-control" placeholder="Efectivo, tarjeta…">
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Nota</label>
+                        <input type="text" name="nota" class="form-control" placeholder="Opcional">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-danger">Registrar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+{# ── Modal: Nuevo Compromiso ── #}
+<div class="modal fade" id="modal-compromiso" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="bi bi-calendar-check text-primary me-2"></i>Nuevo compromiso</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="post" action="{{ path('grova_financiera_compromiso_crear', {_locale: app.request.locale}) }}">
+                <input type="hidden" name="_token" value="{{ csrf_token('fin_compromiso') }}">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Nombre *</label>
+                        <input type="text" name="nombre" class="form-control" required>
+                    </div>
+                    <div class="row g-2 mb-3">
+                        <div class="col-6">
+                            <label class="form-label">Tipo *</label>
+                            <select name="tipo" class="form-select" required>
+                                <option value="servicio">Servicio</option>
+                                <option value="suscripcion">Suscripción</option>
+                                <option value="prestamo">Préstamo</option>
+                                <option value="credito">Crédito</option>
+                                <option value="deuda_persona">Deuda personal</option>
+                                <option value="ahorro">Ahorro</option>
+                            </select>
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label">Bolsa *</label>
+                            <select name="bolsa_id" class="form-select" required>
+                                {% for b in bolsas %}
+                                <option value="{{ b.id }}">{{ b.nombre }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                    <div class="row g-2 mb-3">
+                        <div class="col-5">
+                            <label class="form-label">Monto cuota *</label>
+                            <input type="number" name="monto_cuota" class="form-control" step="0.01" min="0" required>
+                        </div>
+                        <div class="col-3">
+                            <label class="form-label">Moneda</label>
+                            <select name="moneda" class="form-select">
+                                <option value="HNL" selected>HNL</option>
+                                <option value="USD">USD</option>
+                                <option value="EUR">EUR</option>
+                            </select>
+                        </div>
+                        <div class="col-4">
+                            <label class="form-label">Día de pago</label>
+                            <input type="number" name="dia_pago" class="form-control" min="1" max="31" value="1">
+                        </div>
+                    </div>
+                    <div class="row g-2 mb-3">
+                        <div class="col-6">
+                            <label class="form-label">Frecuencia</label>
+                            <select name="frecuencia" class="form-select">
+                                <option value="mensual" selected>Mensual</option>
+                                <option value="quincenal">Quincenal</option>
+                                <option value="anual">Anual</option>
+                                <option value="unica">Pago único</option>
+                            </select>
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label">Fecha inicio</label>
+                            <input type="date" name="fecha_inicio" class="form-control" value="{{ 'now'|date('Y-m-01') }}">
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Descripción</label>
+                        <textarea name="descripcion" class="form-control" rows="2" placeholder="Ej: Cilindro de agua 59L, se compra cada 2 semanas aprox."></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Contacto</label>
+                        <input type="text" name="contacto" class="form-control" placeholder="Teléfono o nombre de contacto">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Guardar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+{# ── Modales: Editar compromiso ── #}
+{% for c in compromisos %}
+<div class="modal fade" id="modal-edit-compromiso-{{ c.id }}" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" style="font-size:14px;"><i class="bi bi-pencil me-2"></i>Editar — {{ c.nombre }}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="post" action="{{ path('grova_financiera_compromiso_editar', {_locale: app.request.locale, id: c.id}) }}">
+                <input type="hidden" name="_token" value="{{ csrf_token('fin_compromiso_edit_' ~ c.id) }}">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Nombre *</label>
+                        <input type="text" name="nombre" class="form-control" value="{{ c.nombre }}" required>
+                    </div>
+                    <div class="row g-2 mb-3">
+                        <div class="col-6">
+                            <label class="form-label">Tipo</label>
+                            <select name="tipo" class="form-select">
+                                <option value="servicio"      {{ c.tipo == 'servicio'      ? 'selected' }}>Servicio</option>
+                                <option value="suscripcion"   {{ c.tipo == 'suscripcion'   ? 'selected' }}>Suscripción</option>
+                                <option value="prestamo"      {{ c.tipo == 'prestamo'      ? 'selected' }}>Préstamo</option>
+                                <option value="credito"       {{ c.tipo == 'credito'       ? 'selected' }}>Crédito</option>
+                                <option value="deuda_persona" {{ c.tipo == 'deuda_persona' ? 'selected' }}>Deuda personal</option>
+                                <option value="ahorro"        {{ c.tipo == 'ahorro'        ? 'selected' }}>Ahorro</option>
+                            </select>
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label">Bolsa</label>
+                            <select name="bolsa_id" class="form-select">
+                                {% for b in bolsas %}
+                                <option value="{{ b.id }}" {{ c.bolsa.id == b.id ? 'selected' }}>{{ b.nombre }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                    <div class="row g-2 mb-3">
+                        <div class="col-5">
+                            <label class="form-label">Monto cuota *</label>
+                            <input type="number" name="monto_cuota" class="form-control" step="0.01" value="{{ c.montoCuota }}" required>
+                        </div>
+                        <div class="col-3">
+                            <label class="form-label">Moneda</label>
+                            <select name="moneda" class="form-select">
+                                <option value="HNL" {{ c.moneda == 'HNL' ? 'selected' }}>HNL</option>
+                                <option value="USD" {{ c.moneda == 'USD' ? 'selected' }}>USD</option>
+                                <option value="EUR" {{ c.moneda == 'EUR' ? 'selected' }}>EUR</option>
+                            </select>
+                        </div>
+                        <div class="col-4">
+                            <label class="form-label">Día de pago</label>
+                            <input type="number" name="dia_pago" class="form-control" min="1" max="31" value="{{ c.diaPago }}">
+                        </div>
+                    </div>
+                    <div class="row g-2 mb-3">
+                        <div class="col-6">
+                            <label class="form-label">Frecuencia</label>
+                            <select name="frecuencia" class="form-select">
+                                <option value="mensual"   {{ c.frecuencia == 'mensual'   ? 'selected' }}>Mensual</option>
+                                <option value="quincenal" {{ c.frecuencia == 'quincenal' ? 'selected' }}>Quincenal</option>
+                                <option value="anual"     {{ c.frecuencia == 'anual'     ? 'selected' }}>Anual</option>
+                                <option value="unica"     {{ c.frecuencia == 'unica'     ? 'selected' }}>Pago único</option>
+                            </select>
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label">Contacto</label>
+                            <input type="text" name="contacto" class="form-control" value="{{ c.contacto ?? '' }}" placeholder="Tel / nombre">
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Descripción</label>
+                        <textarea name="descripcion" class="form-control" rows="2" placeholder="Ej: Cilindro de agua 59L, se compra cada 2 semanas aprox.">{{ c.descripcion ?? '' }}</textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary btn-sm">Guardar cambios</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endfor %}
+
+{# ── Modales: Pagar cuota ── #}
+{% for cuota in proximas %}
+{% if cuota.estado != 'pagado' %}
+<div class="modal fade" id="modal-pagar-{{ cuota.id }}" tabindex="-1">
+    <div class="modal-dialog modal-sm">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" style="font-size:14px;">Pagar — {{ cuota.compromiso.nombre }}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="post" action="{{ path('grova_financiera_cuota_pagar', {_locale: app.request.locale, id: cuota.id}) }}">
+                <input type="hidden" name="_token" value="{{ csrf_token('fin_pago_' ~ cuota.id) }}">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Monto a pagar</label>
+                        <input type="number" name="monto" class="form-control" step="0.01" value="{{ cuota.saldoPendiente }}" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Fecha</label>
+                        <input type="date" name="fecha" class="form-control" value="{{ 'now'|date('Y-m-d') }}">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Método</label>
+                        <input type="text" name="metodo" class="form-control" placeholder="Transferencia, efectivo…">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-success btn-sm">Confirmar pago</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endfor %}
+
+{# ── Modal: Nueva Deuda / Acreedor ── #}
+<div class="modal fade" id="modal-acreedor" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="bi bi-credit-card text-danger me-2"></i>Nueva deuda</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="post" action="{{ path('grova_financiera_acreedor_crear', {_locale: app.request.locale}) }}">
+                <input type="hidden" name="_token" value="{{ csrf_token('fin_acreedor') }}">
+                <div class="modal-body">
+                    <div class="row g-2 mb-3">
+                        <div class="col-8">
+                            <label class="form-label">Acreedor *</label>
+                            <input type="text" name="nombre" class="form-control" placeholder="BHD, Banco Atlántida, Juan…" required>
+                        </div>
+                        <div class="col-4">
+                            <label class="form-label">Tipo</label>
+                            <select name="tipo" class="form-select">
+                                <option value="prestamo">Préstamo</option>
+                                <option value="credito">Crédito</option>
+                                <option value="persona">Persona</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="row g-2 mb-3">
+                        <div class="col-6">
+                            <label class="form-label">Saldo actual (HNL) *</label>
+                            <input type="number" name="saldo_hnl" class="form-control" step="0.01" min="0" required>
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label">Tasa anual (%)</label>
+                            <input type="number" name="tasa_anual" class="form-control" step="0.01" min="0" value="0" placeholder="0 = sin interés">
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Compromiso vinculado</label>
+                        <select name="compromiso_id" class="form-select">
+                            <option value="0">— Ninguno —</option>
+                            {% for c in compromisos %}
+                            <option value="{{ c.id }}">{{ c.nombre }}</option>
+                            {% endfor %}
+                        </select>
+                        <div class="form-text">Vincula al compromiso que genera las cuotas.</div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-danger">Registrar deuda</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+{# ── Modales: Editar acreedor ── #}
+{% for a in acreedores %}
+<div class="modal fade" id="modal-acr-edit-{{ a.id }}" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" style="font-size:14px;"><i class="bi bi-pencil me-2"></i>{{ a.nombre }}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="post" action="{{ path('grova_financiera_acreedor_editar', {_locale: app.request.locale, id: a.id}) }}">
+                <input type="hidden" name="_token" value="{{ csrf_token('fin_acreedor_edit_' ~ a.id) }}">
+                <div class="modal-body">
+                    <div class="row g-2 mb-3">
+                        <div class="col-8">
+                            <label class="form-label">Acreedor *</label>
+                            <input type="text" name="nombre" class="form-control" value="{{ a.nombre }}" required>
+                        </div>
+                        <div class="col-4">
+                            <label class="form-label">Tipo</label>
+                            <select name="tipo" class="form-select">
+                                <option value="prestamo"  {{ a.tipo == 'prestamo' ? 'selected' }}>Préstamo</option>
+                                <option value="credito"   {{ a.tipo == 'credito'  ? 'selected' }}>Crédito</option>
+                                <option value="persona"   {{ a.tipo == 'persona'  ? 'selected' }}>Persona</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="row g-2 mb-3">
+                        <div class="col-6">
+                            <label class="form-label">Saldo actual (HNL) *</label>
+                            <input type="number" name="saldo_hnl" class="form-control" step="0.01" value="{{ a.saldoHnl }}" required>
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label">Tasa anual (%)</label>
+                            <input type="number" name="tasa_anual" class="form-control" step="0.01" value="{{ (a.tasaAnual * 100)|round(2) }}">
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Compromiso vinculado</label>
+                        <select name="compromiso_id" class="form-select">
+                            <option value="0">— Ninguno —</option>
+                            {% for c in compromisos %}
+                            <option value="{{ c.id }}" {{ a.compromiso and a.compromiso.id == c.id ? 'selected' }}>{{ c.nombre }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary btn-sm">Guardar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endfor %}
+
+{# ── Modal: Nueva Inversión ── #}
+<div class="modal fade" id="modal-inversion" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="bi bi-graph-up-arrow text-primary me-2"></i>Nueva inversión</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="post" action="{{ path('grova_financiera_inversion_crear', {_locale: app.request.locale}) }}">
+                <input type="hidden" name="_token" value="{{ csrf_token('fin_inversion') }}">
+                <div class="modal-body">
+                    <div class="row g-2 mb-3">
+                        <div class="col-8">
+                            <label class="form-label">Nombre *</label>
+                            <input type="text" name="nombre" class="form-control" placeholder="Ej: Bitcoin, Fondo BAC" required>
+                        </div>
+                        <div class="col-4">
+                            <label class="form-label">Tipo</label>
+                            <select name="tipo" class="form-select">
+                                <option value="acciones">Acciones</option>
+                                <option value="fondo">Fondo</option>
+                                <option value="cripto">Cripto</option>
+                                <option value="deposito_plazo">Depósito a plazo</option>
+                                <option value="bien_raiz">Bien raíz</option>
+                                <option value="negocio">Negocio</option>
+                                <option value="otro" selected>Otro</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Institución / Plataforma</label>
+                        <input type="text" name="institucion" class="form-control" placeholder="Binance, Banco Atlántida…">
+                    </div>
+                    <div class="row g-2 mb-3">
+                        <div class="col-6">
+                            <label class="form-label">Monto invertido (HNL) *</label>
+                            <input type="number" name="monto_invertido" class="form-control" step="0.01" min="0" required>
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label">Valor actual (HNL)</label>
+                            <input type="number" name="valor_actual" class="form-control" step="0.01" min="0" placeholder="Igual al invertido si es nuevo">
+                        </div>
+                    </div>
+                    <div class="row g-2 mb-3">
+                        <div class="col-6">
+                            <label class="form-label">Rendimiento esperado (%/año)</label>
+                            <input type="number" name="rendimiento_esperado" class="form-control" step="0.01" min="0" value="0" placeholder="Ej: 8">
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label">Fecha inicio</label>
+                            <input type="date" name="fecha_inicio" class="form-control">
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Nota</label>
+                        <input type="text" name="nota" class="form-control" placeholder="Opcional">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Registrar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+{# ── Modales: Actualizar inversión ── #}
+{% for inv in inversiones %}
+{% if inv.activa %}
+<div class="modal fade" id="modal-inv-upd-{{ inv.id }}" tabindex="-1">
+    <div class="modal-dialog modal-sm">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" style="font-size:14px;"><i class="bi bi-pencil me-2"></i>{{ inv.nombre }}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="post" action="{{ path('grova_financiera_inversion_actualizar', {_locale: app.request.locale, id: inv.id}) }}">
+                <input type="hidden" name="_token" value="{{ csrf_token('fin_inversion_upd_' ~ inv.id) }}">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Valor actual (HNL) *</label>
+                        <input type="number" name="valor_actual" class="form-control" step="0.01" value="{{ inv.valorActualHnl }}" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Monto invertido (HNL)</label>
+                        <input type="number" name="monto_invertido" class="form-control" step="0.01" value="{{ inv.montoInvertidoHnl }}">
+                        <div class="form-text">Solo cambia si hiciste un aporte adicional.</div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Nota</label>
+                        <input type="text" name="nota" class="form-control" value="{{ inv.nota ?? '' }}" placeholder="Opcional">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary btn-sm">Guardar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endfor %}
+
+{# ── Modal: Nueva Meta ── #}
+<div class="modal fade" id="modal-meta" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="bi bi-bullseye text-info me-2"></i>Nueva meta de ahorro</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="post" action="{{ path('grova_financiera_meta_crear', {_locale: app.request.locale}) }}">
+                <input type="hidden" name="_token" value="{{ csrf_token('fin_meta') }}">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Nombre *</label>
+                        <input type="text" name="nombre" class="form-control" placeholder="Ej: Fondo de emergencia, Laptop nueva" required>
+                    </div>
+                    <div class="row g-2 mb-3">
+                        <div class="col-6">
+                            <label class="form-label">Tipo</label>
+                            <select name="tipo" class="form-select">
+                                <option value="emergencia">Emergencia</option>
+                                <option value="vivienda">Vivienda</option>
+                                <option value="retiro">Retiro</option>
+                                <option value="inversion">Inversión</option>
+                                <option value="compra">Compra</option>
+                                <option value="viaje">Viaje</option>
+                                <option value="educacion">Educación</option>
+                                <option value="otro" selected>Otro</option>
+                            </select>
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label">Fecha objetivo</label>
+                            <input type="date" name="fecha_objetivo" class="form-control">
+                        </div>
+                    </div>
+                    <div class="row g-2 mb-3">
+                        <div class="col-6">
+                            <label class="form-label">Monto objetivo (HNL) *</label>
+                            <input type="number" name="monto_objetivo" class="form-control" step="0.01" min="1" required>
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label">Monto inicial (HNL)</label>
+                            <input type="number" name="monto_inicial" class="form-control" step="0.01" min="0" value="0">
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-info text-white">Crear meta</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+{# ── Modales: Abonar a meta ── #}
+{% for meta in metas %}
+{% if meta.activa and meta.faltante > 0 %}
+<div class="modal fade" id="modal-meta-abonar-{{ meta.id }}" tabindex="-1">
+    <div class="modal-dialog modal-sm">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" style="font-size:14px;"><i class="bi bi-bullseye me-2 text-info"></i>Abonar — {{ meta.nombre }}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="post" action="{{ path('grova_financiera_meta_abonar', {_locale: app.request.locale, id: meta.id}) }}">
+                <input type="hidden" name="_token" value="{{ csrf_token('fin_meta_abonar_' ~ meta.id) }}">
+                <div class="modal-body">
+                    <p class="text-muted mb-3" style="font-size:12px;">
+                        Acumulado: <strong>L {{ meta.montoAcumulado|number_format(2) }}</strong> /
+                        L {{ meta.montoObjetivo|number_format(2) }}<br>
+                        Falta: <strong class="text-warning">L {{ meta.faltante|number_format(2) }}</strong>
+                    </p>
+                    <div class="mb-3">
+                        <label class="form-label">Abono (HNL) *</label>
+                        <input type="number" name="abono" class="form-control" step="0.01" min="0.01"
+                            value="{{ meta.aporteMensualSugerido > 0 ? meta.aporteMensualSugerido : '' }}" required>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-success btn-sm">Confirmar abono</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endfor %}
+
+{# ── Modales: Documentos compromisos ── #}
+{% for c in compromisos %}
+{% set compDocs = documentos['compromiso'][c.id] ?? [] %}
+<div class="modal fade" id="modal-doc-comp-{{ c.id }}" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" style="font-size:14px;"><i class="bi bi-paperclip me-2"></i>Documentos — {{ c.nombre }}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                {% if compDocs is not empty %}
+                <ul class="fin-doc-list mb-3">
+                    {% for d in compDocs %}
+                    <li class="fin-doc-item">
+                        <i class="bi bi-{{ d.esPdf ? 'file-earmark-pdf text-danger' : 'image text-info' }}" style="font-size:14px;flex-shrink:0;"></i>
+                        <a href="{{ path('grova_financiera_documento_ver', {_locale: app.request.locale, id: d.id}) }}" target="_blank" title="{{ d.nombreOriginal }}">{{ d.nombreOriginal }}</a>
+                        {% if d.descripcion %}<span class="fin-doc-desc">{{ d.descripcion }}</span>{% endif %}
+                        <span class="fin-doc-size">{{ d.tamanoLegible() }}</span>
+                        <form method="post" action="{{ path('grova_financiera_documento_eliminar', {_locale: app.request.locale, id: d.id}) }}" class="d-inline ms-auto" onsubmit="return confirm('¿Eliminar este documento?')">
+                            <input type="hidden" name="_token" value="{{ csrf_token('fin_doc_del_' ~ d.id) }}">
+                            <button type="submit" class="btn btn-link p-0 text-danger" style="font-size:13px;"><i class="bi bi-trash3"></i></button>
+                        </form>
+                    </li>
+                    {% endfor %}
+                </ul>
+                {% else %}
+                <p class="text-muted mb-3" style="font-size:13px;">Sin documentos aún.</p>
+                {% endif %}
+
+                <hr style="border-color:#1e293b;">
+                <p style="font-size:12px;font-weight:600;color:#94a3b8;margin-bottom:.5rem;">Subir nuevo documento</p>
+                <form method="post" action="{{ path('grova_financiera_documento_subir', {_locale: app.request.locale}) }}" enctype="multipart/form-data">
+                    <input type="hidden" name="_token" value="{{ csrf_token('fin_documento') }}">
+                    <input type="hidden" name="entidad_tipo" value="compromiso">
+                    <input type="hidden" name="entidad_id" value="{{ c.id }}">
+                    <div class="mb-2">
+                        <input type="file" name="archivo" class="form-control form-control-sm" accept=".pdf,.jpg,.jpeg,.png,.webp" required>
+                        <div style="font-size:11px;color:#64748b;margin-top:.25rem;">PDF, JPG, PNG o WEBP · máx. 10 MB</div>
+                    </div>
+                    <div class="mb-3">
+                        <input type="text" name="descripcion" class="form-control form-control-sm" placeholder="Descripción opcional (ej: Recibo cuota #1)">
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-sm w-100"><i class="bi bi-upload me-1"></i>Subir</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endfor %}
+
+{# ── Modales: Documentos inversiones ── #}
+{% for inv in inversiones %}
+<div class="modal fade" id="modal-doc-inv-{{ inv.id }}" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" style="font-size:14px;"><i class="bi bi-paperclip me-2"></i>Documentos — {{ inv.nombre }}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                {% set invDocs = documentos['inversion'][inv.id] ?? [] %}
+                {% if invDocs is not empty %}
+                <ul class="fin-doc-list mb-3">
+                    {% for d in invDocs %}
+                    <li class="fin-doc-item">
+                        <i class="bi bi-{{ d.esPdf ? 'file-earmark-pdf text-danger' : 'image text-info' }}" style="font-size:14px;flex-shrink:0;"></i>
+                        <a href="{{ path('grova_financiera_documento_ver', {_locale: app.request.locale, id: d.id}) }}" target="_blank" title="{{ d.nombreOriginal }}">{{ d.nombreOriginal }}</a>
+                        {% if d.descripcion %}<span class="fin-doc-desc">{{ d.descripcion }}</span>{% endif %}
+                        <span class="fin-doc-size">{{ d.tamanoLegible() }}</span>
+                        <form method="post" action="{{ path('grova_financiera_documento_eliminar', {_locale: app.request.locale, id: d.id}) }}" class="d-inline ms-auto" onsubmit="return confirm('¿Eliminar este documento?')">
+                            <input type="hidden" name="_token" value="{{ csrf_token('fin_doc_del_' ~ d.id) }}">
+                            <button type="submit" class="btn btn-link p-0 text-danger" style="font-size:13px;"><i class="bi bi-trash3"></i></button>
+                        </form>
+                    </li>
+                    {% endfor %}
+                </ul>
+                {% else %}
+                <p class="text-muted mb-3" style="font-size:13px;">Sin documentos aún.</p>
+                {% endif %}
+
+                <hr style="border-color:#1e293b;">
+                <p style="font-size:12px;font-weight:600;color:#94a3b8;margin-bottom:.5rem;">Subir nuevo documento</p>
+                <form method="post" action="{{ path('grova_financiera_documento_subir', {_locale: app.request.locale}) }}" enctype="multipart/form-data">
+                    <input type="hidden" name="_token" value="{{ csrf_token('fin_documento') }}">
+                    <input type="hidden" name="entidad_tipo" value="inversion">
+                    <input type="hidden" name="entidad_id" value="{{ inv.id }}">
+                    <div class="mb-2">
+                        <input type="file" name="archivo" class="form-control form-control-sm" accept=".pdf,.jpg,.jpeg,.png,.webp" required>
+                        <div style="font-size:11px;color:#64748b;margin-top:.25rem;">PDF, JPG, PNG o WEBP · máx. 10 MB</div>
+                    </div>
+                    <div class="mb-3">
+                        <input type="text" name="descripcion" class="form-control form-control-sm" placeholder="Descripción opcional (ej: Contrato de compraventa)">
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-sm w-100"><i class="bi bi-upload me-1"></i>Subir</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endfor %}
+
+{% endblock %}
+
+{% block app_scripts %}
+<script>
+function finTab(panel, btn) {
+    document.getElementById('fin-panel-gastos').style.display   = 'none';
+    document.getElementById('fin-panel-ingresos').style.display = 'none';
+    document.getElementById('fin-panel-' + panel).style.display = '';
+    document.querySelectorAll('.fin-tab').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+}
+function toggleIngTC() {
+    var moneda = document.getElementById('ing-moneda').value;
+    var wrap   = document.getElementById('ing-tc-wrap');
+    wrap.style.display = moneda !== 'HNL' ? '' : 'none';
+}
+function toggleGtoTC() {
+    var moneda = document.getElementById('gto-moneda').value;
+    var tc     = document.getElementById('gto-tc');
+    tc.readOnly = moneda === 'HNL';
+    if (moneda === 'HNL') tc.value = '1';
+}
+</script>
+{% endblock %}

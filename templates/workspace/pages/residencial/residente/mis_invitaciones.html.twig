@@ -1,0 +1,84 @@
+{% extends 'workspace/app_layout.html.twig' %}
+{% block page_title %}Mis invitaciones{% endblock %}
+{% block app_page_subtitle %}Pases de acceso que has generado{% endblock %}
+
+{% block page_styles %}
+<style>
+.pase-card { background:#111827; border:1px solid #1e293b; border-radius:12px; padding:1rem 1.25rem; margin-bottom:.5rem; }
+body.light-mode .pase-card { background:#fff; border-color:#e2e8f0; }
+.pase-card:hover { border-color:#3b82f655; }
+.estado-pendiente { background:#3b82f622; color:#60a5fa; }
+.estado-usado     { background:#16a34a22; color:#4ade80; }
+.estado-vencido   { background:#1e293b;   color:#64748b; }
+.estado-cancelado { background:#dc262622; color:#f87171; }
+.pase-estado-badge { font-size:10px; padding:2px 8px; border-radius:8px; font-weight:600; }
+</style>
+{% endblock %}
+
+{% block app_main %}
+
+{% for label, messages in app.flashes %}
+    {% for message in messages %}
+        <div class="alert alert-{{ label == 'danger' ? 'danger' : 'success' }} mb-3">{{ message }}</div>
+    {% endfor %}
+{% endfor %}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <span class="text-muted small">{{ pases|length }} invitación{{ pases|length != 1 ? 'es' : '' }}</span>
+    <a href="{{ path('grova_residencial_residente_crear_invitacion', {_locale: app.request.locale}) }}" class="btn btn-primary btn-sm">
+        <i class="bi bi-plus-lg me-1"></i>Nueva invitación
+    </a>
+</div>
+
+{% if pases is empty %}
+<div class="content-card">
+    <div class="content-card-body text-center py-5">
+        <i class="bi bi-qr-code" style="font-size:3rem;color:#3b82f6;"></i>
+        <h5 class="mt-3">Sin invitaciones aún</h5>
+        <p class="text-muted">Crea tu primera invitación para que un visitante pueda entrar al residencial.</p>
+        <a href="{{ path('grova_residencial_residente_crear_invitacion', {_locale: app.request.locale}) }}" class="btn btn-primary">
+            Crear invitación
+        </a>
+    </div>
+</div>
+{% else %}
+    {% for pase in pases %}
+    <div class="pase-card">
+        <div class="d-flex align-items-start gap-3">
+            <div class="flex-grow-1">
+                <div class="d-flex align-items-center gap-2 mb-1">
+                    <span class="fw-semibold">{{ pase.visitante ? pase.visitante.nombreCompleto : 'Visitante sin especificar' }}</span>
+                    <span class="pase-estado-badge estado-{{ pase.estado }}">{{ pase.estadoLabel }}</span>
+                    <span class="badge bg-secondary ms-1" style="font-size:9px;">{{ pase.tipoLabel }}</span>
+                </div>
+                <div class="small text-muted">
+                    <i class="bi bi-house me-1"></i>{{ pase.casaDestino.label }}
+                    {% if pase.fechaInicio or pase.fechaFin %}
+                        · <i class="bi bi-calendar me-1"></i>
+                        {{ pase.fechaInicio ? pase.fechaInicio|date('d/m/Y') : '—' }}
+                        {% if pase.fechaFin %} al {{ pase.fechaFin|date('d/m/Y') }}{% endif %}
+                    {% endif %}
+                    {% if pase.horaInicio %}
+                        · <i class="bi bi-clock me-1"></i>{{ pase.horaInicio }} – {{ pase.horaFin }}
+                    {% endif %}
+                </div>
+            </div>
+            <div class="d-flex flex-column gap-1">
+                <a href="{{ path('grova_residencial_residente_ver_pase', {id: pase.id, _locale: app.request.locale}) }}"
+                   class="btn btn-xs btn-outline-primary">
+                    <i class="bi bi-qr-code me-1"></i>Ver QR
+                </a>
+                {% if pase.estado == 'pendiente' %}
+                <form method="post" action="{{ path('grova_residencial_residente_cancelar_pase', {id: pase.id, _locale: app.request.locale}) }}"
+                      onsubmit="return confirm('¿Cancelar esta invitación?')">
+                    <input type="hidden" name="_token" value="{{ csrf_token('residencial_cancelar_pase_' ~ pase.id) }}">
+                    <button type="submit" class="btn btn-xs btn-outline-danger w-100">Cancelar</button>
+                </form>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+{% endif %}
+
+{% endblock %}

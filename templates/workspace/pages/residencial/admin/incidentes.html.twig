@@ -1,0 +1,41 @@
+{% extends 'workspace/app_layout.html.twig' %}
+{% block page_title %}Incidentes{% endblock %}
+{% block app_page_subtitle %}Registro de incidentes del residencial{% endblock %}
+
+{% block app_main %}
+
+<div class="content-card">
+    <div class="content-card-header">Incidentes — {{ incidentes|length }}</div>
+    <div class="content-card-body p-0">
+        {% if incidentes is empty %}
+            <p class="text-muted text-center py-4">No hay incidentes registrados.</p>
+        {% else %}
+        <div class="table-responsive">
+            <table class="table table-sm mb-0">
+                <thead>
+                    <tr>
+                        <th>Tipo</th>
+                        <th>Descripción</th>
+                        <th>Guardia</th>
+                        <th>Fecha</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for incidente in incidentes %}
+                    <tr>
+                        <td>
+                            <span class="badge bg-danger">{{ incidente.tipoLabel }}</span>
+                        </td>
+                        <td>{{ incidente.descripcion|u.truncate(80, '…') }}</td>
+                        <td>{{ incidente.guardia.nombreCompleto }}</td>
+                        <td>{{ incidente.creadoEn|date('d/m/Y H:i') }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+{% endblock %}

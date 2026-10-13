@@ -1,0 +1,69 @@
+{# Columna pagada de la fila de factura #}
+{% if inv_can_toggle_paid %}
+    {% if inv.pagadaAt %}
+        <form method="post"
+              action="{{ path('grova_work_invoice_paid', {id: inv.id, _locale: locale}) }}"
+              class="js-work-invoice-unpaid-confirm mb-0"
+              data-confirm-title="{{ 'work.paid_mark_as_unpaid'|trans({}, 'work') }}"
+              data-confirm-text="{{ 'work.confirm_mark_unpaid'|trans({}, 'work') }}">
+            <input type="hidden" name="invoice_year" value="{{ invoice_year }}">
+            <input type="hidden" name="_token" value="{{ csrf_token('work_invoice_paid_' ~ inv.id) }}">
+            {% if inv_fx is defined and inv_fx.eur is defined and inv_fx.eur > 0 %}
+                {% set inv_fx_tip = 'L ' ~ (inv.totalFloat * inv_fx.eur)|number_format(2, '.', ',') %}
+                {% if inv_fx.usd is defined and inv_fx.usd > 0 %}
+                    {% set inv_fx_tip = inv_fx_tip ~ ' · US$ ' ~ (inv.totalFloat * inv_fx.eur / inv_fx.usd)|number_format(2, '.', ',') %}
+                {% endif %}
+                {% set inv_btn_title = ('work.invoice_paid_fx_label'|trans({}, 'work')) ~ ': ' ~ inv_fx_tip ~ ' — ' ~ ('work.paid_mark_as_unpaid'|trans({}, 'work')) %}
+            {% else %}
+                {% set inv_btn_title = 'work.paid_mark_as_unpaid'|trans({}, 'work') %}
+            {% endif %}
+            <div class="inv-paid-row">
+                <button type="submit"
+                        class="btn btn-outline-success btn-sm inv-paid-mark-pill"
+                        title="{{ inv_btn_title|e('html_attr') }}">
+                    <i class="bi bi-bank2 me-1"></i>{{ 'work.paid'|trans({}, 'work') }}
+                </button>
+                <span class="inv-paid-at text-nowrap" title="{{ 'work.invoice_paid_at_tooltip'|trans({'%fecha%': inv.pagadaAt|date('d/m/Y')}, 'work') }}">{{ inv.pagadaAt|date('d/m/y') }}</span>
+            </div>
+        </form>
+    {% else %}
+        <button type="button"
+                class="btn btn-outline-secondary btn-sm js-work-mark-paid-open"
+                data-bs-toggle="modal"
+                data-bs-target="#modal-work-mark-paid"
+                data-invoice-id="{{ inv.id }}"
+                data-period="{{ work_month_year(inv.anio, inv.mes, locale) }}"
+                data-comision-default="{{ recargo_hnl|number_format(2, '.', '') }}"
+                data-paid-action="{{ path('grova_work_invoice_paid', {id: inv.id, _locale: locale}) }}"
+                data-paid-token="{{ csrf_token('work_invoice_paid_' ~ inv.id) }}"
+                title="{{ 'work.paid_mark_as_paid'|trans({}, 'work') }}">
+            <i class="bi bi-hourglass-split me-1"></i>{{ 'work.unpaid'|trans({}, 'work') }}
+        </button>
+    {% endif %}
+{% else %}
+{% set inv_lock_year_hint = 'work.locked_paid_toggle_not_vigente_year'|trans({}, 'work') %}
+{% if inv.pagadaAt %}
+    {% if inv_fx is defined and inv_fx.eur is defined and inv_fx.eur > 0 %}
+        {% set inv_fx_tip2 = 'L ' ~ (inv.totalFloat * inv_fx.eur)|number_format(2, '.', ',') %}
+        {% if inv_fx.usd is defined and inv_fx.usd > 0 %}
+            {% set inv_fx_tip2 = inv_fx_tip2 ~ ' · US$ ' ~ (inv.totalFloat * inv_fx.eur / inv_fx.usd)|number_format(2, '.', ',') %}
+        {% endif %}
+        {% set inv_lock_title = ('work.invoice_paid_fx_label'|trans({}, 'work')) ~ ': ' ~ inv_fx_tip2 %}
+    {% else %}
+        {% set inv_lock_title = '' %}
+    {% endif %}
+    {% set inv_paid_row_title = inv_lock_year_hint ~ (inv_lock_title ? ' — ' ~ inv_lock_title : '') %}
+    <div class="inv-paid-row" title="{{ inv_paid_row_title|e('html_attr') }}">
+        <span class="btn btn-outline-success btn-sm disabled inv-paid-mark-pill" style="pointer-events:none;opacity:.85;">
+            <i class="bi bi-bank2 me-1"></i>{{ 'work.paid'|trans({}, 'work') }}
+        </span>
+        <span class="inv-paid-at text-nowrap" title="{{ 'work.invoice_paid_at_tooltip'|trans({'%fecha%': inv.pagadaAt|date('d/m/Y')}, 'work') }}">{{ inv.pagadaAt|date('d/m/y') }}</span>
+    </div>
+{% else %}
+    <div class="inv-paid-row" title="{{ inv_lock_year_hint|e('html_attr') }}">
+        <span class="btn btn-outline-secondary btn-sm disabled" style="pointer-events:none;opacity:.85;">
+            <i class="bi bi-hourglass-split me-1"></i>{{ 'work.unpaid'|trans({}, 'work') }}
+        </span>
+    </div>
+{% endif %}
+{% endif %}

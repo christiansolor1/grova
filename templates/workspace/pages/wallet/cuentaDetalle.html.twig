@@ -1,0 +1,204 @@
+{% extends 'workspace/app_layout.html.twig' %}
+{% block page_title %}{{ cuenta.nombre }}{% endblock %}
+{% block app_page_subtitle %}Estado de cuenta — {{ mes_label }}{% endblock %}
+
+{% block page_styles %}
+<style>
+.cuenta-header { background:{{ cuenta.color }}18; border:1px solid {{ cuenta.color }}55; border-top:3px solid {{ cuenta.color }}; border-radius:12px; padding:1.5rem; }
+.cuenta-saldo-label { font-size:11px; color:#64748b; text-transform:uppercase; letter-spacing:.06em; margin-bottom:.3rem; }
+.cuenta-saldo-value { font-size:36px; font-weight:900; line-height:1; }
+.cuenta-num { font-size:12px; color:#64748b; font-family:monospace; margin-top:.4rem; }
+.stat-box { background:#111827; border:1px solid #1e293b; border-radius:10px; padding:1rem 1.25rem; }
+body.light-mode .stat-box { background:#fff; border-color:#e2e8f0; }
+.stat-label { font-size:11px; color:#64748b; text-transform:uppercase; letter-spacing:.06em; }
+.stat-value { font-size:22px; font-weight:800; line-height:1.2; margin-top:.2rem; }
+.mov-tipo-ingreso { color:#22c55e; font-weight:700; }
+.mov-tipo-gasto   { color:#f87171; font-weight:700; }
+.mov-transferencia { opacity:.75; font-style:italic; }
+.chart-wrap { background:#111827; border:1px solid #1e293b; border-radius:10px; padding:1.25rem; }
+body.light-mode .chart-wrap { background:#fff; border-color:#e2e8f0; }
+</style>
+{% endblock %}
+
+{% block app_main %}
+
+{# ── Breadcrumb ── #}
+<nav class="mb-3">
+    <a href="{{ path('grova_wallet_index', {_locale: app.request.locale}) }}" class="text-secondary text-decoration-none small">
+        <i class="bi bi-wallet2 me-1"></i>Wallet
+    </a>
+    <span class="text-muted small mx-1">/</span>
+    <span class="small text-muted">{{ cuenta.nombre }}</span>
+</nav>
+
+{# ── Header de la cuenta ── #}
+<div class="cuenta-header mb-4">
+    <div class="d-flex align-items-start justify-content-between flex-wrap gap-3">
+        <div>
+            <div class="wallet-cuenta-tipo mb-1" style="font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:#64748b;">{{ cuenta.tipoLabel }}{% if cuenta.institucionNombre %} · {{ cuenta.institucionNombre }}{% endif %}</div>
+            <div style="font-size:22px;font-weight:800;color:#f8fafc;">
+                {{ cuenta.nombre }}
+            </div>
+            {% if numeroCuenta %}
+            <div class="cuenta-num"><i class="bi bi-bank me-1"></i>Cta: {{ numeroCuenta }}</div>
+            {% endif %}
+            {% if tarjeta %}
+            <div class="cuenta-num"><i class="bi bi-credit-card me-1"></i>Tarjeta: {{ tarjeta }}</div>
+            {% endif %}
+        </div>
+        <div class="text-end">
+            <div class="cuenta-saldo-label">Saldo actual</div>
+            <div class="cuenta-saldo-value {{ saldo >= 0 ? 'text-success' : 'text-danger' }}">
+                L {{ saldo|abs|number_format(2, '.', ',') }}
+            </div>
+            {% if cuenta.isCredito and saldo > 0 %}
+            <div class="small text-muted mt-1">Monto adeudado</div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+{# ── Filtro mes/año ── #}
+<div class="d-flex align-items-center gap-2 mb-4 flex-wrap">
+    <span class="small text-muted">Período:</span>
+    {% for m in 1..12 %}
+    <a href="{{ path('grova_wallet_cuenta_detalle', {id: cuenta.id, _locale: app.request.locale, mes: m, anio: anio}) }}"
+       class="btn btn-sm {{ mes == m ? 'btn-primary' : 'btn-outline-secondary' }}">
+        {{ meses[m-1]|slice(0,3) }}
+    </a>
+    {% endfor %}
+    <span class="text-muted small">|</span>
+    {% for a in (anio - 1)..(anio + 1) %}
+    <a href="{{ path('grova_wallet_cuenta_detalle', {id: cuenta.id, _locale: app.request.locale, mes: mes, anio: a}) }}"
+       class="btn btn-sm {{ anio == a ? 'btn-primary' : 'btn-outline-secondary' }}">
+        {{ a }}
+    </a>
+    {% endfor %}
+</div>
+
+{# ── Stats del período ── #}
+<div class="row g-3 mb-4">
+    <div class="col-sm-4">
+        <div class="stat-box">
+            <div class="stat-label">Ingresos</div>
+            <div class="stat-value text-success">L {{ ingresos|number_format(2, '.', ',') }}</div>
+        </div>
+    </div>
+    <div class="col-sm-4">
+        <div class="stat-box">
+            <div class="stat-label">Gastos</div>
+            <div class="stat-value text-danger">L {{ gastos|number_format(2, '.', ',') }}</div>
+        </div>
+    </div>
+    <div class="col-sm-4">
+        <div class="stat-box">
+            <div class="stat-label">Balance neto</div>
+            <div class="stat-value {{ balance >= 0 ? 'text-success' : 'text-danger' }}">
+                L {{ balance|abs|number_format(2, '.', ',') }}
+                <span class="small fw-normal">{{ balance >= 0 ? '+' : '−' }}</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+{# ── Gráfico semanal ── #}
+<div class="chart-wrap mb-4">
+    <div class="small text-muted mb-3">Ingresos vs Gastos — {{ mes_label }} (por semana)</div>
+    <canvas id="chartSemanal" height="90"></canvas>
+</div>
+
+{# ── Tabla de movimientos ── #}
+<div class="content-card">
+    <div class="content-card-header">
+        Movimientos — {{ mes_label }}
+        <span class="badge bg-secondary ms-2">{{ movimientos|length }}</span>
+    </div>
+    <div class="content-card-body p-0">
+        {% if movimientos|length == 0 %}
+        <div class="grova-empty-state py-4">
+            <div class="grova-empty-icon"><i class="bi bi-inbox"></i></div>
+            <div class="grova-empty-title">Sin movimientos</div>
+            <div class="grova-empty-desc">No hay registros para {{ mes_label }}.</div>
+        </div>
+        {% else %}
+        <div class="table-responsive">
+            <table class="table table-sm grova-table mb-0">
+                <thead>
+                    <tr>
+                        <th>Fecha</th>
+                        <th>Descripción</th>
+                        <th>Categoría</th>
+                        <th class="text-end">Monto</th>
+                    </tr>
+                </thead>
+                <tbody>
+                {% for e in movimientos %}
+                {% set esTransferencia = e.descripcion starts with 'Transferencia' %}
+                <tr class="{{ esTransferencia ? 'mov-transferencia' : '' }}">
+                    <td class="text-nowrap small">{{ e.fecha|date('d/m/Y') }}</td>
+                    <td>
+                        {% if esTransferencia %}<i class="bi bi-arrow-left-right me-1 text-muted"></i>{% endif %}
+                        {{ e.descripcion ?? '—' }}
+                    </td>
+                    <td>
+                        {% if e.category %}
+                        <span class="cat-chip" style="color:{{ e.category.color }};background:{{ e.category.color }}22;">
+                            <i class="{{ e.category.icono }}"></i> {{ e.category.nombre }}
+                        </span>
+                        {% else %}
+                        <span class="text-muted small">—</span>
+                        {% endif %}
+                    </td>
+                    <td class="text-end text-nowrap {{ e.isIngreso ? 'mov-tipo-ingreso' : 'mov-tipo-gasto' }}">
+                        {{ e.isIngreso ? '+' : '−' }} L {{ e.montoFloat|number_format(2, '.', ',') }}
+                    </td>
+                </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+{% endblock %}
+
+{% block app_page_scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script>
+(function () {
+    var semanas = {{ semanas|json_encode|raw }};
+    var labels  = ['Sem 1 (1-7)', 'Sem 2 (8-14)', 'Sem 3 (15-21)', 'Sem 4 (22+)'];
+    var keys    = ['S1', 'S2', 'S3', 'S4'];
+
+    var ingresos = keys.map(function(k) { return semanas[k].ingreso; });
+    var gastos   = keys.map(function(k) { return semanas[k].gasto; });
+
+    var isDark = !document.body.classList.contains('light-mode');
+    var gridColor = isDark ? 'rgba(255,255,255,.07)' : 'rgba(0,0,0,.07)';
+    var textColor = isDark ? '#94a3b8' : '#64748b';
+
+    new Chart(document.getElementById('chartSemanal'), {
+        type: 'bar',
+        data: {
+            labels: labels,
+            datasets: [
+                { label: 'Ingresos', data: ingresos, backgroundColor: '#22c55e99', borderColor: '#22c55e', borderWidth: 1, borderRadius: 4 },
+                { label: 'Gastos',   data: gastos,   backgroundColor: '#f8717199', borderColor: '#f87171', borderWidth: 1, borderRadius: 4 },
+            ]
+        },
+        options: {
+            responsive: true,
+            plugins: { legend: { labels: { color: textColor, font: { size: 12 } } } },
+            scales: {
+                x: { ticks: { color: textColor }, grid: { color: gridColor } },
+                y: {
+                    ticks: { color: textColor, callback: function(v) { return 'L ' + v.toLocaleString(); } },
+                    grid: { color: gridColor }
+                }
+            }
+        }
+    });
+})();
+</script>
+{% endblock %}

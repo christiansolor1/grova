@@ -1,0 +1,204 @@
+{% extends 'workspace/app_layout.html.twig' %}
+{% block page_title %}Garita{% endblock %}
+{% block app_page_subtitle %}Panel de control del guardia{% endblock %}
+
+{% block page_styles %}
+<style>
+.garita-btn { border-radius:16px; padding:1.5rem 1rem; font-size:1.1rem; font-weight:600; display:flex; flex-direction:column; align-items:center; gap:.5rem; border:2px solid transparent; transition:.2s; }
+.garita-btn i { font-size:2rem; }
+.garita-btn:hover { transform:translateY(-2px); }
+
+.entrada-row { background:#111827; border:1px solid #1e293b; border-radius:10px; padding:.75rem 1rem; margin-bottom:.35rem; display:flex; align-items:center; gap:.75rem; }
+body.light-mode .entrada-row { background:#fff; border-color:#e2e8f0; }
+
+/* QR scanner overlay */
+#qr-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,.85); z-index:9999; flex-direction:column; align-items:center; justify-content:center; gap:1rem; }
+#qr-overlay.activo { display:flex; }
+#qr-video { width:min(90vw,400px); border-radius:12px; border:3px solid #3b82f6; }
+#qr-resultado { font-size:1.2rem; font-weight:700; padding:1rem 2rem; border-radius:12px; display:none; }
+#qr-resultado.ok   { background:#16a34a; color:#fff; }
+#qr-resultado.fail { background:#dc2626; color:#fff; }
+</style>
+{% endblock %}
+
+{% block app_main %}
+
+{% for label, messages in app.flashes %}
+    {% for message in messages %}
+        <div class="alert alert-{{ label == 'danger' ? 'danger' : 'success' }} mb-3">{{ message }}</div>
+    {% endfor %}
+{% endfor %}
+
+{# ── Acciones rápidas ── #}
+<div class="row g-3 mb-4">
+    <div class="col-6 col-md-3">
+        <button class="btn btn-success garita-btn w-100" id="btn-abrir-scanner">
+            <i class="bi bi-qr-code-scan"></i>
+            <span>Escanear QR</span>
+        </button>
+    </div>
+    <div class="col-6 col-md-3">
+        <a href="{{ path('grova_residencial_guardia_buscar_visitante', {_locale: app.request.locale}) }}" class="btn btn-outline-primary garita-btn w-100">
+            <i class="bi bi-search"></i>
+            <span>Buscar visitante</span>
+        </a>
+    </div>
+    <div class="col-6 col-md-3">
+        <a href="{{ path('grova_residencial_guardia_entrada_manual', {_locale: app.request.locale}) }}" class="btn btn-outline-secondary garita-btn w-100">
+            <i class="bi bi-person-plus"></i>
+            <span>Entrada manual</span>
+        </a>
+    </div>
+    <div class="col-6 col-md-3">
+        <a href="{{ path('grova_residencial_guardia_paquetes', {_locale: app.request.locale}) }}" class="btn btn-outline-warning garita-btn w-100">
+            <i class="bi bi-box-seam"></i>
+            <span>Paquetes</span>
+        </a>
+    </div>
+</div>
+
+<div class="row g-3">
+    {# ── Visitantes activos ── #}
+    <div class="col-md-6">
+        <div class="content-card">
+            <div class="content-card-header">
+                Dentro ahora — {{ visitantes_activos|length }}
+            </div>
+            <div class="content-card-body">
+                {% if visitantes_activos is empty %}
+                    <p class="text-muted text-center py-3">No hay visitantes dentro.</p>
+                {% else %}
+                    {% for registro in visitantes_activos %}
+                    <div class="entrada-row">
+                        <div>
+                            <div class="fw-semibold">{{ registro.visitante.nombreCompleto }}</div>
+                            <div class="small text-muted">Entró {{ registro.horaEntrada|date('H:i') }}</div>
+                        </div>
+                        <form method="post" class="ms-auto"
+                              action="{{ path('grova_residencial_guardia_registrar_salida', {id: registro.id, _locale: app.request.locale}) }}">
+                            <input type="hidden" name="_token" value="{{ csrf_token('residencial_salida_' ~ registro.id) }}">
+                            <button type="submit" class="btn btn-sm btn-outline-danger">
+                                <i class="bi bi-box-arrow-right me-1"></i>Salida
+                            </button>
+                        </form>
+                    </div>
+                    {% endfor %}
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    {# ── Últimas entradas ── #}
+    <div class="col-md-6">
+        <div class="content-card">
+            <div class="content-card-header">Últimas entradas</div>
+            <div class="content-card-body">
+                {% if ultimas_entradas is empty %}
+                    <p class="text-muted text-center py-3">Sin registros hoy.</p>
+                {% else %}
+                    {% for registro in ultimas_entradas %}
+                    <div class="entrada-row">
+                        <span class="badge {{ registro.tipoEntrada == 'qr' ? 'bg-success' : 'bg-secondary' }}" style="font-size:9px;">{{ registro.tipoEntradaLabel }}</span>
+                        <div>
+                            <div class="fw-semibold small">{{ registro.visitante.nombreCompleto }}</div>
+                            <div class="small text-muted">{{ registro.horaEntrada|date('d/m H:i') }}</div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+{# ── Scanner QR overlay ── #}
+<div id="qr-overlay">
+    <video id="qr-video" playsinline autoplay></video>
+    <div id="qr-resultado"></div>
+    <button class="btn btn-outline-light" id="btn-cerrar-scanner">
+        <i class="bi bi-x-lg me-1"></i>Cerrar
+    </button>
+</div>
+
+{% endblock %}
+
+{% block app_page_scripts %}
+<script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
+<script>
+(function () {
+    const csrfToken  = "{{ csrf_token('residencial_garita_qr') }}";
+    const escanearUrl = "{{ path('grova_residencial_guardia_escanear_qr', {_locale: app.request.locale}) }}";
+
+    const overlay   = document.getElementById('qr-overlay');
+    const video     = document.getElementById('qr-video');
+    const resultado = document.getElementById('qr-resultado');
+    let stream      = null;
+    let animFrame   = null;
+    let procesando  = false;
+
+    document.getElementById('btn-abrir-scanner').addEventListener('click', async () => {
+        try {
+            stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+            video.srcObject = stream;
+            overlay.classList.add('activo');
+            escanearFrame();
+        } catch (e) {
+            alert('No se pudo acceder a la cámara: ' + e.message);
+        }
+    });
+
+    document.getElementById('btn-cerrar-scanner').addEventListener('click', cerrarScanner);
+
+    function cerrarScanner() {
+        overlay.classList.remove('activo');
+        if (stream) { stream.getTracks().forEach(t => t.stop()); stream = null; }
+        if (animFrame) { cancelAnimationFrame(animFrame); animFrame = null; }
+        resultado.style.display = 'none';
+        procesando = false;
+    }
+
+    function escanearFrame() {
+        if (!video.videoWidth) { animFrame = requestAnimationFrame(escanearFrame); return; }
+        const canvas  = document.createElement('canvas');
+        canvas.width  = video.videoWidth;
+        canvas.height = video.videoHeight;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(video, 0, 0);
+        const imagen = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        const codigo = jsQR(imagen.data, imagen.width, imagen.height);
+
+        if (codigo && !procesando) {
+            procesando = true;
+            validarToken(codigo.data);
+            return;
+        }
+        animFrame = requestAnimationFrame(escanearFrame);
+    }
+
+    async function validarToken(token) {
+        const body = new FormData();
+        body.append('_token', csrfToken);
+        body.append('token', token);
+
+        try {
+            const resp = await fetch(escanearUrl, { method: 'POST', body });
+            const data = await resp.json();
+
+            resultado.style.display = 'block';
+            if (data.ok) {
+                resultado.className = 'qr-resultado ok';
+                resultado.innerHTML = `<i class="bi bi-check-circle me-2"></i>ACCESO OK<br><small>${data.visitante_nombre ?? ''} → ${data.casa_label ?? ''}</small>`;
+            } else {
+                resultado.className = 'qr-resultado fail';
+                resultado.innerHTML = `<i class="bi bi-x-circle me-2"></i>DENEGADO<br><small>${data.razon}</small>`;
+            }
+
+            setTimeout(() => cerrarScanner(), 3000);
+        } catch (e) {
+            procesando = false;
+            animFrame = requestAnimationFrame(escanearFrame);
+        }
+    }
+})();
+</script>
+{% endblock %}

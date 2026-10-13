@@ -1,0 +1,171 @@
+module:
+  nombre: 'Planificación Financiera'
+  descripcion: 'Control de presupuesto, compromisos, metas e inversiones'
+
+nav:
+  dashboard:    'Dashboard'
+  presupuesto:  'Presupuesto'
+  compromisos:  'Compromisos'
+  gastos:       'Gastos'
+  metas:        'Metas'
+  inversiones:  'Inversiones'
+  acreedores:   'Acreedores'
+  eventos:      'Eventos'
+  salud:        'Salud financiera'
+
+# Bolsas
+bolsa:
+  tipos:
+    necesidad: 'Necesidades'
+    gusto:     'Deseos'
+    ahorro:    'Ahorro'
+    deuda:     'Deudas'
+    inversion: 'Inversiones'
+    familia:   'Familia'
+
+# Presupuesto
+presupuesto:
+  tipos:
+    libre:     'Libre'
+    babilonia: 'Babilonia'
+  plantillas:
+    babilonia_dabasir:  'Dabasir 70/10/20'
+    estandar_50_30_20:  'Harvard 50/30/20'
+    personalizada:      'Personalizada'
+  estados:
+    borrador: 'Borrador'
+    activo:   'Activo'
+    cerrado:  'Cerrado'
+
+# Compromisos
+compromiso:
+  tipos:
+    servicio:      'Servicio'
+    suscripcion:   'Suscripción'
+    prestamo:      'Préstamo'
+    credito:       'Crédito'
+    deuda_persona: 'Deuda personal'
+  frecuencias:
+    mensual:   'Mensual'
+    quincenal: 'Quincenal'
+    anual:     'Anual'
+    unica:     'Pago único'
+
+# Cuotas
+cuota:
+  estados:
+    pendiente: 'Pendiente'
+    parcial:   'Parcial'
+    pagado:    'Pagado'
+    vencido:   'Vencido'
+
+# Gastos
+gasto:
+  naturaleza:
+    necesidad: 'Necesidad'
+    deseo:     'Deseo'
+    ahorro:    'Ahorro'
+    deuda:     'Deuda'
+
+# Metas
+meta:
+  tipos:
+    emergencia: 'Fondo de emergencia'
+    vivienda:   'Vivienda'
+    retiro:     'Retiro'
+    inversion:  'Inversión'
+    compra:     'Compra'
+    viaje:      'Viaje'
+    educacion:  'Educación'
+    otro:       'Otro'
+
+# Inversiones
+inversion:
+  tipos:
+    acciones:       'Acciones'
+    fondo:          'Fondo de inversión'
+    cripto:         'Cripto'
+    deposito_plazo: 'Depósito a plazo'
+    bien_raiz:      'Bien raíz'
+    negocio:        'Negocio'
+    otro:           'Otro'
+
+# Acreedores
+acreedor:
+  tipos:
+    prestamo: 'Préstamo'
+    credito:  'Crédito'
+    persona:  'Persona'
+
+# Salud mensual
+salud:
+  estados:
+    positivo: 'Positivo'
+    neutro:   'Neutro'
+    negativo: 'Negativo'
+
+# Eventos financieros
+evento:
+  tipos:
+    viaje:       'Viaje'
+    celebracion: 'Celebración'
+    proyecto:    'Proyecto'
+    otro:        'Otro'
+
+# Reglas financieras (tooltips / alertas)
+regla:
+  babilonia_10:      'Regla Babilonia: guarda el 10% de todo lo que ganas'
+  dabasir_70_10_20:  'Plan Dabasir: 70% necesidades, 10% ahorro, 20% deudas'
+  harvard_50_30_20:  'Regla Harvard: 50% necesidades, 30% deseos, 20% ahorro/deudas'
+  aviso_exceso:      'Este gasto supera el límite de tu bolsa de %bolsa%'
+  aviso_sin_presup:  'No tienes presupuesto activo para este mes'
+
+# Campos comunes
+field:
+  nombre:              'Nombre'
+  descripcion:         'Descripción'
+  tipo:                'Tipo'
+  bolsa:               'Bolsa'
+  monto:               'Monto'
+  moneda:              'Moneda'
+  tasa_cambio:         'Tipo de cambio'
+  fecha:               'Fecha'
+  fecha_inicio:        'Fecha inicio'
+  fecha_fin:           'Fecha fin'
+  fecha_vencimiento:   'Vence'
+  dia_pago:            'Día de pago'
+  frecuencia:          'Frecuencia'
+  capital:             'Capital'
+  interes:             'Interés'
+  tasa_anual:          'Tasa anual (%)'
+  plazo_meses:         'Plazo (meses)'
+  cuota_fija:          'Cuota fija'
+  saldo:               'Saldo'
+  monto_objetivo:      'Monto objetivo'
+  monto_acumulado:     'Acumulado'
+  aporte_mensual:      'Aporte mensual'
+  porcentaje_avance:   '% avance'
+  rendimiento_esperado: 'Rendimiento esperado (%)'
+  rendimiento_real:    'Rendimiento real (%)'
+  naturaleza:          'Naturaleza'
+  metodo_pago:         'Método de pago'
+  comprobante:         'Comprobante'
+  nota:                'Nota'
+  presupuesto_estimado: 'Presupuesto estimado'
+  activo:              'Activo'
+  activa:              'Activa'
+
+# Acciones
+action:
+  crear_presupuesto:   'Nuevo presupuesto'
+  registrar_ingreso:   'Registrar ingreso'
+  registrar_gasto:     'Registrar gasto'
+  agregar_compromiso:  'Agregar compromiso'
+  registrar_pago:      'Registrar pago'
+  agregar_meta:        'Nueva meta'
+  agregar_inversion:   'Nueva inversión'
+  abonar_meta:         'Abonar a meta'
+  ver_amortizacion:    'Ver tabla de amortización'
+  calcular_cuota:      'Calcular cuota'
+  cerrar_mes:          'Cerrar mes'
+  autoevaluar:         'Autoevaluación del mes'
