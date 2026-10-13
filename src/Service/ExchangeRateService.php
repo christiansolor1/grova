@@ -61,14 +61,8 @@ final class ExchangeRateService
     private function leerTasasDesdeCache(): array
     {
         return $this->cache->get(self::CACHE_KEY, function (ItemInterface $item): array {
-            $banks = [];
+            $banks = $this->fetchTodos();
 
-            $banks['Atlántida'] = $this->fetchAtlantida();
-            $banks['Ficohsa']   = $this->fetchFicohsa();
-            $banks['Occidente'] = $this->fetchOccidente();
-            $banks['BAC']       = $this->fetchBAC();
-            // Filtrar bancos que fallaron
-            $banks = array_filter($banks, fn($b) => $b !== null);
             if (empty($banks)) {
                 $item->expiresAfter(300);
                 return $this->fallback();
@@ -113,119 +107,126 @@ final class ExchangeRateService
     // ── Parsers ──────────────────────────────────────────────────────────────
 
     /** @return array{usd:float,usd_venta:float,eur:float,eur_venta:float,url:string}|null */
-    private function fetchAtlantida(): ?array
+    private function parsearAtlantida(string $json): ?array
     {
-        try {
-            $json = $this->fetchJson(self::URL_JSON_ATLANTIDA);
-            $data = json_decode($json, true, 512, JSON_THROW_ON_ERROR);
-            if (!is_array($data) || $data === []) {
-                return null;
-            }
-
-            $hoy = (new \DateTimeImmutable('now', new \DateTimeZone(self::ZONA_HONDURAS)))->format('d-m-Y');
-            $fecha = isset($data[$hoy]) ? $hoy : (string) array_key_last($data);
-            $dia = $data[$fecha] ?? null;
-            if (!is_array($dia) || empty($dia['USD']['compra']) || empty($dia['EUR']['compra'])) {
-                return null;
-            }
-
-            return [
-                'usd'       => (float) $dia['USD']['compra'],
-                'usd_venta' => (float) ($dia['USD']['venta'] ?? $dia['USD']['compra']),
-                'eur'       => (float) $dia['EUR']['compra'],
-                'eur_venta' => (float) ($dia['EUR']['venta'] ?? $dia['EUR']['compra']),
-                'url'       => 'aolweb.bancatlan.hn',
-            ];
-        } catch (\Throwable) {
+        $data = json_decode($json, true, 512, JSON_THROW_ON_ERROR);
+        if (!is_array($data) || $data === []) {
             return null;
         }
-    }
 
-    /** @return array{usd:float,usd_venta:float,eur:float,eur_venta:float,url:string}|null */
-    private function fetchFicohsa(): ?array
-    {
-        try {
-            $html = $this->fetch('https://www.ficohsa.hn/');
-            // values-uno = USD, values-dos = EUR
-            preg_match('/values-uno[^>]*>.*?buys-value[^>]*>\s*L\s*([\d.]+).*?sale-value[^>]*>\s*L\s*([\d.]+)/s', $html, $usd);
-            preg_match('/values-dos[^>]*>.*?buys-value[^>]*>\s*L\s*([\d.]+).*?sale-value[^>]*>\s*L\s*([\d.]+)/s', $html, $eur);
-            if (empty($usd[1]) || empty($eur[1])) return null;
-            return ['usd' => (float)$usd[1], 'usd_venta' => (float)$usd[2], 'eur' => (float)$eur[1], 'eur_venta' => (float)$eur[2], 'url' => 'ficohsa.hn'];
-        } catch (\Throwable) { return null; }
-    }
-
-    /** @return array{usd:float,usd_venta:float,eur:float,eur_venta:float,url:string}|null */
-    private function fetchOccidente(): ?array
-    {
-        try {
-            $html = $this->fetch('https://www.bancodeoccidente.hn/enlinea/');
-            // Solo tiene USD: "Compra: LPS. 26.6151" "Venta: LPS.26.7482"
-            preg_match('/Compra[^>]*>\s*LPS\.?\s*([\d.]+)/i', $html, $c);
-            preg_match('/Venta[^>]*>\s*LPS\.?\s*([\d.]+)/i', $html, $v);
-            if (empty($c[1])) return null;
-            return ['usd' => (float)$c[1], 'usd_venta' => (float)($v[1] ?? $c[1]), 'eur' => 0.0, 'eur_venta' => 0.0, 'url' => 'bancodeoccidente.hn'];
-        } catch (\Throwable) { return null; }
-    }
-
-    /** @return array{usd:float,usd_venta:float,eur:float,eur_venta:float,url:string}|null */
-    private function fetchBAC(): ?array
-    {
-        try {
-            $xml = $this->fetch('https://www.sucursalelectronica.com/exchangerate/showXmlExchangeRate.do');
-            $doc = new \SimpleXMLElement($xml);
-            foreach ($doc->country as $country) {
-                if (strtolower(trim((string) $country->name)) === 'honduras') {
-                    $buyUsd  = (float) $country->buyRateUSD;
-                    $saleUsd = (float) $country->saleRateUSD;
-                    $buyEur  = (float) $country->buyRateEUR;
-                    $saleEur = (float) $country->saleRateEUR;
-                    if ($buyUsd <= 0) return null;
-                    return ['usd' => $buyUsd, 'usd_venta' => $saleUsd, 'eur' => $buyEur, 'eur_venta' => $saleEur, 'url' => 'baccredomatic.com'];
-                }
-            }
+        $hoy   = (new \DateTimeImmutable('now', new \DateTimeZone(self::ZONA_HONDURAS)))->format('d-m-Y');
+        $fecha = isset($data[$hoy]) ? $hoy : (string) array_key_last($data);
+        $dia   = $data[$fecha] ?? null;
+        if (!is_array($dia) || empty($dia['USD']['compra']) || empty($dia['EUR']['compra'])) {
             return null;
-        } catch (\Throwable) { return null; }
+        }
+
+        return [
+            'usd'       => (float) $dia['USD']['compra'],
+            'usd_venta' => (float) ($dia['USD']['venta'] ?? $dia['USD']['compra']),
+            'eur'       => (float) $dia['EUR']['compra'],
+            'eur_venta' => (float) ($dia['EUR']['venta'] ?? $dia['EUR']['compra']),
+            'url'       => 'aolweb.bancatlan.hn',
+        ];
+    }
+
+    /** @return array{usd:float,usd_venta:float,eur:float,eur_venta:float,url:string}|null */
+    private function parsearFicohsa(string $html): ?array
+    {
+        preg_match('/values-uno[^>]*>.*?buys-value[^>]*>\s*L\s*([\d.]+).*?sale-value[^>]*>\s*L\s*([\d.]+)/s', $html, $usd);
+        preg_match('/values-dos[^>]*>.*?buys-value[^>]*>\s*L\s*([\d.]+).*?sale-value[^>]*>\s*L\s*([\d.]+)/s', $html, $eur);
+        if (empty($usd[1]) || empty($eur[1])) {
+            return null;
+        }
+
+        return ['usd' => (float) $usd[1], 'usd_venta' => (float) $usd[2], 'eur' => (float) $eur[1], 'eur_venta' => (float) $eur[2], 'url' => 'ficohsa.hn'];
+    }
+
+    /** @return array{usd:float,usd_venta:float,eur:float,eur_venta:float,url:string}|null */
+    private function parsearOccidente(string $html): ?array
+    {
+        preg_match('/Compra[^>]*>\s*LPS\.?\s*([\d.]+)/i', $html, $c);
+        preg_match('/Venta[^>]*>\s*LPS\.?\s*([\d.]+)/i', $html, $v);
+        if (empty($c[1])) {
+            return null;
+        }
+
+        return ['usd' => (float) $c[1], 'usd_venta' => (float) ($v[1] ?? $c[1]), 'eur' => 0.0, 'eur_venta' => 0.0, 'url' => 'bancodeoccidente.hn'];
+    }
+
+    /** @return array{usd:float,usd_venta:float,eur:float,eur_venta:float,url:string}|null */
+    private function parsearBAC(string $xml): ?array
+    {
+        $doc = new \SimpleXMLElement($xml);
+        foreach ($doc->country as $country) {
+            if (strtolower(trim((string) $country->name)) === 'honduras') {
+                $buyUsd = (float) $country->buyRateUSD;
+                if ($buyUsd <= 0) {
+                    return null;
+                }
+
+                return [
+                    'usd'       => $buyUsd,
+                    'usd_venta' => (float) $country->saleRateUSD,
+                    'eur'       => (float) $country->buyRateEUR,
+                    'eur_venta' => (float) $country->saleRateEUR,
+                    'url'       => 'baccredomatic.com',
+                ];
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Lanza las 4 peticiones en paralelo y resuelve cada una individualmente.
+     * Timeout máximo total ≈ 5 s (no 4 × 15 s en secuencia).
+     *
+     * @return array<string, array{usd:float,usd_venta:float,eur:float,eur_venta:float,url:string}>
+     */
+    private function fetchTodos(): array
+    {
+        $opciones = [
+            'timeout' => 5,
+            'headers' => [
+                'User-Agent' => 'Mozilla/5.0 (compatible; Grova/1.0)',
+                'Accept'     => 'application/json, text/html, */*',
+            ],
+        ];
+
+        $respuestas = [
+            'Atlántida' => $this->httpClient->request('GET', self::URL_JSON_ATLANTIDA, $opciones),
+            'Ficohsa'   => $this->httpClient->request('GET', 'https://www.ficohsa.hn/', $opciones),
+            'Occidente' => $this->httpClient->request('GET', 'https://www.bancodeoccidente.hn/enlinea/', $opciones),
+            'BAC'       => $this->httpClient->request('GET', 'https://www.sucursalelectronica.com/exchangerate/showXmlExchangeRate.do', $opciones),
+        ];
+
+        $banks = [];
+
+        foreach ($respuestas as $nombre => $respuesta) {
+            try {
+                $cuerpo = $respuesta->getContent();
+                $banks[$nombre] = match ($nombre) {
+                    'Atlántida' => $this->parsearAtlantida($cuerpo),
+                    'Ficohsa'   => $this->parsearFicohsa($cuerpo),
+                    'Occidente' => $this->parsearOccidente($cuerpo),
+                    'BAC'       => $this->parsearBAC($cuerpo),
+                    default     => null,
+                };
+            } catch (\Throwable) {
+                $banks[$nombre] = null;
+            }
+        }
+
+        return array_filter($banks, fn($b) => $b !== null);
     }
 
     private function fetch(string $url): string
     {
-        return $this->fetchJson($url);
-    }
-
-    private function fetchJson(string $url): string
-    {
-        return $this->fetchJsonConTimeout($url, 15);
-    }
-
-    private function fetchJsonConTimeout(string $url, int $segundos): string
-    {
-        try {
-            return $this->httpClient->request('GET', $url, [
-                'timeout' => $segundos,
-                'headers' => [
-                    'User-Agent' => 'Mozilla/5.0 (compatible; Grova/1.0)',
-                    'Accept'     => 'application/json, text/html, */*',
-                ],
-            ])->getContent();
-        } catch (\Throwable) {
-            $contexto = stream_context_create([
-                'http' => [
-                    'timeout'        => $segundos,
-                    'user_agent'     => 'Mozilla/5.0 (compatible; Grova/1.0)',
-                    'ignore_errors'  => true,
-                ],
-                'ssl' => [
-                    'verify_peer'      => true,
-                    'verify_peer_name' => true,
-                ],
-            ]);
-            $cuerpo = @file_get_contents($url, false, $contexto);
-            if ($cuerpo === false || $cuerpo === '') {
-                throw new \RuntimeException('No se pudo descargar: ' . $url);
-            }
-
-            return $cuerpo;
-        }
+        return $this->httpClient->request('GET', $url, [
+            'timeout' => 5,
+            'headers' => ['User-Agent' => 'Mozilla/5.0 (compatible; Grova/1.0)', 'Accept' => '*/*'],
+        ])->getContent();
     }
 
     /** @return array{banks:array,best_eur:string,best_usd:string,usd:float,usd_venta:float,eur:float,eur_venta:float,fecha:string,source:string} */

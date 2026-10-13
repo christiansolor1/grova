@@ -1,5 +1,20 @@
 # grova — CLAUDE.md
 
+## Flujo de cierre de ticket (GKAN)
+
+Al terminar un ticket, sin que se te pida, ejecuta estos pasos en orden:
+
+1. **Carpeta del ticket** — crea `/Users/christiansolorzano/Developer/KAN/GKAN-[N]/` y guarda ahí `documentacion.txt` con lo hecho, decisiones y archivos clave.
+2. **Nota Obsidian** — crea `/Users/christiansolorzano/Library/Mobile Documents/iCloud~md~obsidian/Documents/Solorzano-kb/GKAN/GKAN-[N].md` con frontmatter `tags`, `ticket`, `estado`, `fecha` y secciones: Objetivo, Antes/Después, Archivos clave, Pendiente.
+3. **Archivos de prueba** — si los hay, muévelos a la carpeta del ticket y crea `README-pruebas.md` explicando para qué sirve cada uno.
+4. **Mensaje de commit** — formato `GKAN-[N]: [mensaje breve]`. No uses la palabra "fix". No hagas commit, solo muestra el mensaje.
+5. **Comentario Jira** — empieza con "Ahora", describe qué hay disponible/funciona, máximo 2 líneas en español.
+
+### Prefijo de tickets
+
+- `GKAN-[N]` — tickets de grova (G de Grova + KAN de Kanban)
+- Los KAN-XXXX son de authemis, no mezclar
+
 ## Qué es grova
 
 SaaS modular horizontal (similar a Odoo) construido en Symfony 7.4. El objetivo es vender módulos a empresas y personas de distintas industrias. Sin un módulo activo el núcleo no tiene sentido para el usuario final.

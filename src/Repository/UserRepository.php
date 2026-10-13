@@ -82,4 +82,21 @@ class UserRepository extends ServiceEntityRepository implements PasswordUpgrader
             ->getQuery()
             ->getResult();
     }
+
+    /**
+     * @param \App\Entity\Tenant $tenant
+     * @return User[]
+     */
+    public function findByRolesResidencial(\App\Entity\Tenant $tenant): array
+    {
+        return $this->createQueryBuilder('u')
+            ->where('u.tenant = :tenant')
+            ->andWhere("u.roles LIKE :guardia OR u.roles LIKE :residente")
+            ->setParameter('tenant', $tenant)
+            ->setParameter('guardia', '%ROLE_RESIDENCIAL_GUARDIA%')
+            ->setParameter('residente', '%ROLE_RESIDENCIAL_RESIDENTE%')
+            ->orderBy('u.nombre', 'ASC')
+            ->getQuery()
+            ->getResult();
+    }
 }

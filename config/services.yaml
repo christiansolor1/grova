@@ -61,6 +61,14 @@ services:
         arguments:
             $projectDir: '%kernel.project_dir%'
 
+    App\Module\Personal\FinancialPlanning\Service\FinDocumentoStorage:
+        arguments:
+            $projectDir: '%kernel.project_dir%'
+
+    App\Service\WorkDayDocumentStorage:
+        arguments:
+            $projectDir: '%kernel.project_dir%'
+
     App\Service\Respaldo\RespaldoWork:
         arguments:
             $projectDir: '%kernel.project_dir%'
@@ -93,6 +101,10 @@ services:
     App\Security\TwoFactor\ProveedorMFA:
         tags:
             - { name: scheb_two_factor.provider, alias: grova_mfa }
+
+    App\Service\EncryptionService:
+        arguments:
+            $appSecret: '%env(APP_SECRET)%'
 
     App\Service\Auth\ServicioGeolocalizacion:
         arguments:

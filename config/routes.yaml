@@ -126,8 +126,48 @@ web_wallet:
     defaults:
         _locale: es
 
+web_wallet_cuenta:
+    resource: '../src/Controller/WalletCuentaController.php'
+    type: attribute
+    prefix: /{_locale}
+    name_prefix: ''
+    requirements:
+        _locale: es|en
+    defaults:
+        _locale: es
+
+web_wallet_category:
+    resource: '../src/Controller/WalletCategoryController.php'
+    type: attribute
+    prefix: /{_locale}
+    name_prefix: ''
+    requirements:
+        _locale: es|en
+    defaults:
+        _locale: es
+
+web_wallet_gasto_fijo:
+    resource: '../src/Controller/WalletGastoFijoController.php'
+    type: attribute
+    prefix: /{_locale}
+    name_prefix: ''
+    requirements:
+        _locale: es|en
+    defaults:
+        _locale: es
+
 web_work:
     resource: '../src/Controller/WorkController.php'
+    type: attribute
+    prefix: /{_locale}
+    name_prefix: ''
+    requirements:
+        _locale: es|en
+    defaults:
+        _locale: es
+
+web_agenda:
+    resource: '../src/Controller/AgendaController.php'
     type: attribute
     prefix: /{_locale}
     name_prefix: ''
@@ -231,6 +271,71 @@ web_lock:
         _locale: es|en
     defaults:
         _locale: es
+
+web_wallet_institucion:
+    resource: '../src/Controller/WalletInstitucionController.php'
+    type: attribute
+    prefix: /{_locale}
+    name_prefix: ''
+    requirements:
+        _locale: es|en
+    defaults:
+        _locale: es
+
+web_wallet_transferencia:
+    resource: '../src/Controller/WalletTransferenciaController.php'
+    type: attribute
+    prefix: /{_locale}
+    name_prefix: ''
+    requirements:
+        _locale: es|en
+    defaults:
+        _locale: es
+
+web_financiera:
+    resource: '../src/Controller/FinancieraController.php'
+    type: attribute
+    prefix: /{_locale}
+    name_prefix: ''
+    requirements:
+        _locale: es|en
+    defaults:
+        _locale: es
+
+web_residencial_admin:
+    resource: '../src/Controller/ResidencialAdminController.php'
+    type: attribute
+    prefix: /{_locale}
+    name_prefix: ''
+    requirements:
+        _locale: es|en
+    defaults:
+        _locale: es
+
+web_residencial_guardia:
+    resource: '../src/Controller/ResidencialGuardiaController.php'
+    type: attribute
+    prefix: /{_locale}
+    name_prefix: ''
+    requirements:
+        _locale: es|en
+    defaults:
+        _locale: es
+
+web_residencial_residente:
+    resource: '../src/Controller/ResidencialResidenteController.php'
+    type: attribute
+    prefix: /{_locale}
+    name_prefix: ''
+    requirements:
+        _locale: es|en
+    defaults:
+        _locale: es
+
+# ── Vista pública del pase (sin locale, sin auth) ────────────────────────────
+web_residencial_publico:
+    resource: '../src/Controller/ResidencialPublicoController.php'
+    type: attribute
 
 # ── Logout (sin locale — el firewall intercepta /logout) ───────────────────
 logout:

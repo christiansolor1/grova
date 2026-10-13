@@ -35,3 +35,4 @@
 ###> Desarrollo local ###
 /public/rootCA.pem
 ###< Desarrollo local ###
+/.env.prod.local

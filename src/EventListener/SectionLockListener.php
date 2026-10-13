@@ -7,6 +7,7 @@ namespace App\EventListener;
 use App\Entity\User;
 use App\Service\SectionLockService;
 use Symfony\Component\EventDispatcher\Attribute\AsEventListener;
+use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpKernel\Event\RequestEvent;
 use Symfony\Component\HttpKernel\KernelEvents;
@@ -44,6 +45,12 @@ final class SectionLockListener
 
         $session = $request->getSession();
         if ($this->lockService->isSessionUnlocked($session, $user, $section)) return;
+
+        // AJAX → JSON 401 para que el JS lo maneje sin romper DataTables
+        if ($request->isXmlHttpRequest() || $request->headers->get('Accept') === 'application/json') {
+            $event->setResponse(new JsonResponse(['locked' => true, 'section' => $section], 401));
+            return;
+        }
 
         // Redirigir a la pantalla de bloqueo
         $event->setResponse(new RedirectResponse(

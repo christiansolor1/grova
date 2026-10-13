@@ -28,7 +28,7 @@ final class MenuTreeBuilder
      */
     private const MODULE_KEYS = [
         'wallet', 'work', 'agenda', 'habitos', 'pesca',
-        'legal', 'contactos', 'construccion',
+        'legal', 'contactos', 'construccion', 'residencial',
         'pos', 'restaurante', 'clinica', 'financiera',
         'inventario', 'rrhh', 'facturacion',
     ];

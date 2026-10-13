@@ -83,15 +83,17 @@ class SecurityHeadersSubscriber implements EventSubscriberInterface
         );
 
         $styleSrc = sprintf(
-            "style-src 'self' 'unsafe-inline' %s %s %s; ",
+            "style-src 'self' 'unsafe-inline' %s %s %s %s; ",
             self::CDN_JS,
             self::CDN_DT,
+            self::CDN_JSZIP,
             self::RECAPTCHA,
         );
 
         $fontSrc = sprintf(
-            "font-src 'self' %s; ",
+            "font-src 'self' %s %s; ",
             self::CDN_JS,
+            self::CDN_JSZIP,
         );
 
         $imgSrc = sprintf(

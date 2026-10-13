@@ -41,7 +41,7 @@ final class ComandoSembrarMenuBase extends Command
         ['key' => 'pos',                   'label' => 'POS',              'icon' => 'bi-shop',           'sort' => 120, 'parent' => 'modulos-section', 'status' => 'pendiente'],
         ['key' => 'restaurante',           'label' => 'Restaurante',      'icon' => 'bi-cup-hot',        'sort' => 130, 'parent' => 'modulos-section', 'status' => 'pendiente'],
         ['key' => 'clinica',               'label' => 'Clínica',          'icon' => 'bi-heart-pulse',    'sort' => 140, 'parent' => 'modulos-section', 'status' => 'pendiente'],
-        ['key' => 'financiera',            'label' => 'Financiera',       'icon' => 'bi-bank',           'sort' => 150, 'parent' => 'modulos-section', 'status' => 'pendiente'],
+        ['key' => 'financiera',            'label' => 'Financiera',       'icon' => 'bi-bank',           'sort' => 150, 'parent' => 'modulos-section'],
 
         // ── Administración (ROLE_ADMIN+) ─────────────────────────────────────
         ['key' => 'admin-section',         'label' => 'Administración',   'icon' => 'bi-gear',           'sort' => 900, 'role' => 'ROLE_ADMIN'],
