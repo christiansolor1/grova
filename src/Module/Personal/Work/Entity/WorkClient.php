@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Module\Personal\Work\Entity;
 
+use App\Module\Personal\Wallet\Entity\WalletCuenta;
 use App\Module\Personal\Work\Repository\WorkClientRepository;
 use Doctrine\ORM\Mapping as ORM;
 
@@ -52,10 +53,10 @@ class WorkClient
     #[ORM\Column(length: 100, nullable: true)]
     private ?string $bancDireccion = null;
 
-    #[ORM\Column(length: 20, nullable: true)]
+    #[ORM\Column(length: 200, nullable: true)]
     private ?string $bancSwift = null;
 
-    #[ORM\Column(length: 50, nullable: true)]
+    #[ORM\Column(length: 200, nullable: true)]
     private ?string $bancCuenta = null;
 
     #[ORM\Column(length: 100, nullable: true)]
@@ -64,6 +65,11 @@ class WorkClient
     /** Comisión bancaria mensual fija en Lempiras (cobro por convertir divisa) */
     #[ORM\Column(type: 'decimal', precision: 8, scale: 2, nullable: true)]
     private ?string $recargoHnl = null;
+
+    /** Cuenta de Wallet donde se recibe el pago de este cliente */
+    #[ORM\ManyToOne(targetEntity: WalletCuenta::class)]
+    #[ORM\JoinColumn(nullable: true, onDelete: 'SET NULL')]
+    private ?WalletCuenta $walletCuenta = null;
 
     #[ORM\Column]
     private bool $activo = true;
@@ -125,6 +131,9 @@ class WorkClient
     public function getRecargoHnl(): ?string { return $this->recargoHnl; }
     public function getRecargoHnlFloat(): float { return (float) ($this->recargoHnl ?? 0); }
     public function setRecargoHnl(?string $recargoHnl): static { $this->recargoHnl = $recargoHnl; return $this; }
+
+    public function getWalletCuenta(): ?WalletCuenta { return $this->walletCuenta; }
+    public function setWalletCuenta(?WalletCuenta $walletCuenta): static { $this->walletCuenta = $walletCuenta; return $this; }
 
     public function isActivo(): bool { return $this->activo; }
     public function setActivo(bool $activo): static { $this->activo = $activo; return $this; }

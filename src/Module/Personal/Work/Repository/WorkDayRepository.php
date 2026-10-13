@@ -73,6 +73,20 @@ class WorkDayRepository extends ServiceEntityRepository
     }
 
     /** @return WorkDay[] */
+    public function findByYear(int $tenantId, int $year): array
+    {
+        return $this->createQueryBuilder('d')
+            ->where('d.tenantId = :tenantId')
+            ->andWhere('d.fecha BETWEEN :from AND :to')
+            ->setParameter('tenantId', $tenantId)
+            ->setParameter('from', sprintf('%04d-01-01', $year))
+            ->setParameter('to', sprintf('%04d-12-31', $year))
+            ->orderBy('d.fecha', 'ASC')
+            ->getQuery()
+            ->getResult();
+    }
+
+    /** @return WorkDay[] */
     public function findLatest(int $tenantId, int $limit = 30): array
     {
         return $this->createQueryBuilder('d')

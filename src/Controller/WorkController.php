@@ -15,8 +15,11 @@ use App\Service\ExchangeRateService;
 use App\Service\MenuTreeBuilder;
 use App\Service\NotificationService;
 use App\Service\TenantContext;
+use App\Service\WorkDayDocumentStorage;
 use App\Service\WorkInvoicePaymentProofStorage;
 use App\Service\WorkInvoiceService;
+use App\Module\Personal\Wallet\Entity\WalletEntry;
+use App\Module\Personal\Wallet\Repository\WalletCuentaRepository;
 use App\Module\Personal\Work\Entity\WorkClient;
 use App\Module\Personal\Work\Entity\WorkInvoice;
 use App\Module\Personal\Work\PublicHolidayEntry;
@@ -50,6 +53,9 @@ final class WorkController extends AbstractController
         private readonly TranslatorInterface $translator,
         private readonly NotificationService $notificationService,
         private readonly WorkInvoicePaymentProofStorage $invoicePaymentProofStorage,
+        private readonly WorkDayDocumentStorage $dayDocumentStorage,
+        private readonly WalletCuentaRepository $walletCuentaRepo,
+        private readonly \App\Service\EncryptionService $encryption,
     ) {
     }
 
@@ -361,28 +367,37 @@ final class WorkController extends AbstractController
         ]);
     }
 
-    #[Route('/day/create', name: 'day_create', methods: ['POST'])]
+    #[Route('/day/create', name: 'day_create', methods: ['GET', 'POST'])]
     public function createDay(
         Request $request,
         EntityManagerInterface $em,
     ): Response {
+        if ($request->isMethod('GET')) {
+            return $this->redirectToRoute('grova_work_index', ['_locale' => $request->getLocale()]);
+        }
+
+        $redirectYear  = (int) $request->request->get('redirect_year', (int) date('Y'));
+        $redirectMonth = (int) $request->request->get('redirect_month', (int) date('n'));
+
         if (!$this->isCsrfTokenValid('work_day', (string) $request->request->get('_token'))) {
             $this->addFlash('danger', $this->translator->trans('work.flash_token_invalid', [], 'work'));
-            return $this->redirectToRoute('grova_work_index', ['_locale' => $request->getLocale()]);
+            return $this->redirectToRoute('grova_work_index', ['_locale' => $request->getLocale(), 'year' => $redirectYear, 'month' => $redirectMonth]);
         }
 
         $tenantId = $this->tenantContext->getTenant()->getId();
         $client = $this->clientRepo->findActivo($tenantId);
         if ($client === null) {
             $this->addFlash('danger', $this->translator->trans('work.flash_no_active_client_configured', [], 'work'));
-            return $this->redirectToRoute('grova_work_index', ['_locale' => $request->getLocale()]);
+            return $this->redirectToRoute('grova_work_index', ['_locale' => $request->getLocale(), 'year' => $redirectYear, 'month' => $redirectMonth]);
         }
 
         $fechaStr    = (string) $request->request->get('fecha', date('Y-m-d'));
         $horaEntrada = trim((string) $request->request->get('hora_entrada', ''));
-        $esFeriado   = (bool) $request->request->get('es_feriado', false);
-        $esVacacion  = (bool) $request->request->get('es_vacacion', false);
-        $notas       = trim((string) $request->request->get('notas', ''));
+        $esFeriado     = (bool) $request->request->get('es_feriado', false);
+        $esVacacion    = (bool) $request->request->get('es_vacacion', false);
+        $esPermiso     = (bool) $request->request->get('es_permiso', false);
+        $esIncapacidad = (bool) $request->request->get('es_incapacidad', false);
+        $notas         = trim((string) $request->request->get('notas', ''));
 
         $fecha = new \DateTimeImmutable($fechaStr);
         if ($this->isMonthInvoiced((int) $fecha->format('Y'), (int) $fecha->format('n'), $client)) {
@@ -398,20 +413,28 @@ final class WorkController extends AbstractController
         $existing = $this->dayRepo->findOneBy(['fecha' => $fecha, 'tenantId' => $tenantId]);
         if ($existing !== null) {
             $this->addFlash('warning', $this->translator->trans('work.flash_day_exists_warning', [], 'work'));
-            return $this->redirectToRoute('grova_work_index', ['_locale' => $request->getLocale()]);
+            return $this->redirectToRoute('grova_work_index', ['_locale' => $request->getLocale(), 'year' => (int) $fecha->format('Y'), 'month' => (int) $fecha->format('n')]);
         }
 
         $day = new WorkDay();
         $day->setTenantId($tenantId);
         $day->setClient($client);
         $day->setFecha($fecha);
-        $day->setHoraEntrada($horaEntrada !== '' ? $horaEntrada : null);
+        $day->setHoraEntrada((!$esVacacion && !$esFeriado && !$esPermiso && !$esIncapacidad && $horaEntrada !== '') ? $horaEntrada : null);
         $day->setEsFeriado($esFeriado);
         $day->setEsVacacion($esVacacion);
+        $day->setEsPermiso($esPermiso);
+        $day->setEsIncapacidad($esIncapacidad);
         $day->setNotas($notas !== '' ? $notas : null);
 
         $em->persist($day);
         $em->flush();
+
+        $archivo = $request->files->get('documento');
+        if ($archivo instanceof \Symfony\Component\HttpFoundation\File\UploadedFile && ($esPermiso || $esIncapacidad)) {
+            $this->dayDocumentStorage->tryReplaceDocumento($day, $archivo);
+            $em->flush();
+        }
 
         $msg = $this->translator->trans('work.flash_day_created', [], 'work');
         if ($day->bonusAplica()) {
@@ -421,7 +444,11 @@ final class WorkController extends AbstractController
         }
         $this->addFlash('success', $msg);
 
-        return $this->redirectToRoute('grova_work_index', ['_locale' => $request->getLocale()]);
+        return $this->redirectToRoute('grova_work_index', [
+            '_locale' => $request->getLocale(),
+            'year'    => (int) $fecha->format('Y'),
+            'month'   => (int) $fecha->format('n'),
+        ]);
     }
 
     #[Route('/day/{id}/edit', name: 'day_edit', methods: ['POST'])]
@@ -440,11 +467,13 @@ final class WorkController extends AbstractController
             throw $this->createNotFoundException();
         }
 
-        $fechaStr    = (string) $request->request->get('fecha', $day->getFecha()->format('Y-m-d'));
-        $horaEntrada = trim((string) $request->request->get('hora_entrada', ''));
-        $esFeriado   = (bool) $request->request->get('es_feriado', false);
-        $esVacacion  = (bool) $request->request->get('es_vacacion', false);
-        $notas       = trim((string) $request->request->get('notas', ''));
+        $fechaStr      = (string) $request->request->get('fecha', $day->getFecha()->format('Y-m-d'));
+        $horaEntrada   = trim((string) $request->request->get('hora_entrada', ''));
+        $esFeriado     = (bool) $request->request->get('es_feriado', false);
+        $esVacacion    = (bool) $request->request->get('es_vacacion', false);
+        $esPermiso     = (bool) $request->request->get('es_permiso', false);
+        $esIncapacidad = (bool) $request->request->get('es_incapacidad', false);
+        $notas         = trim((string) $request->request->get('notas', ''));
 
         $tenantId = $this->tenantContext->getTenant()->getId();
         $client = $this->clientRepo->findActivo($tenantId);
@@ -466,15 +495,34 @@ final class WorkController extends AbstractController
         }
 
         $day->setFecha($newFecha);
-        $day->setHoraEntrada($horaEntrada !== '' ? $horaEntrada : null);
+        $day->setHoraEntrada((!$esVacacion && !$esFeriado && !$esPermiso && !$esIncapacidad && $horaEntrada !== '') ? $horaEntrada : null);
         $day->setEsFeriado($esFeriado);
         $day->setEsVacacion($esVacacion);
+        $day->setEsPermiso($esPermiso);
+        $day->setEsIncapacidad($esIncapacidad);
         $day->setNotas($notas !== '' ? $notas : null);
+
+        $archivo = $request->files->get('documento');
+        if ($archivo instanceof \Symfony\Component\HttpFoundation\File\UploadedFile) {
+            $error = $this->dayDocumentStorage->tryReplaceDocumento($day, $archivo);
+            if ($error !== null) {
+                $this->addFlash('danger', $error);
+                return $this->redirectToRoute('grova_work_index', [
+                    '_locale' => $request->getLocale(),
+                    'year'    => $newKeyY,
+                    'month'   => $newKeyM,
+                ]);
+            }
+        }
 
         $em->flush();
         $this->addFlash('success', $this->translator->trans('work.flash_day_updated', [], 'work'));
 
-        return $this->redirectToRoute('grova_work_index', ['_locale' => $request->getLocale()]);
+        return $this->redirectToRoute('grova_work_index', [
+            '_locale' => $request->getLocale(),
+            'year'    => (int) $newFecha->format('Y'),
+            'month'   => (int) $newFecha->format('n'),
+        ]);
     }
 
     #[Route('/day/{id}/delete', name: 'day_delete', methods: ['POST'])]
@@ -501,12 +549,47 @@ final class WorkController extends AbstractController
                 ]);
             }
 
+            $fechaDelDia = $day->getFecha();
             $em->remove($day);
             $em->flush();
             $this->addFlash('success', $this->translator->trans('work.flash_day_deleted', [], 'work'));
+
+            return $this->redirectToRoute('grova_work_index', [
+                '_locale' => $request->getLocale(),
+                'year'    => (int) $fechaDelDia->format('Y'),
+                'month'   => (int) $fechaDelDia->format('n'),
+            ]);
         }
 
         return $this->redirectToRoute('grova_work_index', ['_locale' => $request->getLocale()]);
+    }
+
+    #[Route('/day/{id}/documento', name: 'day_documento', methods: ['GET'])]
+    public function dayDocumento(int $id): Response
+    {
+        $tenantId = $this->tenantContext->getTenant()->getId();
+        $day = $this->dayRepo->find($id);
+
+        if ($day === null || $day->getTenantId() !== $tenantId || !$day->hasDocumento()) {
+            throw $this->createNotFoundException();
+        }
+
+        $path = $this->dayDocumentStorage->absolutePath($day);
+        if ($path === null) {
+            throw $this->createNotFoundException();
+        }
+
+        $dispName = $day->getDocumentoOriginalName() ?: 'documento';
+        $fallback = 'documento.' . (pathinfo($path, PATHINFO_EXTENSION) ?: 'bin');
+
+        return new BinaryFileResponse($path, Response::HTTP_OK, [
+            'Content-Type' => $day->getDocumentoMime() ?? 'application/octet-stream',
+            'Content-Disposition' => HeaderUtils::makeDisposition(
+                HeaderUtils::DISPOSITION_INLINE,
+                $dispName,
+                $fallback,
+            ),
+        ]);
     }
 
     #[Route('/clients', name: 'clients', methods: ['GET'])]
@@ -516,11 +599,14 @@ final class WorkController extends AbstractController
         $tree    = $this->menuTreeBuilder->buildTree($this->isGranted('ROLE_DEVELOPER'));
         $clients = $this->clientRepo->findAllOrdered($tenantId);
 
+        $cuentas = $this->walletCuentaRepo->findActivas($tenantId);
+
         return $this->render('workspace/pages/work/clients.html.twig', [
             'menu_tree'               => $tree,
             'active_menu_key'         => 'work',
             'workspace_home_menu_key' => MenuTreeBuilder::HOME_MENU_KEY,
             'clients'                 => $clients,
+            'wallet_cuentas'          => $cuentas,
         ]);
     }
 
@@ -907,18 +993,31 @@ final class WorkController extends AbstractController
         Request $request,
         EntityManagerInterface $em,
     ): Response {
+        $isAjax = $this->wantsWorkPaymentProofJson($request);
+
         if (!$this->isCsrfTokenValid('work_invoice_paid_' . $id, (string) $request->request->get('_token'))) {
-            $this->addFlash('danger', $this->translator->trans('work.flash_token_invalid', [], 'work'));
+            $msg = $this->translator->trans('work.flash_token_invalid', [], 'work');
+            if ($isAjax) {
+                return new JsonResponse(['success' => false, 'message' => $msg], 422);
+            }
+            $this->addFlash('danger', $msg);
             return $this->redirectToRoute('grova_work_index', ['_locale' => $request->getLocale()]);
         }
 
         $invoice = $this->invoiceRepo->find($id);
         if ($invoice === null) {
+            if ($isAjax) {
+                return new JsonResponse(['success' => false, 'message' => 'Not found'], 404);
+            }
             throw $this->createNotFoundException();
         }
 
         if ($invoice->getAnio() !== $this->vigenteYear()) {
-            $this->addFlash('danger', $this->translator->trans('work.flash_paid_toggle_year', [], 'work'));
+            $msg = $this->translator->trans('work.flash_paid_toggle_year', [], 'work');
+            if ($isAjax) {
+                return new JsonResponse(['success' => false, 'message' => $msg], 422);
+            }
+            $this->addFlash('danger', $msg);
             return $this->redirectToRoute('grova_work_index', ['_locale' => $request->getLocale()]);
         }
 
@@ -930,8 +1029,10 @@ final class WorkController extends AbstractController
             $this->invoicePaymentProofStorage->removeProof($invoice);
             $invoice->setPagadaAt(null);
             $invoice->setComisionBancoHnl(null);
+            $invoice->setWalletEntryId(null);
             $this->clearInvoicePaymentFxFields($invoice);
-            $this->addFlash('success', $this->translator->trans('work.flash_invoice_marked_unpaid', ['%month%' => $monthLabel], 'work'));
+            $msg = $this->translator->trans('work.flash_invoice_marked_unpaid', ['%month%' => $monthLabel], 'work');
+            $this->addFlash('success', $msg);
             $this->notificationService->notify(
                 user: $user,
                 title: 'Factura revertida a pendiente — ' . $monthLabel,
@@ -941,52 +1042,77 @@ final class WorkController extends AbstractController
                 icon: 'bi bi-arrow-counterclockwise',
                 type: 'warning',
             );
-        } else {
-            $fechaCobro = $this->parseFechaCobroParaPagada((string) $request->request->get('fecha_cobro', ''));
-            if ($fechaCobro === null) {
-                $this->addFlash('danger', $this->translator->trans('work.flash_invoice_paid_date_invalid', [], 'work'));
-                return $this->redirectWorkIndexPreservingInvoiceYear($request, $invoice);
+            $em->flush();
+
+            if ($isAjax) {
+                return new JsonResponse(['success' => true, 'paid' => false, 'message' => $msg]);
             }
 
-            $rawComision = $request->request->get('comision_banco_hnl');
-            $defaultL   = $invoice->getClient()->getRecargoHnlFloat();
-            if ($rawComision === null || $rawComision === '') {
-                $comisionL = $defaultL;
-            } else {
-                $comisionL = max(0.0, (float) $rawComision);
-            }
-            $invoice->setComisionBancoHnl(number_format($comisionL, 2, '.', ''));
-            $invoice->setPagadaAt($fechaCobro);
-            $invoice->setReciboSwift($this->parseReciboSwift((string) $request->request->get('recibo_swift', '')));
-
-            // Si el usuario ingresó cuántos Lempiras recibió, calcular tasa efectiva
-            $rawLempiras = $request->request->get('lempiras_recibidos');
-            if ($rawLempiras !== null && $rawLempiras !== '') {
-                $lempirasL = max(0.0, (float) $rawLempiras);
-                $totalEur  = $invoice->getTotalFloat();
-                $invoice->setLempirasRecibidos(number_format($lempirasL, 2, '.', ''));
-                if ($totalEur > 0) {
-                    $tasaEfectiva = ($lempirasL + $comisionL) / $totalEur;
-                    $invoice->setTasaPagoEurL(number_format($tasaEfectiva, 5, '.', ''));
-                    $invoice->setTasaPagoFecha(date('d/m/Y'));
-                    $invoice->setTasaPagoSource('real (ingresado)');
-                }
-            } else {
-                $this->applyPaymentFxSnapshotToInvoice($invoice);
-            }
-            $this->addFlash('success', $this->translator->trans('work.flash_invoice_marked_paid', ['%month%' => $monthLabel], 'work'));
-            $this->notificationService->notify(
-                user: $user,
-                title: 'Factura cobrada — ' . $monthLabel,
-                body: '€' . number_format($invoice->getTotalFloat(), 2, ',', '.') . ' recibidos de ' . $invoice->getClient()->getNombre(),
-                url: '/' . $request->getLocale() . '/work',
-                module: 'work',
-                icon: 'bi bi-check-circle',
-                type: 'success',
-            );
+            return $this->redirectWorkIndexPreservingInvoiceYear($request, $invoice);
         }
 
+        $fechaCobro = $this->parseFechaCobroParaPagada((string) $request->request->get('fecha_cobro', ''));
+        if ($fechaCobro === null) {
+            $msg = $this->translator->trans('work.flash_invoice_paid_date_invalid', [], 'work');
+            if ($isAjax) {
+                return new JsonResponse(['success' => false, 'message' => $msg], 422);
+            }
+            $this->addFlash('danger', $msg);
+            return $this->redirectWorkIndexPreservingInvoiceYear($request, $invoice);
+        }
+
+        $rawComision = $request->request->get('comision_banco_hnl');
+        $defaultL   = $invoice->getClient()->getRecargoHnlFloat();
+        if ($rawComision === null || $rawComision === '') {
+            $comisionL = $defaultL;
+        } else {
+            $comisionL = max(0.0, (float) $rawComision);
+        }
+        $invoice->setComisionBancoHnl(number_format($comisionL, 2, '.', ''));
+        $invoice->getClient()->setRecargoHnl(number_format($comisionL, 2, '.', ''));
+        $invoice->setPagadaAt($fechaCobro);
+        $invoice->setReciboSwift($this->parseReciboSwift((string) $request->request->get('recibo_swift', '')));
+
+        // Si el usuario ingresó cuántos Lempiras recibió, calcular tasa efectiva
+        $rawLempiras = $request->request->get('lempiras_recibidos');
+        if ($rawLempiras !== null && $rawLempiras !== '') {
+            $lempirasL = max(0.0, (float) $rawLempiras);
+            $totalEur  = $invoice->getTotalFloat();
+            $invoice->setLempirasRecibidos(number_format($lempirasL, 2, '.', ''));
+            if ($totalEur > 0) {
+                $tasaEfectiva = ($lempirasL + $comisionL) / $totalEur;
+                $invoice->setTasaPagoEurL(number_format($tasaEfectiva, 5, '.', ''));
+                $invoice->setTasaPagoFecha(date('d/m/Y'));
+                $invoice->setTasaPagoSource('real (ingresado)');
+            }
+        } else {
+            $this->applyPaymentFxSnapshotToInvoice($invoice);
+        }
+        $proofFile = $request->files->get('payment_proof');
+        if ($proofFile instanceof UploadedFile) {
+            $proofError = $this->invoicePaymentProofStorage->tryReplaceProof($invoice, $proofFile);
+            if ($proofError !== null) {
+                $this->addFlash('warning', $this->translator->trans($proofError, [], 'work'));
+            }
+        }
+
+        $msg = $this->translator->trans('work.flash_invoice_marked_paid', ['%month%' => $monthLabel], 'work');
+        $this->addFlash('success', $msg);
+        $this->notificationService->notify(
+            user: $user,
+            title: 'Factura cobrada — ' . $monthLabel,
+            body: '€' . number_format($invoice->getTotalFloat(), 2, ',', '.') . ' recibidos de ' . $invoice->getClient()->getNombre(),
+            url: '/' . $request->getLocale() . '/work',
+            module: 'work',
+            icon: 'bi bi-check-circle',
+            type: 'success',
+        );
+
         $em->flush();
+
+        if ($isAjax) {
+            return new JsonResponse(['success' => true, 'paid' => true, 'message' => $msg]);
+        }
 
         return $this->redirectWorkIndexPreservingInvoiceYear($request, $invoice);
     }
@@ -1032,6 +1158,7 @@ final class WorkController extends AbstractController
 
         $comisionL = max(0.0, (float) $raw);
         $invoice->setComisionBancoHnl(number_format($comisionL, 2, '.', ''));
+        $invoice->getClient()->setRecargoHnl(number_format($comisionL, 2, '.', ''));
         $invoice->setPagadaAt($fechaCobro);
         $rawRecibo = trim((string) $request->request->get('recibo_swift', ''));
         if ($rawRecibo !== '') {
@@ -1138,8 +1265,7 @@ final class WorkController extends AbstractController
                     'success'   => true,
                     'message'   => $msg,
                     'invoiceId' => $invoice->getId(),
-                    'cellHtml'  => $this->renderInvoiceProofCellFragment($request, $invoice, $invoiceYear),
-                ]);
+                ] + $this->renderInvoiceProofCellFragment($request, $invoice, $invoiceYear));
             }
             $this->addFlash('success', $msg);
 
@@ -1231,12 +1357,533 @@ final class WorkController extends AbstractController
                 'success'   => true,
                 'message'   => $msg,
                 'invoiceId' => $invoice->getId(),
-                'cellHtml'  => $this->renderInvoiceProofCellFragment($request, $invoice, $invoiceYear),
-            ]);
+            ] + $this->renderInvoiceProofCellFragment($request, $invoice, $invoiceYear));
         }
         $this->addFlash('success', $msg);
 
         return $this->redirectWorkIndexPreservingInvoiceYear($request, $invoice);
+    }
+
+    /**
+     * GET: ver comprobante del banco. POST: subir comprobante del banco + registrar lempiras/comisión.
+     */
+    #[Route('/invoice/{id}/bank-proof', name: 'invoice_bank_proof', methods: ['GET', 'POST'])]
+    public function invoiceBankProof(
+        int $id,
+        Request $request,
+        EntityManagerInterface $em,
+    ): Response {
+        $invoice = $this->invoiceRepo->find($id);
+        if ($invoice === null) {
+            throw $this->createNotFoundException();
+        }
+
+        if ($request->isMethod('POST')) {
+            $wantsJson   = $this->wantsWorkPaymentProofJson($request);
+            $invoiceYear = $this->normalizeInvoiceYearFromRequest($request, $invoice);
+
+            if (!$this->isCsrfTokenValid('work_invoice_bank_proof_' . $id, (string) $request->request->get('_token'))) {
+                $msg = $this->translator->trans('work.flash_token_invalid', [], 'work');
+                if ($wantsJson) {
+                    return new JsonResponse(['success' => false, 'message' => $msg], Response::HTTP_FORBIDDEN);
+                }
+                $this->addFlash('danger', $msg);
+                return $this->redirectWorkIndexPreservingInvoiceYear($request, $invoice);
+            }
+
+            if (!$invoice->isPagada()) {
+                $msg = $this->translator->trans('work.flash_payment_proof_only_paid', [], 'work');
+                if ($wantsJson) {
+                    return new JsonResponse(['success' => false, 'message' => $msg], Response::HTTP_UNPROCESSABLE_ENTITY);
+                }
+                $this->addFlash('danger', $msg);
+                return $this->redirectWorkIndexPreservingInvoiceYear($request, $invoice);
+            }
+
+            if ($invoice->getAnio() !== $this->vigenteYear()) {
+                $msg = $this->translator->trans('work.flash_paid_toggle_year', [], 'work');
+                if ($wantsJson) {
+                    return new JsonResponse(['success' => false, 'message' => $msg], Response::HTTP_UNPROCESSABLE_ENTITY);
+                }
+                $this->addFlash('danger', $msg);
+                return $this->redirectWorkIndexPreservingInvoiceYear($request, $invoice);
+            }
+
+            // Registrar lempiras y comisión
+            $rawLempiras = $request->request->get('lempiras_recibidos');
+            if ($rawLempiras !== null && $rawLempiras !== '') {
+                $lempirasL = max(0.0, (float) $rawLempiras);
+                $invoice->setLempirasRecibidos(number_format($lempirasL, 2, '.', ''));
+
+                $rawComision = $request->request->get('comision_banco_hnl');
+                $comisionL   = ($rawComision !== null && $rawComision !== '')
+                    ? max(0.0, (float) $rawComision)
+                    : $invoice->getClient()->getRecargoHnlFloat();
+
+                $invoice->setComisionBancoHnl(number_format($comisionL, 2, '.', ''));
+                $invoice->getClient()->setRecargoHnl(number_format($comisionL, 2, '.', ''));
+
+                $totalEur = $invoice->getTotalFloat();
+                if ($totalEur > 0) {
+                    $tasaEfectiva = ($lempirasL + $comisionL) / $totalEur;
+                    $invoice->setTasaPagoEurL(number_format($tasaEfectiva, 5, '.', ''));
+                    $invoice->setTasaPagoFecha(date('d/m/Y'));
+                    $invoice->setTasaPagoSource('real (ingresado)');
+                }
+            }
+
+            $rawSwift = trim((string) $request->request->get('recibo_swift', ''));
+            if ($rawSwift !== '') {
+                $invoice->setReciboSwift($this->parseReciboSwift($rawSwift));
+            }
+
+            // Guardar archivo del banco
+            $uploaded = $request->files->get('bank_proof');
+            if ($uploaded instanceof UploadedFile && $uploaded->getClientOriginalName() !== '') {
+                $err = $this->invoicePaymentProofStorage->tryReplaceBankProof($invoice, $uploaded);
+                if ($err !== null) {
+                    $msg = $this->translator->trans($err, [], 'work');
+                    if ($wantsJson) {
+                        return new JsonResponse(['success' => false, 'message' => $msg], Response::HTTP_UNPROCESSABLE_ENTITY);
+                    }
+                    $this->addFlash('danger', $msg);
+                    return $this->redirectWorkIndexPreservingInvoiceYear($request, $invoice);
+                }
+            }
+
+            $em->flush();
+            $msg = $this->translator->trans('work.flash_invoice_payment_details_updated', [
+                '%month%' => WorkMonthLabel::format($invoice->getAnio(), $invoice->getMes(), $request->getLocale()),
+            ], 'work');
+            if ($wantsJson) {
+                return new JsonResponse([
+                    'success'   => true,
+                    'message'   => $msg,
+                    'invoiceId' => $invoice->getId(),
+                ] + $this->renderInvoiceProofCellFragment($request, $invoice, $invoiceYear));
+            }
+            $this->addFlash('success', $msg);
+            return $this->redirectWorkIndexPreservingInvoiceYear($request, $invoice);
+        }
+
+        // GET: servir el archivo
+        if (!$invoice->hasBankProof()) {
+            throw $this->createNotFoundException();
+        }
+
+        $path = $this->invoicePaymentProofStorage->absoluteBankProofPath($invoice);
+        if ($path === null) {
+            throw $this->createNotFoundException();
+        }
+
+        $dispName = $invoice->getBankProofOriginalName() ?: 'comprobante-banco';
+        $fallback  = 'comprobante-banco.' . (pathinfo($path, PATHINFO_EXTENSION) ?: 'bin');
+
+        return new BinaryFileResponse($path, Response::HTTP_OK, [
+            'Content-Type'        => $invoice->getBankProofMime() ?? 'application/octet-stream',
+            'Content-Disposition' => HeaderUtils::makeDisposition(
+                HeaderUtils::DISPOSITION_INLINE,
+                $dispName,
+                $fallback,
+            ),
+        ]);
+    }
+
+    #[Route('/invoice/{id}/bank-proof/delete', name: 'invoice_bank_proof_delete', methods: ['POST'])]
+    public function deleteInvoiceBankProof(
+        int $id,
+        Request $request,
+        EntityManagerInterface $em,
+    ): Response {
+        $wantsJson = $this->wantsWorkPaymentProofJson($request);
+
+        if (!$this->isCsrfTokenValid('work_invoice_bank_proof_delete_' . $id, (string) $request->request->get('_token'))) {
+            $msg = $this->translator->trans('work.flash_token_invalid', [], 'work');
+            if ($wantsJson) {
+                return new JsonResponse(['success' => false, 'message' => $msg], Response::HTTP_FORBIDDEN);
+            }
+            $this->addFlash('danger', $msg);
+            return $this->redirectToRoute('grova_work_index', ['_locale' => $request->getLocale()]);
+        }
+
+        $invoice = $this->invoiceRepo->find($id);
+        if ($invoice === null) {
+            throw $this->createNotFoundException();
+        }
+
+        $invoiceYear = $this->normalizeInvoiceYearFromRequest($request, $invoice);
+
+        if (!$invoice->hasBankProof()) {
+            $msg = $this->translator->trans('work.flash_payment_proof_delete_none', [], 'work');
+            if ($wantsJson) {
+                return new JsonResponse(['success' => false, 'message' => $msg], Response::HTTP_UNPROCESSABLE_ENTITY);
+            }
+            $this->addFlash('warning', $msg);
+            return $this->redirectWorkIndexPreservingInvoiceYear($request, $invoice);
+        }
+
+        $this->invoicePaymentProofStorage->removeBankProof($invoice);
+        $em->flush();
+        $msg = $this->translator->trans('work.flash_payment_proof_deleted', [], 'work');
+        if ($wantsJson) {
+            return new JsonResponse([
+                'success'   => true,
+                'message'   => $msg,
+                'invoiceId' => $invoice->getId(),
+            ] + $this->renderInvoiceProofCellFragment($request, $invoice, $invoiceYear));
+        }
+        $this->addFlash('success', $msg);
+        return $this->redirectWorkIndexPreservingInvoiceYear($request, $invoice);
+    }
+
+    #[Route('/invoice/{id}/sync-wallet', name: 'invoice_sync_wallet', methods: ['POST'])]
+    public function syncToWallet(
+        int $id,
+        Request $request,
+        EntityManagerInterface $em,
+    ): JsonResponse {
+        if (!$this->isCsrfTokenValid('work_invoice_sync_wallet_' . $id, (string) $request->request->get('_token'))) {
+            return new JsonResponse(['success' => false, 'message' => $this->translator->trans('work.flash_token_invalid', [], 'work')], 422);
+        }
+
+        $invoice = $this->invoiceRepo->find($id);
+        if ($invoice === null) {
+            return new JsonResponse(['success' => false, 'message' => 'Not found'], 404);
+        }
+
+        if (!$invoice->isPagada()) {
+            return new JsonResponse(['success' => false, 'message' => 'La factura debe estar pagada para sincronizar con Wallet.'], 422);
+        }
+
+        if ($invoice->isSyncedToWallet()) {
+            return new JsonResponse(['success' => false, 'message' => 'Esta factura ya está sincronizada con Wallet.'], 422);
+        }
+
+        // Calcular monto en Lempiras
+        $montoL = $invoice->getLempirasRecibidosFloat();
+        if ($montoL <= 0) {
+            $tasa = $invoice->getTasaPagoEurLFloat() > 0
+                ? $invoice->getTasaPagoEurLFloat()
+                : $invoice->getTasaEmisionEurLFloat();
+            if ($tasa > 0) {
+                $montoL = round($invoice->getTotalFloat() * $tasa, 2);
+            }
+        }
+        if ($montoL <= 0) {
+            // Fallback: usar tasa en vivo
+            $rates = $this->exchangeRate->getRates();
+            $eurRate = (float) ($rates['eur'] ?? 0);
+            if ($eurRate > 0) {
+                $montoL = round($invoice->getTotalFloat() * $eurRate, 2);
+            }
+        }
+        if ($montoL <= 0) {
+            return new JsonResponse(['success' => false, 'message' => 'No se pudo calcular el monto en Lempiras. Actualiza las tasas primero.'], 422);
+        }
+
+        $locale     = $request->getLocale();
+        $periodoStr = WorkMonthLabel::format($invoice->getAnio(), $invoice->getMes(), $locale);
+        $tenantId   = $this->tenantContext->getTenant()->getId();
+
+        $entry = new WalletEntry();
+        $entry->setTenantId($tenantId);
+        $entry->setTipo('ingreso');
+        $entry->setMonto(number_format($montoL, 2, '.', ''));
+        $entry->setDescripcion('Work · ' . $invoice->getClient()->getNombre() . ' · ' . $periodoStr);
+        $entry->setFecha($invoice->getPagadaAt() ?? new \DateTimeImmutable());
+
+        // Usar la cuenta del cliente si está configurada, si no usar la seleccionada en el Swal
+        $cuenta = $invoice->getClient()->getWalletCuenta();
+        if ($cuenta === null) {
+            $cuentaId = $request->request->get('cuenta_id');
+            if ($cuentaId !== null && $cuentaId !== '') {
+                $cuentaManual = $this->walletCuentaRepo->find((int) $cuentaId);
+                if ($cuentaManual !== null && $cuentaManual->getTenantId() === $tenantId) {
+                    $cuenta = $cuentaManual;
+                }
+            }
+        }
+        if ($cuenta !== null) {
+            $entry->setCuenta($cuenta);
+        }
+
+        $em->persist($entry);
+        $em->flush();
+
+        $invoice->setWalletEntryId($entry->getId());
+        $em->flush();
+
+        $walletHtml = $this->renderView('workspace/pages/work/_invoice_row_wallet.html.twig', [
+            'inv'          => $invoice,
+            'sync_url'     => $this->generateUrl('grova_work_invoice_sync_wallet', ['id' => $invoice->getId(), '_locale' => $locale]),
+            'unsync_url'   => $this->generateUrl('grova_work_invoice_unsync_wallet', ['id' => $invoice->getId(), '_locale' => $locale]),
+            'invoice_year' => $invoice->getAnio(),
+        ]);
+
+        return new JsonResponse([
+            'success'    => true,
+            'message'    => 'Factura sincronizada con Wallet (L ' . number_format($montoL, 2, '.', ',') . ').',
+            'invoiceId'  => $invoice->getId(),
+            'walletHtml' => $walletHtml,
+        ]);
+    }
+
+    #[Route('/invoice/{id}/unsync-wallet', name: 'invoice_unsync_wallet', methods: ['POST'])]
+    public function unsyncFromWallet(
+        int $id,
+        Request $request,
+        EntityManagerInterface $em,
+    ): JsonResponse {
+        if (!$this->isCsrfTokenValid('work_invoice_unsync_wallet_' . $id, (string) $request->request->get('_token'))) {
+            return new JsonResponse(['success' => false, 'message' => 'Token inválido.'], 422);
+        }
+
+        $invoice = $this->invoiceRepo->find($id);
+        if ($invoice === null) {
+            return new JsonResponse(['success' => false, 'message' => 'Not found'], 404);
+        }
+
+        $entryId = $invoice->getWalletEntryId();
+        if ($entryId === null) {
+            return new JsonResponse(['success' => false, 'message' => 'Esta factura no está sincronizada con Wallet.'], 422);
+        }
+
+        $tenantId = $this->tenantContext->getTenant()->getId();
+
+        /** @var \App\Module\Personal\Wallet\Repository\WalletEntryRepository $entryRepo */
+        $entryRepo = $em->getRepository(\App\Module\Personal\Wallet\Entity\WalletEntry::class);
+        $entry = $entryRepo->find($entryId);
+
+        if ($entry === null) {
+            // El entry fue eliminado manualmente desde Wallet — solo limpiar el link
+            $invoice->setWalletEntryId(null);
+            $em->flush();
+            $locale = $request->getLocale();
+            $walletHtml = $this->renderView('workspace/pages/work/_invoice_row_wallet.html.twig', [
+                'inv'          => $invoice,
+                'sync_url'     => $this->generateUrl('grova_work_invoice_sync_wallet', ['id' => $invoice->getId(), '_locale' => $locale]),
+                'unsync_url'   => $this->generateUrl('grova_work_invoice_unsync_wallet', ['id' => $invoice->getId(), '_locale' => $locale]),
+                'invoice_year' => $invoice->getAnio(),
+            ]);
+            return new JsonResponse(['success' => true, 'message' => 'Sincronización revertida (el movimiento ya no existía en Wallet).', 'walletHtml' => $walletHtml]);
+        }
+
+        // Verificar saldo actual >= monto del ingreso
+        $monto = (float) $entry->getMonto();
+        $cuenta = $entry->getCuenta();
+
+        if ($cuenta !== null) {
+            $saldo = $this->walletCuentaRepo->getSaldo($cuenta);
+        } else {
+            $saldo = $this->getSaldoCarteraGeneral($tenantId, $em);
+        }
+
+        if ($saldo < $monto) {
+            return new JsonResponse([
+                'success' => false,
+                'message' => sprintf(
+                    'No se puede revertir — el saldo actual (L %s) es menor al ingreso (L %s). Ya usaste parte de ese dinero.',
+                    number_format($saldo, 2, '.', ','),
+                    number_format($monto, 2, '.', ',')
+                ),
+            ], 422);
+        }
+
+        $em->remove($entry);
+        $invoice->setWalletEntryId(null);
+        $em->flush();
+
+        $locale = $request->getLocale();
+        $walletHtml = $this->renderView('workspace/pages/work/_invoice_row_wallet.html.twig', [
+            'inv'          => $invoice,
+            'sync_url'     => $this->generateUrl('grova_work_invoice_sync_wallet', ['id' => $invoice->getId(), '_locale' => $locale]),
+            'unsync_url'   => $this->generateUrl('grova_work_invoice_unsync_wallet', ['id' => $invoice->getId(), '_locale' => $locale]),
+            'invoice_year' => $invoice->getAnio(),
+        ]);
+
+        return new JsonResponse([
+            'success'    => true,
+            'message'    => 'Sincronización revertida. El movimiento de L ' . number_format($monto, 2, '.', ',') . ' fue eliminado de Wallet.',
+            'walletHtml' => $walletHtml,
+        ]);
+    }
+
+    private function getSaldoCarteraGeneral(int $tenantId, EntityManagerInterface $em): float
+    {
+        $rows = $em->createQuery(
+            'SELECT e.tipo, SUM(e.monto) AS total
+             FROM App\Module\Personal\Wallet\Entity\WalletEntry e
+             WHERE e.cuenta IS NULL AND e.tenantId = :tid
+             GROUP BY e.tipo'
+        )->setParameter('tid', $tenantId)->getResult();
+
+        $ingresos = 0.0;
+        $gastos   = 0.0;
+        foreach ($rows as $row) {
+            if ($row['tipo'] === 'ingreso') {
+                $ingresos = (float) $row['total'];
+            } else {
+                $gastos = (float) $row['total'];
+            }
+        }
+
+        return $ingresos - $gastos;
+    }
+
+    #[Route('/invoices/data', name: 'invoices_data', methods: ['GET'])]
+    public function invoicesData(Request $request): JsonResponse
+    {
+        $now        = new \DateTimeImmutable();
+        $vigenteYear = (int) $now->format('Y');
+        $year       = (int) ($request->query->get('year', (string) $vigenteYear));
+        $year       = max(2020, min(2099, $year));
+        $locale     = $request->getLocale();
+
+        $tenantId   = $this->tenantContext->getTenant()->getId();
+        $client     = $this->clientRepo->findActivo($tenantId);
+        $invoices   = $this->invoiceRepo->findByAnio($tenantId, $year);
+        $liveRates  = $this->exchangeRate->getRates();
+        $recargoHnl = $client ? $client->getRecargoHnlFloat() : 0.0;
+
+        $rows = [];
+        foreach ($invoices as $inv) {
+            // Tasas efectivas por factura
+            $invFx = $liveRates;
+            if ($inv->getTasaPagoEurL() !== null && $inv->getTasaPagoEurLFloat() > 0) {
+                $invFx = array_merge($liveRates, [
+                    'eur' => $inv->getTasaPagoEurLFloat(),
+                    'usd' => $inv->getTasaPagoUsdLFloat() > 0 ? $inv->getTasaPagoUsdLFloat() : (float) ($liveRates['usd'] ?? 0),
+                ]);
+            } elseif ($inv->getTasaEmisionEurL() !== null && $inv->getTasaEmisionEurLFloat() > 0) {
+                $invFx = array_merge($liveRates, [
+                    'eur' => $inv->getTasaEmisionEurLFloat(),
+                    'usd' => $inv->getTasaEmisionUsdLFloat() > 0 ? $inv->getTasaEmisionUsdLFloat() : (float) ($liveRates['usd'] ?? 0),
+                ]);
+            }
+
+            $invCommL        = $inv->getComisionBancoHnl() !== null ? $inv->getComisionBancoHnlFloat() : $recargoHnl;
+            $invCanTogglePaid = $inv->getAnio() === $vigenteYear;
+            $invCanEditBono  = $inv->getAnio() === $vigenteYear && !$inv->getPagadaAt();
+
+            // Tasa EUR para columna tasas
+            $invTEur = null;
+            if ($inv->getTasaPagoEurL() !== null && $inv->getTasaPagoEurLFloat() > 0) {
+                $invTEur = $inv->getTasaPagoEurLFloat();
+            } elseif ($inv->getTasaEmisionEurL() !== null && $inv->getTasaEmisionEurLFloat() > 0) {
+                $invTEur = $inv->getTasaEmisionEurLFloat();
+            }
+
+            $totalFloat = $inv->getTotalFloat();
+            $eurRate    = (float) ($invFx['eur'] ?? 0);
+            $usdRate    = (float) ($invFx['usd'] ?? 0);
+
+            // Lempiras
+            if ($inv->getLempirasRecibidos() !== null && $inv->getLempirasRecibidosFloat() > 0) {
+                $lempirasVal  = $inv->getLempirasRecibidosFloat();
+                $lempirasSort = $lempirasVal;
+                $lempirasHtml = '<span class="inv-fx-cell" style="color:#22c55e;" title="Lempiras reales recibidos">' . number_format($lempirasVal, 2, '.', ',') . '</span>';
+            } elseif ($eurRate > 0) {
+                $lempirasVal  = round($totalFloat * $eurRate, 2);
+                $lempirasSort = $lempirasVal;
+                $lempirasHtml = '<span class="inv-fx-cell">' . number_format($lempirasVal, 2, '.', ',') . '</span>';
+            } else {
+                $lempirasVal  = 0.0;
+                $lempirasSort = 0.0;
+                $lempirasHtml = '<span class="text-muted">—</span>';
+            }
+
+            // USD
+            if ($eurRate > 0 && $usdRate > 0) {
+                $usdVal  = round($totalFloat * $eurRate / $usdRate, 2);
+                $usdSort = $usdVal;
+                $usdHtml = '<span class="inv-fx-cell">' . number_format($usdVal, 2, '.', ',') . '</span>';
+            } else {
+                $usdVal  = 0.0;
+                $usdSort = 0.0;
+                $usdHtml = '<span class="text-muted">—</span>';
+            }
+
+            // Tasa display
+            $tasaHtml = $invTEur !== null && $invTEur > 0
+                ? '<span class="inv-tasa-inline"><span>€' . number_format($invTEur, 2, '.', ',') . '</span></span>'
+                : '<span class="text-muted">—</span>';
+
+            // Commission display
+            if ($invCanTogglePaid) {
+                if ($inv->getPagadaAt()) {
+                    $estSuffix   = $inv->getComisionBancoHnl() === null ? ' <span class="text-muted">(' . $this->translator->trans('work.commission_estimated_suffix', [], 'work') . ')</span>' : '';
+                    $commHtml    = '<div class="small text-muted mt-0 inv-commission-paid-line" title="' . htmlspecialchars($this->translator->trans('work.invoice_row_commission_title', [], 'work'), ENT_QUOTES, 'UTF-8') . '">−L ' . number_format($invCommL, 2, '.', ',') . $estSuffix . '</div>';
+                } else {
+                    $commHtml = '<span class="text-muted">—</span>';
+                }
+            } else {
+                if ($inv->getPagadaAt()) {
+                    $estSuffix = $inv->getComisionBancoHnl() === null ? ' <span class="text-muted">(' . $this->translator->trans('work.commission_estimated_suffix', [], 'work') . ')</span>' : '';
+                    $lPart     = '';
+                    if ($inv->getLempirasRecibidos() !== null && $inv->getLempirasRecibidosFloat() > 0) {
+                        $lPart = '<span title="Lempiras recibidos del banco">L ' . number_format($inv->getLempirasRecibidosFloat(), 2, '.', ',') . '</span><span class="text-muted mx-1">·</span>';
+                    }
+                    $commHtml = '<div class="small text-muted mt-0 inv-commission-paid-line">' . $lPart . '−L ' . number_format($invCommL, 2, '.', ',') . $estSuffix . '</div>';
+                } else {
+                    $commHtml = '<span class="text-muted">—</span>';
+                }
+            }
+
+            $periodoStr  = WorkMonthLabel::format($inv->getAnio(), $inv->getMes(), $locale);
+            $periodoSort = $inv->getAnio() * 100 + $inv->getMes();
+            $numeroSort  = $inv->getNumero() ?? $inv->getId();
+
+            $partialParams = [
+                'inv'              => $inv,
+                'inv_fx'           => $invFx,
+                'inv_can_toggle_paid' => $invCanTogglePaid,
+                'inv_can_edit_bono'  => $invCanEditBono,
+                'invoice_year'     => $year,
+                'recargo_hnl'      => $recargoHnl,
+                'vigente_year'     => $vigenteYear,
+                'locale'           => $locale,
+            ];
+
+            $proofParams = [
+                'invoice'      => $inv,
+                'invoice_year' => $year,
+                'locale'       => $locale,
+                'vigente_year' => $vigenteYear,
+            ];
+
+            $walletParams = [
+                'inv'          => $inv,
+                'sync_url'     => $this->generateUrl('grova_work_invoice_sync_wallet', ['id' => $inv->getId(), '_locale' => $locale]),
+                'unsync_url'   => $this->generateUrl('grova_work_invoice_unsync_wallet', ['id' => $inv->getId(), '_locale' => $locale]),
+                'invoice_year' => $year,
+            ];
+
+            $rows[] = [
+                'ops'             => $this->renderView('workspace/pages/work/_invoice_row_ops.html.twig', $partialParams),
+                'numero'          => 'N.º ' . ($inv->getNumero() ?? $inv->getId()),
+                'numero_sort'     => $numeroSort,
+                'periodo'         => $periodoStr,
+                'periodo_sort'    => $periodoSort,
+                'dias'            => $inv->getDiasTrabajados() . 'd',
+                'bonus'           => $this->renderView('workspace/pages/work/_invoice_row_bonus.html.twig', $partialParams),
+                'eur'             => '€' . number_format($totalFloat, 2, '.', ','),
+                'eur_sort'        => $totalFloat,
+                'usd'             => $usdHtml,
+                'usd_sort'        => $usdSort,
+                'lempiras'        => $lempirasHtml,
+                'lempiras_sort'   => $lempirasSort,
+                'commission'      => $commHtml,
+                'commission_sort' => $invCommL,
+                'tasa'            => $tasaHtml,
+                'estado'          => $this->renderView('workspace/pages/work/_invoice_row_estado.html.twig', $partialParams),
+                'paid'            => $this->renderView('workspace/pages/work/_invoice_row_paid.html.twig', $partialParams),
+                'client_proof'    => '<div id="work-inv-client-proof-cell-' . $inv->getId() . '">' . $this->renderView('workspace/pages/work/_invoice_proof_cell_client.html.twig', $proofParams) . '</div>',
+                'bank_proof'      => '<div id="work-inv-bank-proof-cell-' . $inv->getId() . '">' . $this->renderView('workspace/pages/work/_invoice_proof_cell_bank.html.twig', $proofParams) . '</div>',
+                'wallet'          => $this->renderView('workspace/pages/work/_invoice_row_wallet.html.twig', $walletParams),
+            ];
+        }
+
+        return new JsonResponse(['data' => $rows]);
     }
 
     private function wantsWorkPaymentProofJson(Request $request): bool
@@ -1263,14 +1910,20 @@ final class WorkController extends AbstractController
         return $y;
     }
 
-    private function renderInvoiceProofCellFragment(Request $request, WorkInvoice $invoice, int $invoiceYear): string
+    /** @return array{clientCellHtml: string, bankCellHtml: string} */
+    private function renderInvoiceProofCellFragment(Request $request, WorkInvoice $invoice, int $invoiceYear): array
     {
-        return $this->renderView('workspace/pages/work/_invoice_proof_cell.html.twig', [
-            'invoice'       => $invoice,
-            'invoice_year'  => $invoiceYear,
-            'locale'        => $request->getLocale(),
-            'vigente_year'  => $this->vigenteYear(),
-        ]);
+        $params = [
+            'invoice'      => $invoice,
+            'invoice_year' => $invoiceYear,
+            'locale'       => $request->getLocale(),
+            'vigente_year' => $this->vigenteYear(),
+        ];
+
+        return [
+            'clientCellHtml' => $this->renderView('workspace/pages/work/_invoice_proof_cell_client.html.twig', $params),
+            'bankCellHtml'   => $this->renderView('workspace/pages/work/_invoice_proof_cell_bank.html.twig', $params),
+        ];
     }
 
     private function redirectWorkIndexPreservingInvoiceYear(Request $request, WorkInvoice $invoice): Response
@@ -1574,11 +2227,22 @@ final class WorkController extends AbstractController
         $client->setHoraLimiteBonus((string) $request->request->get('hora_limite_bonus', '08:00'));
         $client->setBancNombre((string) $request->request->get('banc_nombre', '') ?: null);
         $client->setBancDireccion((string) $request->request->get('banc_direccion', '') ?: null);
-        $client->setBancSwift((string) $request->request->get('banc_swift', '') ?: null);
-        $client->setBancCuenta((string) $request->request->get('banc_cuenta', '') ?: null);
+        $swift = trim((string) $request->request->get('banc_swift', ''));
+        $client->setBancSwift($swift !== '' ? $this->encryption->encrypt($swift) : null);
+        $bancCuentaRaw = trim((string) $request->request->get('banc_cuenta', ''));
+        $client->setBancCuenta($bancCuentaRaw !== '' ? $this->encryption->encrypt($bancCuentaRaw) : null);
         $client->setBancTitular((string) $request->request->get('banc_titular', '') ?: null);
         $recargoRaw = $request->request->get('recargo_hnl', '');
         $client->setRecargoHnl($recargoRaw !== '' ? number_format(abs((float) $recargoRaw), 2, '.', '') : null);
+
+        $tenantId   = $this->tenantContext->getTenant()->getId();
+        $cuentaId   = $request->request->get('wallet_cuenta_id', '');
+        if ($cuentaId !== '' && $cuentaId !== null) {
+            $cuenta = $this->walletCuentaRepo->find((int) $cuentaId);
+            $client->setWalletCuenta($cuenta !== null && $cuenta->getTenantId() === $tenantId ? $cuenta : null);
+        } else {
+            $client->setWalletCuenta(null);
+        }
     }
 
     #[Route('/vacation/create', name: 'vacation_create', methods: ['POST'])]

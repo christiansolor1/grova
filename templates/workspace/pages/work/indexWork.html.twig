@@ -90,9 +90,11 @@ body.light-mode .rate-bank-item.best {
     background: #16a34a18;
     border-color: #16a34a44;
 }
-.tag-feriado  { background:#7c3aed22; color:#a78bfa; border:1px solid #7c3aed44; font-size:10px; padding:1px 6px; border-radius:10px; }
-.tag-vacacion { background:#0891b222; color:#67e8f9; border:1px solid #0891b244; font-size:10px; padding:1px 6px; border-radius:10px; }
-.tag-bonus    { background:#16a34a22; color:#4ade80; border:1px solid #16a34a44; font-size:10px; padding:1px 6px; border-radius:10px; }
+.tag-feriado     { background:#7c3aed22; color:#a78bfa; border:1px solid #7c3aed44; font-size:10px; padding:1px 6px; border-radius:10px; }
+.tag-vacacion    { background:#0891b222; color:#67e8f9; border:1px solid #0891b244; font-size:10px; padding:1px 6px; border-radius:10px; }
+.tag-permiso     { background:#9c27b022; color:#ce93d8; border:1px solid #9c27b044; font-size:10px; padding:1px 6px; border-radius:10px; }
+.tag-incapacidad { background:#e91e6322; color:#f48fb1; border:1px solid #e91e6344; font-size:10px; padding:1px 6px; border-radius:10px; }
+.tag-bonus       { background:#16a34a22; color:#4ade80; border:1px solid #16a34a44; font-size:10px; padding:1px 6px; border-radius:10px; }
 .tag-normal   { background:#1e293b; color:#94a3b8; font-size:10px; padding:1px 6px; border-radius:10px; }
 body.light-mode .tag-normal { background:#e2e8f0; color:#475569; }
 .badge-borrador { background:#1e293b; color:#94a3b8; font-size:10px; padding:2px 8px; border-radius:10px; }
@@ -326,6 +328,8 @@ body.light-mode .work-cal-legend-dot--is { background: #0f766e; }
 body.light-mode .work-cal-legend-dot--ip { background: #e11d48; }
 body.light-mode .tag-feriado { background: #ede9fe; color: #5b21b6; border-color: #c4b5fd; }
 body.light-mode .tag-vacacion { background: #ecfeff; color: #0e7490; border-color: #67e8f9; }
+body.light-mode .tag-permiso { background: #f3e8ff; color: #7e22ce; border-color: #d8b4fe; }
+body.light-mode .tag-incapacidad { background: #fce7f3; color: #9d174d; border-color: #f9a8d4; }
 body.light-mode .tag-bonus { background: #dcfce7; color: #166534; border-color: #86efac; }
 .work-cal-legend-min {
     display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem 0.75rem;
@@ -825,8 +829,8 @@ body.light-mode .list-li-dark { border-color:#e2e8f0 !important; }
             <div class="col-sm-4">
                 <div style="font-size:11px;color:#64748b;text-transform:uppercase;letter-spacing:.06em;">{{ 'work.client_bank_data'|trans({}, 'work') }}</div>
                 {% if client.bancNombre %}
-                <div style="font-size:12px;">{{ client.bancNombre }} · {{ client.bancSwift }}</div>
-                <div style="font-size:12px;color:#64748b;">{{ client.bancCuenta }} · {{ client.bancTitular }}</div>
+                <div style="font-size:12px;">{{ client.bancNombre }} · {{ client.bancSwift|decrypt }}</div>
+                <div style="font-size:12px;color:#64748b;">{{ client.bancCuenta|decrypt }} · {{ client.bancTitular }}</div>
                 {% else %}
                 <div style="font-size:12px;color:#475569;">{{ 'work.client_no_bank'|trans({}, 'work') }}</div>
                 {% endif %}
@@ -1028,6 +1032,7 @@ body.light-mode .list-li-dark { border-color:#e2e8f0 !important; }
                                 <th style="width:90px;">{{ 'work.col_entry'|trans({}, 'work') }}</th>
                                 <th>{{ 'work.col_type'|trans({}, 'work') }}</th>
                                 <th>{{ 'work.col_notes'|trans({}, 'work') }}</th>
+                                <th style="width:80px;">{{ 'work.col_documento'|trans({}, 'work') }}</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -1081,14 +1086,20 @@ body.light-mode .list-li-dark { border-color:#e2e8f0 !important; }
                                     {% endif %}
                                 </td>
                                 <td>
-                                    {% set show_normal = day.horaEntrada and not day.esFeriado and not day.esVacacion and not day.bonusAplica %}
-                                    {% set has_chip = day.esFeriado or day.esVacacion or day.bonusAplica or show_normal %}
+                                    {% set show_normal = day.horaEntrada and not day.esFeriado and not day.esVacacion and not day.esPermiso and not day.esIncapacidad and not day.bonusAplica %}
+                                    {% set has_chip = day.esFeriado or day.esVacacion or day.esPermiso or day.esIncapacidad or day.bonusAplica or show_normal %}
                                     <div class="d-flex flex-wrap gap-1 align-items-center" style="max-width:260px;">
                                         {% if day.esFeriado %}
                                             <span class="tag-feriado">{{ 'work.tag_holiday'|trans({}, 'work') }}</span>
                                         {% endif %}
                                         {% if day.esVacacion %}
                                             <span class="tag-vacacion">{{ 'work.tag_vacation'|trans({}, 'work') }}</span>
+                                        {% endif %}
+                                        {% if day.esPermiso %}
+                                            <span class="tag-permiso">{{ 'work.tag_permiso'|trans({}, 'work') }}</span>
+                                        {% endif %}
+                                        {% if day.esIncapacidad %}
+                                            <span class="tag-incapacidad">{{ 'work.tag_incapacidad'|trans({}, 'work') }}</span>
                                         {% endif %}
                                         {% if day.bonusAplica %}
                                             <span class="tag-bonus"><i class="bi bi-star-fill me-1"></i>+€{{ bonus_dia }}</span>
@@ -1102,6 +1113,34 @@ body.light-mode .list-li-dark { border-color:#e2e8f0 !important; }
                                     </div>
                                 </td>
                                 <td style="font-size:12px;color:#64748b;">{{ day.notas ?? '—' }}</td>
+                                <td>
+                                    {% if day.hasDocumento %}
+                                        <div class="d-inline-flex gap-1">
+                                            <a href="{{ path('grova_work_day_documento', {id: day.id, _locale: app.request.locale}) }}"
+                                               target="_blank" rel="noopener noreferrer"
+                                               class="btn btn-outline-secondary btn-sm btn-inv-proof"
+                                               title="Ver documento">
+                                                <i class="bi bi-file-earmark-text me-1"></i><i class="bi bi-eye"></i>
+                                            </a>
+                                            <a href="{{ path('grova_work_day_documento', {id: day.id, _locale: app.request.locale}) }}"
+                                               download="{{ day.documentoOriginalName ?: 'documento' }}"
+                                               class="btn btn-outline-secondary btn-sm btn-inv-proof"
+                                               title="Descargar documento">
+                                                <i class="bi bi-download"></i>
+                                            </a>
+                                        </div>
+                                    {% elseif day.esPermiso or day.esIncapacidad %}
+                                        <button type="button"
+                                                class="btn btn-outline-secondary btn-sm btn-inv-proof"
+                                                data-bs-toggle="modal"
+                                                data-bs-target="#modal-edit-day-{{ day.id }}"
+                                                title="Subir documento">
+                                            <i class="bi bi-cloud-upload"></i>
+                                        </button>
+                                    {% else %}
+                                        <span class="text-muted" style="font-size:11px;">—</span>
+                                    {% endif %}
+                                </td>
                             </tr>
                             {% endfor %}
                         </tbody>
@@ -1114,6 +1153,7 @@ body.light-mode .list-li-dark { border-color:#e2e8f0 !important; }
                     <div class="modal-dialog modal-dialog-centered">
                         <div class="modal-content">
                             <form method="post" action="{{ path('grova_work_day_edit', {id: day.id, _locale: app.request.locale}) }}"
+                                  enctype="multipart/form-data"
                                   class="js-work-submit-loading"
                                   data-work-loading-title="{{ 'work.swal_loading_save'|trans({}, 'work') }}">
                                 <input type="hidden" name="_token" value="{{ csrf_token('work_day_edit_' ~ day.id) }}">
@@ -1127,26 +1167,50 @@ body.light-mode .list-li-dark { border-color:#e2e8f0 !important; }
                                             <label class="form-label">{{ 'work.field_date'|trans({}, 'work') }}</label>
                                             <input type="date" class="form-control form-control-sm" name="fecha" value="{{ day.fecha|date('Y-m-d') }}" required>
                                         </div>
-                                        <div class="col-sm-6">
+                                        <div class="col-sm-6 js-edit-dia-hora-wrap">
                                             <label class="form-label">{{ 'work.field_entry_time'|trans({}, 'work') }}</label>
                                             <input type="time" class="form-control form-control-sm" name="hora_entrada" value="{{ day.horaEntrada }}">
                                             <div class="form-text">{{ 'work.field_bonus_hint'|trans({'%time%': client.horaLimiteBonus, '%amount%': bonus_dia}, 'work') }}</div>
                                         </div>
                                         <div class="col-12">
-                                            <div class="d-flex gap-3">
+                                            <div class="d-flex flex-wrap gap-3">
                                                 <div class="form-check">
-                                                    <input class="form-check-input" type="checkbox" name="es_feriado" id="ef_{{ day.id }}" value="1" {{ day.esFeriado ? 'checked' : '' }}>
+                                                    <input class="form-check-input js-edit-dia-tipo" type="checkbox" name="es_feriado" id="ef_{{ day.id }}" value="1" {{ day.esFeriado ? 'checked' : '' }}>
                                                     <label class="form-check-label" for="ef_{{ day.id }}">{{ 'work.field_is_holiday'|trans({}, 'work') }}</label>
                                                 </div>
                                                 <div class="form-check">
-                                                    <input class="form-check-input" type="checkbox" name="es_vacacion" id="ev_{{ day.id }}" value="1" {{ day.esVacacion ? 'checked' : '' }}>
+                                                    <input class="form-check-input js-edit-dia-tipo" type="checkbox" name="es_vacacion" id="ev_{{ day.id }}" value="1" {{ day.esVacacion ? 'checked' : '' }}>
                                                     <label class="form-check-label" for="ev_{{ day.id }}">{{ 'work.field_is_vacation'|trans({}, 'work') }}</label>
+                                                </div>
+                                                <div class="form-check">
+                                                    <input class="form-check-input js-edit-dia-tipo" type="checkbox" name="es_permiso" id="ep_{{ day.id }}" value="1" {{ day.esPermiso ? 'checked' : '' }}>
+                                                    <label class="form-check-label" for="ep_{{ day.id }}">{{ 'work.field_is_permiso'|trans({}, 'work') }}</label>
+                                                </div>
+                                                <div class="form-check">
+                                                    <input class="form-check-input js-edit-dia-tipo" type="checkbox" name="es_incapacidad" id="ei_{{ day.id }}" value="1" {{ day.esIncapacidad ? 'checked' : '' }}>
+                                                    <label class="form-check-label" for="ei_{{ day.id }}">{{ 'work.field_is_incapacidad'|trans({}, 'work') }}</label>
                                                 </div>
                                             </div>
                                         </div>
                                         <div class="col-12">
                                             <label class="form-label">{{ 'work.field_notes'|trans({}, 'work') }}</label>
                                             <input type="text" class="form-control form-control-sm" name="notas" value="{{ day.notas }}" maxlength="255">
+                                        </div>
+                                        <div class="col-12 js-edit-dia-doc-wrap" style="{{ (day.esPermiso or day.esIncapacidad) ? '' : 'display:none;' }}">
+                                            <label class="form-label">{{ 'work.field_documento'|trans({}, 'work') }}</label>
+                                            {% if day.hasDocumento %}
+                                                <div class="d-flex align-items-center gap-2 mb-2">
+                                                    <i class="bi bi-file-earmark-check text-success"></i>
+                                                    <span class="small text-muted">{{ day.documentoOriginalName }}</span>
+                                                    <a href="{{ path('grova_work_day_documento', {id: day.id, _locale: app.request.locale}) }}"
+                                                       target="_blank" class="btn btn-outline-secondary btn-sm btn-inv-proof" title="Ver">
+                                                        <i class="bi bi-eye"></i>
+                                                    </a>
+                                                </div>
+                                            {% endif %}
+                                            <input type="file" class="form-control form-control-sm" name="documento"
+                                                   accept=".pdf,image/jpeg,image/png,image/webp">
+                                            <div class="form-text">{{ 'work.field_documento_hint'|trans({}, 'work') }}</div>
                                         </div>
                                     </div>
                                 </div>
@@ -1485,9 +1549,12 @@ body.light-mode .list-li-dark { border-color:#e2e8f0 !important; }
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
             <form method="post" action="{{ path('grova_work_day_create', {_locale: app.request.locale}) }}"
+                  enctype="multipart/form-data"
                   class="js-work-submit-loading"
                   data-work-loading-title="{{ 'work.swal_loading_save'|trans({}, 'work') }}">
                 <input type="hidden" name="_token" value="{{ csrf_token('work_day') }}">
+                <input type="hidden" name="redirect_year" value="{{ year }}">
+                <input type="hidden" name="redirect_month" value="{{ month }}">
                 <div class="modal-header">
                     <h5 class="modal-title">{{ 'work.modal_log_day'|trans({}, 'work') }}</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
@@ -1497,22 +1564,30 @@ body.light-mode .list-li-dark { border-color:#e2e8f0 !important; }
                         <div class="col-sm-6">
                             <label class="form-label">{{ 'work.field_date'|trans({}, 'work') }}</label>
                             <input type="date" class="form-control form-control-sm" name="fecha"
-                                   value="{{ 'now'|date('Y-m-d') }}" required>
+                                   value="{{ year }}-{{ '%02d'|format(month) }}-01" required>
                         </div>
-                        <div class="col-sm-6">
+                        <div class="col-sm-6" id="nuevo-dia-hora-wrap">
                             <label class="form-label">{{ 'work.field_entry_time'|trans({}, 'work') }}</label>
-                            <input type="time" class="form-control form-control-sm" name="hora_entrada" placeholder="{{ 'work.field_entry_time_placeholder'|trans({}, 'work') }}">
+                            <input type="time" class="form-control form-control-sm" name="hora_entrada" id="nuevo-dia-hora" placeholder="{{ 'work.field_entry_time_placeholder'|trans({}, 'work') }}">
                             <div class="form-text">{{ 'work.field_bonus_hint'|trans({'%time%': client.horaLimiteBonus, '%amount%': bonus_dia}, 'work') }}</div>
                         </div>
                         <div class="col-12">
-                            <div class="d-flex gap-3">
+                            <div class="d-flex flex-wrap gap-3">
                                 <div class="form-check">
-                                    <input class="form-check-input" type="checkbox" name="es_feriado" id="es_feriado" value="1">
+                                    <input class="form-check-input js-nuevo-dia-tipo" type="checkbox" name="es_feriado" id="es_feriado" value="1">
                                     <label class="form-check-label" for="es_feriado">{{ 'work.field_is_holiday'|trans({}, 'work') }}</label>
                                 </div>
                                 <div class="form-check">
-                                    <input class="form-check-input" type="checkbox" name="es_vacacion" id="es_vacacion" value="1">
+                                    <input class="form-check-input js-nuevo-dia-tipo" type="checkbox" name="es_vacacion" id="es_vacacion" value="1">
                                     <label class="form-check-label" for="es_vacacion">{{ 'work.field_is_vacation'|trans({}, 'work') }}</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input js-nuevo-dia-tipo" type="checkbox" name="es_permiso" id="es_permiso" value="1">
+                                    <label class="form-check-label" for="es_permiso">{{ 'work.field_is_permiso'|trans({}, 'work') }}</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input js-nuevo-dia-tipo" type="checkbox" name="es_incapacidad" id="es_incapacidad" value="1">
+                                    <label class="form-check-label" for="es_incapacidad">{{ 'work.field_is_incapacidad'|trans({}, 'work') }}</label>
                                 </div>
                             </div>
                         </div>
@@ -1520,6 +1595,12 @@ body.light-mode .list-li-dark { border-color:#e2e8f0 !important; }
                             <label class="form-label">{{ 'work.field_notes'|trans({}, 'work') }}</label>
                             <input type="text" class="form-control form-control-sm" name="notas"
                                    placeholder="{{ 'work.field_notes_ph'|trans({}, 'work') }}" maxlength="255">
+                        </div>
+                        <div class="col-12" id="nuevo-dia-doc-wrap" style="display:none;">
+                            <label class="form-label">{{ 'work.field_documento'|trans({}, 'work') }}</label>
+                            <input type="file" class="form-control form-control-sm" name="documento"
+                                   accept=".pdf,image/jpeg,image/png,image/webp">
+                            <div class="form-text">{{ 'work.field_documento_hint'|trans({}, 'work') }}</div>
                         </div>
                     </div>
                 </div>
@@ -1582,11 +1663,11 @@ body.light-mode .list-li-dark { border-color:#e2e8f0 !important; }
                         </div>
                         <div class="col-sm-6">
                             <label class="form-label">{{ 'work.field_swift'|trans({}, 'work') }}</label>
-                            <input type="text" class="form-control form-control-sm" name="banc_swift" value="{{ client.bancSwift }}">
+                            <input type="text" class="form-control form-control-sm" name="banc_swift" value="{{ client.bancSwift|decrypt }}">
                         </div>
                         <div class="col-sm-6">
                             <label class="form-label">{{ 'work.field_account'|trans({}, 'work') }}</label>
-                            <input type="text" class="form-control form-control-sm" name="banc_cuenta" value="{{ client.bancCuenta }}">
+                            <input type="text" class="form-control form-control-sm" name="banc_cuenta" value="{{ client.bancCuenta|decrypt }}">
                         </div>
                         <div class="col-sm-6">
                             <label class="form-label">{{ 'work.field_account_holder'|trans({}, 'work') }}</label>
@@ -1794,7 +1875,6 @@ body.light-mode .list-li-dark { border-color:#e2e8f0 !important; }
         </button>
     </div>
     <div class="content-card-body p-0">
-        {% if invoices|length > 0 %}
         <div class="work-invoice-dt-scroll-wrap px-3 pt-3" data-grova-dual-scroll>
             <table class="table table-hover work-invoice-table mb-0" id="work-inv-table" style="color:inherit;">
                 <thead>
@@ -1805,290 +1885,20 @@ body.light-mode .list-li-dark { border-color:#e2e8f0 !important; }
                         <th class="col-inv-compact text-nowrap">{{ 'work.col_days'|trans({}, 'work') }}</th>
                         <th class="col-inv-compact text-nowrap">{{ 'work.col_bonus'|trans({}, 'work') }}</th>
                         <th class="col-inv-eur text-end text-nowrap" title="{{ 'work.invoice_paid_fx_label'|trans({}, 'work') }}">{{ 'work.col_total_eur'|trans({}, 'work') }}</th>
-                        <th class="col-inv-l text-end text-nowrap" title="{{ 'work.invoice_paid_fx_label'|trans({}, 'work') }}">{{ 'work.col_equiv_l'|trans({}, 'work') }}</th>
                         <th class="col-inv-usd text-end text-nowrap" title="{{ 'work.invoice_paid_fx_label'|trans({}, 'work') }}">{{ 'work.col_equiv_usd'|trans({}, 'work') }}</th>
+                        <th class="col-inv-l text-end text-nowrap" title="{{ 'work.invoice_paid_fx_label'|trans({}, 'work') }}">{{ 'work.col_equiv_l'|trans({}, 'work') }}</th>
+                        <th class="col-inv-commission text-nowrap">{{ 'work.col_commission_cobro'|trans({}, 'work') }}</th>
                         <th class="col-inv-tasas text-end text-nowrap" title="{{ 'work.col_inv_tasas_hint'|trans({}, 'work') }}">{{ 'work.col_inv_tasas'|trans({}, 'work') }}</th>
                         <th class="col-inv-estado text-nowrap">{{ 'work.col_status'|trans({}, 'work') }}</th>
                         <th class="col-inv-paid text-nowrap">{{ 'work.col_paid'|trans({}, 'work') }}</th>
-                        <th class="col-inv-proof text-nowrap" title="{{ 'work.col_payment_proof_hint'|trans({}, 'work') }}">{{ 'work.col_payment_proof'|trans({}, 'work') }}</th>
-                        <th class="col-inv-commission text-nowrap">{{ 'work.col_commission_cobro'|trans({}, 'work') }}</th>
+                        <th class="col-inv-proof text-nowrap" title="Comprobante del cliente">Comp. cliente</th>
+                        <th class="col-inv-proof text-nowrap" title="Comprobante banco (conversión EUR→L)">Comp. banco</th>
+                        <th class="col-inv-wallet text-nowrap text-center">Wallet</th>
                     </tr>
                 </thead>
-                <tbody>
-                    {% for inv in invoices %}
-                    {% set inv_fx = rates %}
-                    {% if inv.tasaPagoEurL is not null and inv.tasaPagoEurLFloat > 0 %}
-                        {% set inv_fx = rates|merge({'eur': inv.tasaPagoEurLFloat, 'usd': inv.tasaPagoUsdLFloat > 0 ? inv.tasaPagoUsdLFloat : (rates.usd ?? 0)}) %}
-                    {% elseif inv.tasaEmisionEurL is not null and inv.tasaEmisionEurLFloat > 0 %}
-                        {% set inv_fx = rates|merge({'eur': inv.tasaEmisionEurLFloat, 'usd': inv.tasaEmisionUsdLFloat > 0 ? inv.tasaEmisionUsdLFloat : (rates.usd ?? 0)}) %}
-                    {% endif %}
-                    {% set inv_comm_l = inv.comisionBancoHnl is not null ? inv.comisionBancoHnlFloat : recargo_hnl %}
-                    {% set inv_can_toggle_paid = inv.anio == vigente_year %}
-                    {% set inv_t_eur = null %}
-                    {% set inv_t_usd = null %}
-                    {% if inv.tasaPagoEurL is not null and inv.tasaPagoEurLFloat > 0 %}
-                        {% set inv_t_eur = inv.tasaPagoEurLFloat %}
-                        {% set inv_t_usd = inv.tasaPagoUsdLFloat > 0 ? inv.tasaPagoUsdLFloat : null %}
-                    {% elseif inv.tasaEmisionEurL is not null and inv.tasaEmisionEurLFloat > 0 %}
-                        {% set inv_t_eur = inv.tasaEmisionEurLFloat %}
-                        {% set inv_t_usd = inv.tasaEmisionUsdLFloat > 0 ? inv.tasaEmisionUsdLFloat : null %}
-                    {% endif %}
-                    {% set inv_can_edit_bono = inv.anio == vigente_year and not inv.pagadaAt %}
-                    <tr>
-                        <td class="col-inv-ops">
-                            <div class="inv-ops-row">
-                                {% if inv_can_edit_bono %}
-                                <button type="button"
-                                        class="btn btn-outline-warning btn-sm"
-                                        data-bs-toggle="modal"
-                                        data-bs-target="#modal-work-inv-manual-bono"
-                                        data-inv-url="{{ path('grova_work_invoice_manual_bonus', {id: inv.id, _locale: app.request.locale}) }}"
-                                        data-csrf="{{ csrf_token('work_invoice_manual_bonus_' ~ inv.id) }}"
-                                        data-bonus-lines="{{ inv.extraBonusLinesPayload|json_encode(15)|e('html_attr') }}"
-                                        title="{{ 'work.invoice_manual_bonus_btn_title'|trans({}, 'work') }}">
-                                    <i class="bi bi-gift"></i>
-                                </button>
-                                {% endif %}
-                                <a href="{{ path('grova_work_invoice_pdf', {id: inv.id, _locale: app.request.locale}) }}"
-                                   class="btn btn-outline-secondary btn-sm"
-                                   title="{{ 'work.invoice_pdf_internal'|trans({}, 'work') }}" target="_blank"><i class="bi bi-filetype-pdf"></i></a>
-                                <a href="{{ path('grova_work_invoice_pdf_external', {id: inv.id, _locale: app.request.locale}) }}"
-                                   class="btn btn-outline-primary btn-sm"
-                                   title="{{ 'work.invoice_pdf_client'|trans({}, 'work') }}" target="_blank"><i class="bi bi-receipt"></i></a>
-                                {% if inv.estado == 'borrador' %}
-                                <form method="post" action="{{ path('grova_work_invoice_send', {id: inv.id, _locale: app.request.locale}) }}"
-                                      class="d-inline js-work-swal-confirm"
-                                      data-work-swal-title="{{ 'work.confirm_send_invoice'|trans({}, 'work') }}"
-                                      data-work-swal-icon="question"
-                                      data-work-swal-confirm-text="{{ 'work.confirm_yes_send'|trans({}, 'work') }}"
-                                      data-work-swal-cancel-text="{{ 'work.confirm_cancel'|trans({}, 'work') }}"
-                                      data-work-swal-confirm-color="#2563eb"
-                                      data-work-loading-title="{{ 'work.swal_loading_send'|trans({}, 'work') }}">
-                                    <input type="hidden" name="_token" value="{{ csrf_token('work_invoice_send_' ~ inv.id) }}">
-                                    <button type="submit"
-                                            class="btn btn-outline-primary btn-sm"
-                                            title="{{ inv.pagadaAt ? ('work.locked_paid_invoice'|trans({}, 'work')) : ('work.tooltip_op_send_invoice'|trans({}, 'work')) }}"
-                                            {{ inv.pagadaAt ? 'disabled' : '' }}>
-                                        <i class="bi bi-send"></i>
-                                    </button>
-                                </form>
-                                {% endif %}
-                                {% set inv_past_year = inv.anio < vigente_year %}
-                                {% if inv_past_year or inv.pagadaAt %}
-                                    <button type="button"
-                                            class="btn btn-outline-danger btn-sm"
-                                            title="{{ inv_past_year ? 'work.locked_delete_past_year'|trans({}, 'work') : ('work.locked_paid_invoice'|trans({}, 'work')) }}"
-                                            disabled>
-                                        <i class="bi bi-trash3"></i>
-                                    </button>
-                                {% else %}
-                                    <form method="post" action="{{ path('grova_work_invoice_delete', {id: inv.id, _locale: app.request.locale}) }}"
-                                          class="d-inline js-work-swal-confirm"
-                                          data-work-swal-title="{{ 'work.confirm_delete_invoice'|trans({}, 'work') }}"
-                                          data-work-swal-icon="warning"
-                                          data-work-swal-confirm-text="{{ 'work.confirm_yes_delete'|trans({}, 'work') }}"
-                                          data-work-swal-cancel-text="{{ 'work.confirm_cancel'|trans({}, 'work') }}"
-                                          data-work-loading-title="{{ 'work.swal_loading_delete'|trans({}, 'work') }}">
-                                        <input type="hidden" name="_token" value="{{ csrf_token('work_invoice_delete_' ~ inv.id) }}">
-                                        <button type="submit"
-                                                class="btn btn-outline-danger btn-sm"
-                                                title="{{ 'work.tooltip_op_delete_invoice'|trans({}, 'work') }}">
-                                            <i class="bi bi-trash3"></i>
-                                        </button>
-                                    </form>
-                                {% endif %}
-                            </div>
-                        </td>
-                        <td class="col-inv-hash" data-order="{{ inv.numero ?? inv.id }}">
-                            <span class="inv-num">N.º {{ inv.numero ?? inv.id }}</span>
-                        </td>
-                        <td class="col-inv-period" data-order="{{ inv.anio * 100 + inv.mes }}">
-                            <span class="inv-period-short">{{ work_month_year(inv.anio, inv.mes) }}</span>
-                        </td>
-                        <td class="col-inv-compact">{{ inv.diasTrabajados }}d</td>
-                        <td class="col-inv-compact">
-                            {% if inv.diasBonus > 0 %}
-                                <span style="color:#22c55e;">+{{ inv.diasBonus }}d</span>
-                            {% else %}
-                                <span style="color:#475569;">—</span>
-                            {% endif %}
-                            {% if inv.extraBonusSumFloat > 0 %}
-                                <div class="small text-warning text-nowrap mt-1" style="font-size:10px;line-height:1.2;"
-                                     title="{{ 'work.invoice_bonus_lines_tooltip'|trans({'%n%': inv.bonusLines|length}, 'work') }}">
-                                    +€{{ inv.extraBonusSumFloat|number_format(2, '.', ',') }}{% if inv.bonusLines|length > 1 %} <span class="text-muted">({{ inv.bonusLines|length }})</span>{% endif %}
-                                </div>
-                            {% endif %}
-                        </td>
-                        <td class="col-inv-eur"><span class="inv-eur-cell">€{{ inv.totalFloat|number_format(2, '.', ',') }}</span></td>
-                        <td class="col-inv-l">
-                            {% if inv.lempirasRecibidos is not null and inv.lempirasRecibidosFloat > 0 %}
-                            <span class="inv-fx-cell" style="color:#22c55e;" title="Lempiras reales recibidos">{{ inv.lempirasRecibidosFloat|number_format(2, '.', ',') }}</span>
-                            {% elseif inv_fx is defined and inv_fx.eur is defined and inv_fx.eur > 0 %}
-                            <span class="inv-fx-cell">{{ (inv.totalFloat * inv_fx.eur)|number_format(2, '.', ',') }}</span>
-                            {% else %}
-                            <span class="text-muted">—</span>
-                            {% endif %}
-                        </td>
-                        <td class="col-inv-usd">
-                            {% if inv_fx is defined and inv_fx.eur is defined and inv_fx.eur > 0 and inv_fx.usd is defined and inv_fx.usd > 0 %}
-                            <span class="inv-fx-cell">{{ (inv.totalFloat * inv_fx.eur / inv_fx.usd)|number_format(2, '.', ',') }}</span>
-                            {% else %}
-                            <span class="text-muted">—</span>
-                            {% endif %}
-                        </td>
-                        <td class="col-inv-tasas">
-                            {% if inv_t_eur is not null and inv_t_eur > 0 %}
-                                <span class="inv-tasa-inline">
-                                    <span>€{{ inv_t_eur|number_format(2, '.', ',') }}</span>
-                                    {% if inv_t_usd is not null and inv_t_usd > 0 %}
-                                    <span class="inv-tasa-sep" aria-hidden="true">·</span>
-                                    <span>${{ inv_t_usd|number_format(2, '.', ',') }}</span>
-                                    {% endif %}
-                                </span>
-                            {% else %}
-                                <span class="text-muted">—</span>
-                            {% endif %}
-                        </td>
-                        <td class="col-inv-estado">
-                            {% if inv.estado == 'enviada' %}
-                                <span class="inv-estado-inline">
-                                    <span class="inv-status-sent">
-                                        <i class="bi bi-check-circle me-1"></i>{{ 'work.status_sent'|trans({}, 'work') }}
-                                    </span>
-                                    {% if inv.enviadaAt %}
-                                        <span class="inv-paid-at text-nowrap" title="{{ 'work.invoice_sent_at_tooltip'|trans({'%fecha%': inv.enviadaAt|date('d/m/Y')}, 'work') }}">{{ inv.enviadaAt|date('d/m/y') }}</span>
-                                    {% endif %}
-                                </span>
-                            {% else %}
-                                <span class="badge-borrador">{{ 'work.status_draft'|trans({}, 'work') }}</span>
-                            {% endif %}
-                        </td>
-                        <td class="col-inv-paid">
-                            {% if inv_can_toggle_paid %}
-                                {% if inv.pagadaAt %}
-                                    <form method="post"
-                                          action="{{ path('grova_work_invoice_paid', {id: inv.id, _locale: app.request.locale}) }}"
-                                          class="js-work-invoice-unpaid-confirm mb-0"
-                                          data-confirm-title="{{ 'work.paid_mark_as_unpaid'|trans({}, 'work') }}"
-                                          data-confirm-text="{{ 'work.confirm_mark_unpaid'|trans({}, 'work') }}">
-                                        <input type="hidden" name="invoice_year" value="{{ invoice_year }}">
-                                        <input type="hidden" name="_token" value="{{ csrf_token('work_invoice_paid_' ~ inv.id) }}">
-                                        {% if inv_fx is defined and inv_fx.eur is defined and inv_fx.eur > 0 %}
-                                            {% set inv_fx_tip = 'L ' ~ (inv.totalFloat * inv_fx.eur)|number_format(2, '.', ',') %}
-                                            {% if inv_fx.usd is defined and inv_fx.usd > 0 %}
-                                                {% set inv_fx_tip = inv_fx_tip ~ ' · US$ ' ~ (inv.totalFloat * inv_fx.eur / inv_fx.usd)|number_format(2, '.', ',') %}
-                                            {% endif %}
-                                            {% set inv_btn_title = ('work.invoice_paid_fx_label'|trans({}, 'work')) ~ ': ' ~ inv_fx_tip ~ ' — ' ~ ('work.paid_mark_as_unpaid'|trans({}, 'work')) %}
-                                        {% else %}
-                                            {% set inv_btn_title = 'work.paid_mark_as_unpaid'|trans({}, 'work') %}
-                                        {% endif %}
-                                        <div class="inv-paid-row">
-                                            <button type="submit"
-                                                    class="btn btn-outline-success btn-sm inv-paid-mark-pill"
-                                                    title="{{ inv_btn_title|e('html_attr') }}">
-                                                <i class="bi bi-bank2 me-1"></i>{{ 'work.paid'|trans({}, 'work') }}
-                                            </button>
-                                            <span class="inv-paid-at text-nowrap" title="{{ 'work.invoice_paid_at_tooltip'|trans({'%fecha%': inv.pagadaAt|date('d/m/Y')}, 'work') }}">{{ inv.pagadaAt|date('d/m/y') }}</span>
-                                        </div>
-                                    </form>
-                                {% else %}
-                                    <span class="text-muted small" title="{{ 'work.invoice_paid_column_pending_hint'|trans({}, 'work') }}">—</span>
-                                {% endif %}
-                            {% else %}
-                            {% set inv_lock_year_hint = 'work.locked_paid_toggle_not_vigente_year'|trans({}, 'work') %}
-                            {% if inv.pagadaAt %}
-                                {% if inv_fx is defined and inv_fx.eur is defined and inv_fx.eur > 0 %}
-                                    {% set inv_fx_tip2 = 'L ' ~ (inv.totalFloat * inv_fx.eur)|number_format(2, '.', ',') %}
-                                    {% if inv_fx.usd is defined and inv_fx.usd > 0 %}
-                                        {% set inv_fx_tip2 = inv_fx_tip2 ~ ' · US$ ' ~ (inv.totalFloat * inv_fx.eur / inv_fx.usd)|number_format(2, '.', ',') %}
-                                    {% endif %}
-                                    {% set inv_lock_title = ('work.invoice_paid_fx_label'|trans({}, 'work')) ~ ': ' ~ inv_fx_tip2 %}
-                                {% else %}
-                                    {% set inv_lock_title = '' %}
-                                {% endif %}
-                                {% set inv_paid_row_title = inv_lock_year_hint ~ (inv_lock_title ? ' — ' ~ inv_lock_title : '') %}
-                                <div class="inv-paid-row" title="{{ inv_paid_row_title|e('html_attr') }}">
-                                    <span class="btn btn-outline-success btn-sm disabled inv-paid-mark-pill" style="pointer-events:none;opacity:.85;">
-                                        <i class="bi bi-bank2 me-1"></i>{{ 'work.paid'|trans({}, 'work') }}
-                                    </span>
-                                    <span class="inv-paid-at text-nowrap" title="{{ 'work.invoice_paid_at_tooltip'|trans({'%fecha%': inv.pagadaAt|date('d/m/Y')}, 'work') }}">{{ inv.pagadaAt|date('d/m/y') }}</span>
-                                </div>
-                            {% else %}
-                                <div class="inv-paid-row" title="{{ inv_lock_year_hint|e('html_attr') }}">
-                                    <span class="btn btn-outline-secondary btn-sm disabled" style="pointer-events:none;opacity:.85;">
-                                        <i class="bi bi-hourglass-split me-1"></i>{{ 'work.unpaid'|trans({}, 'work') }}
-                                    </span>
-                                </div>
-                            {% endif %}
-                            {% endif %}
-                        </td>
-                        <td class="col-inv-proof">
-                            <div id="work-inv-proof-cell-{{ inv.id }}" class="work-inv-proof-cell">
-                                {% include 'workspace/pages/work/_invoice_proof_cell.html.twig' with {
-                                    invoice: inv,
-                                    invoice_year: invoice_year,
-                                    locale: app.request.locale,
-                                    vigente_year: vigente_year
-                                } only %}
-                            </div>
-                        </td>
-                        <td class="col-inv-commission">
-                            {% if inv_can_toggle_paid %}
-                                {% if inv.pagadaAt %}
-                                    <div class="small text-muted mt-0 inv-commission-paid-line" title="{{ 'work.invoice_row_commission_title'|trans({}, 'work') }}">
-                                        −L {{ inv_comm_l|number_format(2, '.', ',') }}{% if inv.comisionBancoHnl is null %} <span class="text-muted">({{ 'work.commission_estimated_suffix'|trans({}, 'work') }})</span>{% endif %}
-                                    </div>
-                                {% else %}
-                                    <form method="post"
-                                          action="{{ path('grova_work_invoice_paid', {id: inv.id, _locale: app.request.locale}) }}"
-                                          class="mb-0 js-work-submit-loading"
-                                          data-work-loading-title="{{ 'work.swal_loading_save'|trans({}, 'work') }}"
-                                          title="{{ 'work.invoice_unpaid_form_flow_hint'|trans({}, 'work')|e('html_attr') }}">
-                                        <input type="hidden" name="invoice_year" value="{{ invoice_year }}">
-                                        <input type="hidden" name="_token" value="{{ csrf_token('work_invoice_paid_' ~ inv.id) }}">
-                                        <div class="inv-pay-row-pendiente">
-                                            <label for="fecha-pay-{{ inv.id }}" class="visually-hidden">{{ 'work.invoice_paid_date_label'|trans({}, 'work') }}</label>
-                                            <input id="fecha-pay-{{ inv.id }}" type="date" name="fecha_cobro" value="{{ 'now'|date('Y-m-d') }}" max="{{ 'now'|date('Y-m-d') }}" class="form-control form-control-sm inv-fecha-input" required title="{{ 'work.invoice_paid_date_hint'|trans({}, 'work') }}">
-                                            <label for="lempiras-pay-{{ inv.id }}" class="visually-hidden">{{ 'work.invoice_paid_lempiras_label'|trans({}, 'work') }}</label>
-                                            <input id="lempiras-pay-{{ inv.id }}" type="number" step="0.01" min="0" name="lempiras_recibidos" value="" class="form-control form-control-sm inv-lempiras-input" placeholder="{{ 'work.invoice_paid_lempiras_ph'|trans({}, 'work') }}" title="{{ 'work.invoice_paid_lempiras_hint'|trans({}, 'work') }}">
-                                            <label for="comision-pay-{{ inv.id }}" class="visually-hidden">{{ 'work.invoice_paid_bank_commission_label'|trans({}, 'work') }}</label>
-                                            <input id="comision-pay-{{ inv.id }}" type="number" step="0.01" min="0" name="comision_banco_hnl" value="{{ recargo_hnl|number_format(2, '.', '') }}" class="form-control form-control-sm inv-comision-input" title="{{ 'work.invoice_paid_bank_commission_hint'|trans({}, 'work') }}">
-                                            <label for="recibo-pay-{{ inv.id }}" class="visually-hidden">{{ 'work.field_recibo_swift'|trans({}, 'work') }}</label>
-                                            <input id="recibo-pay-{{ inv.id }}" type="number" min="1" step="1" name="recibo_swift" value="" class="form-control form-control-sm inv-recibo-input" placeholder="{{ 'work.field_recibo_swift_ph'|trans({}, 'work') }}" title="{{ 'work.field_recibo_swift_hint'|trans({}, 'work') }}">
-                                            <button type="submit"
-                                                    class="btn btn-outline-secondary btn-sm"
-                                                    title="{{ 'work.paid_mark_as_paid'|trans({}, 'work') }}">
-                                                <i class="bi bi-hourglass-split me-1"></i>{{ 'work.unpaid'|trans({}, 'work') }}
-                                            </button>
-                                        </div>
-                                    </form>
-                                {% endif %}
-                            {% else %}
-                                {% if inv.pagadaAt %}
-                                    <div class="small text-muted mt-0 inv-commission-paid-line">
-                                        {% if inv.lempirasRecibidos is not null and inv.lempirasRecibidosFloat > 0 %}
-                                            <span title="Lempiras recibidos del banco">L {{ inv.lempirasRecibidosFloat|number_format(2, '.', ',') }}</span>
-                                            <span class="text-muted mx-1">·</span>
-                                        {% endif %}
-                                        −L {{ inv_comm_l|number_format(2, '.', ',') }}{% if inv.comisionBancoHnl is null %} <span class="text-muted">({{ 'work.commission_estimated_suffix'|trans({}, 'work') }})</span>{% endif %}
-                                    </div>
-                                {% else %}
-                                    <span class="text-muted">—</span>
-                                {% endif %}
-                            {% endif %}
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
+                <tbody></tbody>
             </table>
         </div>
-        {% else %}
-        <div class="grova-empty-state">
-            <div class="grova-empty-icon"><i class="bi bi-receipt"></i></div>
-            <div class="grova-empty-title">{{ 'work.empty_invoices_year'|trans({'%year%': invoice_year}, 'work') }}</div>
-            <div class="grova-empty-desc">{{ 'work.empty_invoices_desc'|trans({}, 'work') }}</div>
-        </div>
-        {% endif %}
     </div>
 </div>
 
@@ -2112,6 +1922,90 @@ body.light-mode .list-li-dark { border-color:#e2e8f0 !important; }
                 <div class="modal-footer py-2">
                     <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">{{ 'work.btn_cancel'|trans({}, 'work') }}</button>
                     <button type="submit" class="btn btn-primary btn-sm"><i class="bi bi-cloud-upload me-1"></i>{{ 'work.payment_proof_save'|trans({}, 'work') }}</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+{# ── Modal: Registrar pago ── #}
+<div class="modal fade grova-modal--macos" id="modal-work-mark-paid" tabindex="-1" aria-labelledby="modal-work-mark-paid-label" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <form id="form-work-mark-paid" method="post" enctype="multipart/form-data" action="#">
+                <input type="hidden" name="invoice_year" value="{{ invoice_year }}">
+                <input type="hidden" name="_token" id="mark-paid-csrf" value="">
+                <div class="modal-header py-2">
+                    <h5 class="modal-title" id="modal-work-mark-paid-label">Registrar pago</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="{{ 'work.btn_cancel'|trans({}, 'work') }}"></button>
+                </div>
+                <div class="modal-body py-3">
+                    <p class="small text-muted mb-3" id="modal-mark-paid-period"></p>
+                    <div class="mb-3">
+                        <label for="mark-paid-fecha" class="form-label small mb-1">{{ 'work.invoice_paid_date_label'|trans({}, 'work') }} <span class="text-danger">*</span></label>
+                        <input id="mark-paid-fecha" type="date" name="fecha_cobro" required
+                               max="{{ 'now'|date('Y-m-d') }}"
+                               class="form-control form-control-sm">
+                    </div>
+                    <div class="mb-0">
+                        <label for="mark-paid-proof" class="form-label small mb-1">Comprobante TASARAUTO <span class="text-muted">(opcional)</span></label>
+                        <input id="mark-paid-proof" type="file" name="payment_proof"
+                               accept="application/pdf,image/jpeg,image/png,image/webp"
+                               class="form-control form-control-sm">
+                        <div class="form-text">PDF, JPEG, PNG, WEBP — máx. 8 MB</div>
+                    </div>
+                </div>
+                <div class="modal-footer py-2">
+                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">{{ 'work.btn_cancel'|trans({}, 'work') }}</button>
+                    <button type="submit" class="btn btn-success btn-sm"><i class="bi bi-bank2 me-1"></i>Marcar pagada</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+{# ── Modal: Comprobante banco (conversión EUR→L) ── #}
+<div class="modal fade grova-modal--macos" id="modal-work-bank-proof" tabindex="-1" aria-labelledby="modal-work-bank-proof-label" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <form id="form-work-bank-proof" method="post" enctype="multipart/form-data" action="#"
+                  class="js-work-bank-proof-form">
+                <input type="hidden" name="invoice_year" value="{{ invoice_year }}">
+                <input type="hidden" name="_token" id="bank-proof-csrf" value="">
+                <div class="modal-header py-2">
+                    <h5 class="modal-title" id="modal-work-bank-proof-label">Comprobante banco</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="{{ 'work.btn_cancel'|trans({}, 'work') }}"></button>
+                </div>
+                <div class="modal-body py-3">
+                    <p class="small text-muted mb-3" id="modal-bank-proof-period"></p>
+                    <div class="mb-3">
+                        <label for="bank-proof-lempiras" class="form-label small mb-1">{{ 'work.invoice_paid_lempiras_label'|trans({}, 'work') }}</label>
+                        <input id="bank-proof-lempiras" type="number" step="0.01" min="0" name="lempiras_recibidos"
+                               class="form-control form-control-sm"
+                               placeholder="{{ 'work.invoice_paid_lempiras_ph'|trans({}, 'work') }}">
+                    </div>
+                    <div class="mb-3">
+                        <label for="bank-proof-comision" class="form-label small mb-1">{{ 'work.invoice_paid_bank_commission_label'|trans({}, 'work') }}</label>
+                        <input id="bank-proof-comision" type="number" step="0.01" min="0" name="comision_banco_hnl"
+                               class="form-control form-control-sm">
+                    </div>
+                    <div class="mb-3">
+                        <label for="bank-proof-swift" class="form-label small mb-1">{{ 'work.field_recibo_swift'|trans({}, 'work') }}</label>
+                        <input id="bank-proof-swift" type="number" min="1" step="1" name="recibo_swift"
+                               class="form-control form-control-sm"
+                               placeholder="{{ 'work.field_recibo_swift_ph'|trans({}, 'work') }}">
+                    </div>
+                    <div class="mb-0">
+                        <label for="bank-proof-file" class="form-label small mb-1">Captura del banco <span class="text-danger">*</span></label>
+                        <input id="bank-proof-file" type="file" name="bank_proof" required
+                               accept="application/pdf,image/jpeg,image/png,image/webp"
+                               class="form-control form-control-sm">
+                        <div class="form-text">PDF, JPEG, PNG, WEBP — máx. 8 MB</div>
+                    </div>
+                </div>
+                <div class="modal-footer py-2">
+                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">{{ 'work.btn_cancel'|trans({}, 'work') }}</button>
+                    <button type="submit" class="btn btn-success btn-sm"><i class="bi bi-bank2 me-1"></i>Guardar</button>
                 </div>
             </form>
         </div>
@@ -2331,9 +2225,31 @@ body.light-mode .list-li-dark { border-color:#e2e8f0 !important; }
                     confirmButtonColor: '#dc3545',
                 });
 
-                if (res.isConfirmed) {
-                    workSwalBlockingLoad({{ 'work.swal_loading_save'|trans({}, 'work')|json_encode|raw }});
-                    form.submit();
+                if (!res.isConfirmed) return;
+
+                workSwalBlockingLoad({{ 'work.swal_loading_save'|trans({}, 'work')|json_encode|raw }});
+
+                try {
+                    var fd  = new FormData(form);
+                    var action = form.getAttribute('action') || '';
+                    var xhr = await fetch(action, {
+                        method: 'POST',
+                        body: fd,
+                        credentials: 'same-origin',
+                        headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
+                    });
+                    var json = await workProofParseJsonResponse(xhr);
+                    if (typeof window.Swal.close === 'function') window.Swal.close();
+
+                    if (xhr.ok && json && json.success) {
+                        workProofToast('success', json.message || '');
+                        if (workInvDt) workInvDt.ajax.reload(null, false);
+                    } else {
+                        workProofToast('error', (json && json.message) ? json.message : ('HTTP ' + xhr.status));
+                    }
+                } catch (err) {
+                    if (typeof window.Swal.close === 'function') window.Swal.close();
+                    workProofToast('error', {{ 'work.flash_network_error'|trans({}, 'work')|json_encode|raw }});
                 }
             });
         });
@@ -2352,10 +2268,14 @@ body.light-mode .list-li-dark { border-color:#e2e8f0 !important; }
         });
     }
 
-    function workProofApplyCellHtml(invoiceId, html) {
-        var wrap = document.getElementById('work-inv-proof-cell-' + invoiceId);
-        if (wrap && typeof html === 'string') {
-            wrap.innerHTML = html;
+    function workProofApplyCellHtml(invoiceId, clientHtml, bankHtml) {
+        if (typeof clientHtml === 'string') {
+            var clientWrap = document.getElementById('work-inv-client-proof-cell-' + invoiceId);
+            if (clientWrap) clientWrap.innerHTML = clientHtml;
+        }
+        if (typeof bankHtml === 'string') {
+            var bankWrap = document.getElementById('work-inv-bank-proof-cell-' + invoiceId);
+            if (bankWrap) bankWrap.innerHTML = bankHtml;
         }
     }
 
@@ -2416,8 +2336,8 @@ body.light-mode .list-li-dark { border-color:#e2e8f0 !important; }
 
                     if (xhr.ok && json && json.success) {
                         workProofToast('success', json.message || '');
-                        if (json.cellHtml && invId) {
-                            workProofApplyCellHtml(invId, json.cellHtml);
+                        if ((json.clientCellHtml || json.bankCellHtml) && invId) {
+                            workProofApplyCellHtml(invId, json.clientCellHtml, json.bankCellHtml);
                             bindWorkProofDeleteConfirm();
                         }
                     } else {
@@ -2479,8 +2399,8 @@ body.light-mode .list-li-dark { border-color:#e2e8f0 !important; }
                         var inst = window.bootstrap.Modal.getInstance(modalEl);
                         if (inst) inst.hide();
                     }
-                    if (json.cellHtml && (json.invoiceId || invId)) {
-                        workProofApplyCellHtml(json.invoiceId || invId, json.cellHtml);
+                    if ((json.clientCellHtml || json.bankCellHtml) && (json.invoiceId || invId)) {
+                        workProofApplyCellHtml(json.invoiceId || invId, json.clientCellHtml, json.bankCellHtml);
                         bindWorkProofDeleteConfirm();
                     }
                     if (fileInput) fileInput.value = '';
@@ -2526,17 +2446,12 @@ body.light-mode .list-li-dark { border-color:#e2e8f0 !important; }
         }
     }
 
+    var workInvDt = null;
+
     function initWorkInvoiceDataTable() {
         var el = document.getElementById('work-inv-table');
-        if (!el || typeof DataTable === 'undefined') {
-            return null;
-        }
-        if (el.tBodies.length === 0 || el.tBodies[0].rows.length < 1) {
-            return null;
-        }
-        if (el.dataset.workInvDtInit === '1') {
-            return null;
-        }
+        if (!el || typeof DataTable === 'undefined') return null;
+        if (el.dataset.workInvDtInit === '1') return null;
         el.dataset.workInvDtInit = '1';
 
         var locale = {{ app.request.locale|json_encode|raw }};
@@ -2544,42 +2459,74 @@ body.light-mode .list-li-dark { border-color:#e2e8f0 !important; }
             ? 'https://cdn.datatables.net/plug-ins/2.1.8/i18n/en-GB.json'
             : 'https://cdn.datatables.net/plug-ins/2.1.8/i18n/es-ES.json';
         var searchPh = {{ 'work.datatable_search_placeholder'|trans({}, 'work')|json_encode|raw }};
+        var ajaxUrl = {{ path('grova_work_invoices_data', {_locale: app.request.locale})|json_encode|raw }};
+        var invoiceYear = {{ invoice_year|json_encode|raw }};
 
         try {
-            var initDt = (window.GrovaDataTable && window.GrovaDataTable.init) ? window.GrovaDataTable.init : function (t, o) { return new DataTable(t, o); };
+            var initDt = (window.GrovaDataTable && window.GrovaDataTable.init) ? window.GrovaDataTable.init : function(t, o) { return new DataTable(t, o); };
             var dt = initDt(el, {
+                ajax: {
+                    url: ajaxUrl + '?year=' + invoiceYear,
+                    dataSrc: 'data',
+                    error: function(xhr) {
+                        if (xhr.status === 401) {
+                            try {
+                                var j = JSON.parse(xhr.responseText);
+                                if (j.locked) { window.location.reload(); return; }
+                            } catch(e) {}
+                        }
+                    }
+                },
+                columns: [
+                    { data: 'ops', orderable: false },
+                    { data: { _: 'numero', sort: 'numero_sort' } },
+                    { data: { _: 'periodo', sort: 'periodo_sort' } },
+                    { data: 'dias', orderable: false },
+                    { data: 'bonus', orderable: false },
+                    { data: { _: 'eur', sort: 'eur_sort' }, className: 'text-end' },
+                    { data: { _: 'usd', sort: 'usd_sort' }, className: 'text-end' },
+                    { data: { _: 'lempiras', sort: 'lempiras_sort' }, className: 'text-end' },
+                    { data: { _: 'commission', sort: 'commission_sort' } },
+                    { data: 'tasa', orderable: false },
+                    { data: 'estado', orderable: false },
+                    { data: 'paid', orderable: false },
+                    { data: 'client_proof', orderable: false },
+                    { data: 'bank_proof', orderable: false },
+                    { data: 'wallet', orderable: false, className: 'text-center' }
+                ],
                 language: { url: dtLang },
                 buttons: ['excel', 'pdf', 'colvis'],
                 pageLength: 12,
                 order: [[2, 'desc']],
-                columnDefs: [
-                    { orderable: false, targets: [0, 10, 11, 12] }
-                ],
                 layout: {
-                    topStart: {
-                        pageLength: {
-                            menu: [6, 12, 24, 50, -1]
-                        }
-                    },
-                    topEnd: {
-                        search: {
-                            placeholder: searchPh
-                        }
-                    }
+                    topStart: { pageLength: { menu: [6, 12, 24, 50, -1] } },
+                    topEnd: { search: { placeholder: searchPh } }
                 },
-                initComplete: function () {
+                initComplete: function() {
                     relayoutWorkInvoiceDualScroll();
-                },
-                drawCallback: function () {
                     bindWorkSwalConfirmForms();
                     bindWorkSubmitLoading();
                     bindWorkInvoiceUnpaidConfirm();
                     bindWorkProofDeleteConfirm();
-                    relayoutWorkInvoiceDualScroll();
+                    bindWorkMarkPaidModal();
+                    bindWorkMarkPaidAjax(dt);
+                    bindWorkBankProofModal();
+                    bindWorkBankProofAjax(dt);
+                    bindWorkSyncWallet(dt);
+                    bindWorkUnsyncWallet(dt);
+                },
+                drawCallback: function() {
+                    bindWorkSwalConfirmForms();
+                    bindWorkSubmitLoading();
+                    bindWorkInvoiceUnpaidConfirm();
+                    bindWorkProofDeleteConfirm();
+                    bindWorkSyncWallet(dt);
+                    bindWorkUnsyncWallet(dt);
                 }
             });
+            workInvDt = dt;
             return dt;
-        } catch (e) {
+        } catch(e) {
             console.error('DataTable facturas:', e);
             return null;
         }
@@ -2748,6 +2695,496 @@ body.light-mode .list-li-dark { border-color:#e2e8f0 !important; }
         }
     }
 
+    function bindWorkMarkPaidModal() {
+        var modal = document.getElementById('modal-work-mark-paid');
+        var form  = document.getElementById('form-work-mark-paid');
+        if (!modal || !form || modal.dataset.markPaidModalBound === '1') return;
+        modal.dataset.markPaidModalBound = '1';
+
+        modal.addEventListener('show.bs.modal', function (ev) {
+            var btn = ev.relatedTarget;
+            if (!btn) return;
+
+            var period    = btn.getAttribute('data-period') || '';
+            var action    = btn.getAttribute('data-paid-action') || '';
+            var token     = btn.getAttribute('data-paid-token') || '';
+            var invoiceId = btn.getAttribute('data-invoice-id') || '';
+
+            document.getElementById('modal-mark-paid-period').textContent = period;
+            document.getElementById('mark-paid-csrf').value  = token;
+            document.getElementById('mark-paid-fecha').value = new Date().toISOString().slice(0, 10);
+            var proofInput = document.getElementById('mark-paid-proof');
+            if (proofInput) proofInput.value = '';
+
+            form.setAttribute('action', action);
+            form.dataset.lastInvoiceId = invoiceId;
+        });
+    }
+
+    function bindWorkBankProofModal() {
+        var modal = document.getElementById('modal-work-bank-proof');
+        var form  = document.getElementById('form-work-bank-proof');
+        if (!modal || !form || modal.dataset.bankProofModalBound === '1') return;
+        modal.dataset.bankProofModalBound = '1';
+
+        modal.addEventListener('show.bs.modal', function (ev) {
+            var btn = ev.relatedTarget;
+            if (!btn || !btn.classList.contains('js-work-bank-proof-open')) return;
+
+            var period   = btn.getAttribute('data-period') || '';
+            var lempiras = btn.getAttribute('data-lempiras') || '';
+            var comision = btn.getAttribute('data-comision') || '0.00';
+            var swift    = btn.getAttribute('data-swift') || '';
+            var action   = btn.getAttribute('data-bank-action') || '';
+            var token    = btn.getAttribute('data-bank-token') || '';
+
+            document.getElementById('modal-bank-proof-period').textContent = period;
+            document.getElementById('bank-proof-csrf').value     = token;
+            document.getElementById('bank-proof-lempiras').value = lempiras;
+            document.getElementById('bank-proof-comision').value = comision;
+            document.getElementById('bank-proof-swift').value    = swift;
+            var fileInput = document.getElementById('bank-proof-file');
+            if (fileInput) fileInput.value = '';
+
+            form.setAttribute('action', action);
+            form.dataset.invoiceId = btn.getAttribute('data-invoice-id') || '';
+        });
+    }
+
+    function bindWorkBankProofAjax(dt) {
+        var form = document.getElementById('form-work-bank-proof');
+        if (!form || form.dataset.bankProofAjaxBound === '1') return;
+        form.dataset.bankProofAjaxBound = '1';
+
+        form.addEventListener('submit', async function (e) {
+            if (!workHasSwal()) return;
+            e.preventDefault();
+
+            var fileInput = document.getElementById('bank-proof-file');
+            if (!fileInput || !fileInput.files || !fileInput.files.length) {
+                workProofToast('warning', 'Seleccioná un archivo antes de guardar.');
+                return;
+            }
+
+            workSwalBlockingLoad({{ 'work.swal_loading_save'|trans({}, 'work')|json_encode|raw }});
+
+            var fd     = new FormData(form);
+            var action = form.getAttribute('action') || '';
+
+            try {
+                var xhr = await fetch(action, {
+                    method: 'POST',
+                    body: fd,
+                    credentials: 'same-origin',
+                    headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
+                });
+                var json = await workProofParseJsonResponse(xhr);
+                if (typeof window.Swal.close === 'function') window.Swal.close();
+
+                if (xhr.ok && json && json.success) {
+                    workProofToast('success', json.message || '');
+                    var modalEl = document.getElementById('modal-work-bank-proof');
+                    if (modalEl && window.bootstrap && window.bootstrap.Modal) {
+                        var inst = window.bootstrap.Modal.getInstance(modalEl);
+                        if (inst) inst.hide();
+                    }
+                    if (dt) dt.ajax.reload(null, false);
+                } else {
+                    workProofToast('error', (json && json.message) ? json.message : ('HTTP ' + xhr.status));
+                }
+            } catch (err) {
+                if (typeof window.Swal.close === 'function') window.Swal.close();
+                workProofToast('error', {{ 'work.flash_network_error'|trans({}, 'work')|json_encode|raw }});
+            }
+        });
+    }
+
+    function bindWorkMarkPaidAjax(dt) {
+        var form = document.getElementById('form-work-mark-paid');
+        if (!form || form.dataset.markPaidAjaxBound === '1') return;
+        form.dataset.markPaidAjaxBound = '1';
+
+        form.addEventListener('submit', async function (e) {
+            if (!workHasSwal()) { return; }
+            e.preventDefault();
+
+            workSwalBlockingLoad({{ 'work.swal_loading_save'|trans({}, 'work')|json_encode|raw }});
+
+            var fd     = new FormData(form);
+            var action = form.getAttribute('action') || '';
+
+            try {
+                var xhr = await fetch(action, {
+                    method: 'POST',
+                    body: fd,
+                    credentials: 'same-origin',
+                    headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
+                });
+                var json = await workProofParseJsonResponse(xhr);
+                if (typeof window.Swal.close === 'function') window.Swal.close();
+
+                if (xhr.ok && json && json.success) {
+                    var modalEl = document.getElementById('modal-work-mark-paid');
+                    if (modalEl && window.bootstrap && window.bootstrap.Modal) {
+                        var inst = window.bootstrap.Modal.getInstance(modalEl);
+                        if (inst) inst.hide();
+                    }
+
+                    if (json.paid) {
+                        // Factura recién marcada como pagada → preguntar si sincronizar con Wallet
+                        var swalRes = await window.Swal.fire({
+                            title: '¿Registrar en Wallet?',
+                            text: 'El cobro quedará registrado como ingreso en Wallet en Lempiras.',
+                            icon: 'question',
+                            showCancelButton: true,
+                            confirmButtonText: 'Sí, registrar',
+                            cancelButtonText: 'Ahora no',
+                            confirmButtonColor: '#22c55e',
+                        });
+
+                        if (swalRes.isConfirmed) {
+                            // El token y la URL de sync estarán disponibles tras el reload del DT
+                            // Primero recargamos, luego disparamos el sync en la fila recién pintada
+                            if (dt) {
+                                dt.ajax.reload(function() {
+                                    // Buscar el botón de sync de esta factura y dispararlo automáticamente
+                                    var invId  = parseInt(form.dataset.lastInvoiceId || '0', 10);
+                                    if (invId) {
+                                        var syncBtn = document.querySelector('.js-work-sync-wallet[data-invoice-id="' + invId + '"]');
+                                        if (syncBtn) syncBtn.click();
+                                    }
+                                }, false);
+                            }
+                            return;
+                        }
+                    } else {
+                        workProofToast('success', json.message || '');
+                    }
+
+                    if (dt) dt.ajax.reload(null, false);
+                } else {
+                    workProofToast('error', (json && json.message) ? json.message : ('HTTP ' + xhr.status));
+                }
+            } catch (err) {
+                if (typeof window.Swal.close === 'function') window.Swal.close();
+                workProofToast('error', {{ 'work.flash_network_error'|trans({}, 'work')|json_encode|raw }});
+            }
+        });
+    }
+
+    var WALLET_CUENTAS_ACTIVAS_URL  = {{ path('grova_wallet_cuenta_activas', {_locale: app.request.locale})|json_encode|raw }};
+    var WALLET_CUENTA_CREATE_URL    = {{ path('grova_wallet_cuenta_create', {_locale: app.request.locale})|json_encode|raw }};
+    var WALLET_CUENTA_CREATE_TOKEN  = {{ csrf_token('wallet_cuenta_create')|json_encode|raw }};
+
+    function buildCuentaSelect(cuentas) {
+        var opts = '<option value="">Cartera general (sin cuenta)</option>';
+        cuentas.forEach(function(c) {
+            opts += '<option value="' + c.id + '">' + c.label + (c.institucion ? ' — ' + c.institucion : '') + '</option>';
+        });
+        return '<select id="swal-cuenta-select" class="form-select form-select-sm mt-2">' + opts + '</select>';
+    }
+
+    function bindWorkSyncWallet(dt) {
+        document.querySelectorAll('.js-work-sync-wallet').forEach(function (btn) {
+            if (btn.dataset.syncBound === '1') return;
+            btn.dataset.syncBound = '1';
+
+            btn.addEventListener('click', async function () {
+                if (!workHasSwal()) return;
+
+                var syncUrl            = btn.getAttribute('data-sync-url') || '';
+                var token              = btn.getAttribute('data-sync-token') || '';
+                var clientCuentaId     = btn.getAttribute('data-client-cuenta-id') || '';
+                var clientCuentaNombre = btn.getAttribute('data-client-cuenta-nombre') || '';
+                var clientBancNombre   = btn.getAttribute('data-client-banc-nombre') || '';
+                var clientBancDigitos  = btn.getAttribute('data-client-banc-digitos') || '';
+
+                var htmlContent = '';
+                var cuentaId    = '';
+
+                var modoCrear = false;
+
+                if (clientCuentaId !== '') {
+                    // Caso 1: cliente tiene cuenta configurada → directo
+                    htmlContent = '<p class="mb-0 small">El cobro se registrará en <strong>' + clientCuentaNombre + '</strong>.</p>';
+                    cuentaId = clientCuentaId;
+                } else {
+                    // Cargar cuentas activas
+                    var cuentas = [];
+                    try {
+                        var r = await fetch(WALLET_CUENTAS_ACTIVAS_URL, { credentials: 'same-origin',
+                            headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' } });
+                        var cj = await r.json();
+                        cuentas = cj.cuentas || [];
+                    } catch(e) {}
+
+                    if (cuentas.length > 0) {
+                        // Caso 2: hay cuentas → mostrar selector
+                        htmlContent = '<p class="mb-2 small text-muted">Seleccioná a qué cuenta va este ingreso:</p>' + buildCuentaSelect(cuentas);
+                    } else {
+                        // Caso 3: sin cuentas → mini formulario para crear una
+                        modoCrear = true;
+                        htmlContent =
+                            '<p class="mb-2 small text-muted">No tenés cuentas en Wallet. Creá una ahora:</p>' +
+                            '<input id="swal-cuenta-nombre" type="text" class="form-control form-control-sm mb-2" placeholder="Nombre (ej. Atlántida Planilla)" maxlength="100" value="' + clientBancNombre.replace(/"/g, '&quot;') + '">' +
+                            '<select id="swal-cuenta-tipo" class="form-select form-select-sm mb-2">' +
+                                '<option value="debito">Débito</option>' +
+                                '<option value="credito">Crédito</option>' +
+                                '<option value="ahorro">Ahorro</option>' +
+                                '<option value="ahorro_retirable">Ahorro retirable</option>' +
+                                '<option value="aportaciones">Aportaciones</option>' +
+                                '<option value="efectivo">Efectivo</option>' +
+                            '</select>' +
+                            '<input id="swal-cuenta-digitos" type="text" class="form-control form-control-sm mb-2" placeholder="Número de cuenta (ej. 0011234567890)" maxlength="30" inputmode="numeric" value="' + clientBancDigitos.replace(/"/g,'&quot;') + '">' +
+                            '<input id="swal-cuenta-tarjeta" type="text" class="form-control form-control-sm" placeholder="Número de tarjeta (opcional)" maxlength="19" inputmode="numeric">';
+                    }
+                }
+
+                var swalRes = await window.Swal.fire({
+                    title: '¿Registrar en Wallet?',
+                    html: htmlContent,
+                    icon: 'question',
+                    showCancelButton: true,
+                    showDenyButton: modoCrear,
+                    confirmButtonText: modoCrear ? 'Crear y registrar' : 'Sí, registrar',
+                    denyButtonText: 'Usar cartera general',
+                    cancelButtonText: 'Cancelar',
+                    confirmButtonColor: '#22c55e',
+                    denyButtonColor: '#64748b',
+                    preConfirm: modoCrear ? function() {
+                        var nombre = (document.getElementById('swal-cuenta-nombre').value || '').trim();
+                        if (!nombre) {
+                            window.Swal.showValidationMessage('El nombre de la cuenta es obligatorio.');
+                            return false;
+                        }
+                        return true;
+                    } : undefined,
+                });
+
+                if (!swalRes.isConfirmed && !swalRes.isDenied) return;
+
+                // "Usar cartera general" → saltarse creación de cuenta
+                if (swalRes.isDenied) modoCrear = false;
+
+                // Caso 3: crear la cuenta primero
+                if (modoCrear) {
+                    var nombre   = document.getElementById('swal-cuenta-nombre').value.trim();
+                    var tipo     = document.getElementById('swal-cuenta-tipo').value;
+                    var digitos  = document.getElementById('swal-cuenta-digitos').value.trim();
+                    var tarjeta  = document.getElementById('swal-cuenta-tarjeta').value.trim();
+                    workSwalBlockingLoad('Creando cuenta…');
+                    try {
+                        var fdCuenta = new FormData();
+                        fdCuenta.append('_token', WALLET_CUENTA_CREATE_TOKEN);
+                        fdCuenta.append('nombre', nombre);
+                        fdCuenta.append('tipo', tipo);
+                        fdCuenta.append('numero_cuenta', digitos);
+                        fdCuenta.append('tarjeta_digitos', tarjeta);
+                        fdCuenta.append('saldo_inicial', '0');
+                        fdCuenta.append('color', '#3b82f6');
+                        var rCuenta = await fetch(WALLET_CUENTA_CREATE_URL, {
+                            method: 'POST', body: fdCuenta, credentials: 'same-origin',
+                            headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
+                        });
+                        var jCuenta = await rCuenta.json();
+                        if (!rCuenta.ok || !jCuenta.success) {
+                            if (typeof window.Swal.close === 'function') window.Swal.close();
+                            workProofToast('error', (jCuenta && jCuenta.message) ? jCuenta.message : 'Error al crear la cuenta.');
+                            return;
+                        }
+                        cuentaId = String(jCuenta.id || '');
+                    } catch(e) {
+                        if (typeof window.Swal.close === 'function') window.Swal.close();
+                        workProofToast('error', 'Error de red al crear la cuenta.');
+                        return;
+                    }
+                }
+
+                // Caso 2: leer selector si aplica
+                if (!modoCrear && clientCuentaId === '') {
+                    var sel = document.getElementById('swal-cuenta-select');
+                    if (sel) cuentaId = sel.value;
+                }
+
+                workSwalBlockingLoad({{ 'work.swal_loading_save'|trans({}, 'work')|json_encode|raw }});
+
+                try {
+                    var fd = new FormData();
+                    fd.append('_token', token);
+                    if (cuentaId) fd.append('cuenta_id', cuentaId);
+
+                    var xhr = await fetch(syncUrl, {
+                        method: 'POST',
+                        body: fd,
+                        credentials: 'same-origin',
+                        headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
+                    });
+                    var json = await workProofParseJsonResponse(xhr);
+                    if (typeof window.Swal.close === 'function') window.Swal.close();
+
+                    if (xhr.ok && json && json.success) {
+                        workProofToast('success', json.message || 'Registrado en Wallet.');
+                        if (dt) dt.ajax.reload(null, false);
+                    } else {
+                        workProofToast('error', (json && json.message) ? json.message : ('HTTP ' + xhr.status));
+                    }
+                } catch (err) {
+                    if (typeof window.Swal.close === 'function') window.Swal.close();
+                    workProofToast('error', {{ 'work.flash_network_error'|trans({}, 'work')|json_encode|raw }});
+                }
+            });
+        });
+    }
+
+    function bindWorkUnsyncWallet(dt) {
+        document.querySelectorAll('.js-work-unsync-wallet').forEach(function (btn) {
+            if (btn.dataset.unsyncBound === '1') return;
+            btn.dataset.unsyncBound = '1';
+
+            btn.addEventListener('click', async function () {
+                if (!workHasSwal()) return;
+
+                var unsyncUrl = btn.getAttribute('data-unsync-url') || '';
+                var token     = btn.getAttribute('data-unsync-token') || '';
+
+                var swalRes = await window.Swal.fire({
+                    title: '¿Revertir sincronización?',
+                    html: '<p class="mb-0 small">El movimiento de ingreso en Wallet será <strong>eliminado</strong>.<br>Esto solo es posible si el saldo actual cubre el monto registrado.</p>',
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonText: 'Sí, revertir',
+                    cancelButtonText: 'Cancelar',
+                    confirmButtonColor: '#ef4444',
+                });
+
+                if (!swalRes.isConfirmed) return;
+
+                workSwalBlockingLoad({{ 'work.swal_loading_save'|trans({}, 'work')|json_encode|raw }});
+
+                try {
+                    var fd = new FormData();
+                    fd.append('_token', token);
+
+                    var xhr = await fetch(unsyncUrl, {
+                        method: 'POST',
+                        body: fd,
+                        credentials: 'same-origin',
+                        headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
+                    });
+                    var json = await workProofParseJsonResponse(xhr);
+                    if (typeof window.Swal.close === 'function') window.Swal.close();
+
+                    if (xhr.ok && json && json.success) {
+                        workProofToast('success', json.message || 'Sincronización revertida.');
+                        if (dt) dt.ajax.reload(null, false);
+                    } else {
+                        workProofToast('error', (json && json.message) ? json.message : ('HTTP ' + xhr.status));
+                    }
+                } catch (err) {
+                    if (typeof window.Swal.close === 'function') window.Swal.close();
+                    workProofToast('error', {{ 'work.flash_network_error'|trans({}, 'work')|json_encode|raw }});
+                }
+            });
+        });
+    }
+
+    function bindNuevoDiaTipoToggle() {
+        var horaWrap  = document.getElementById('nuevo-dia-hora-wrap');
+        var horaInput = document.getElementById('nuevo-dia-hora');
+        var docWrap   = document.getElementById('nuevo-dia-doc-wrap');
+        var checkboxes = document.querySelectorAll('.js-nuevo-dia-tipo');
+        if (!horaWrap || !horaInput || !checkboxes.length) return;
+
+        function actualizarCampos() {
+            var sinHorario = Array.from(checkboxes).some(function (cb) { return cb.checked; });
+            if (sinHorario) {
+                horaInput.value = '';
+                horaWrap.style.display = 'none';
+            } else {
+                horaWrap.style.display = '';
+            }
+            if (docWrap) {
+                var cbPermiso     = document.getElementById('es_permiso');
+                var cbIncapacidad = document.getElementById('es_incapacidad');
+                var necesitaDoc   = (cbPermiso && cbPermiso.checked) || (cbIncapacidad && cbIncapacidad.checked);
+                docWrap.style.display = necesitaDoc ? '' : 'none';
+            }
+        }
+
+        function exclusivo(cambiado) {
+            if (cambiado.checked) {
+                checkboxes.forEach(function (cb) {
+                    if (cb !== cambiado) cb.checked = false;
+                });
+            }
+            actualizarCampos();
+        }
+
+        checkboxes.forEach(function (cb) {
+            if (cb.dataset.tipoBound === '1') return;
+            cb.dataset.tipoBound = '1';
+            cb.addEventListener('change', function () { exclusivo(cb); });
+        });
+
+        // Resetear estado al abrir el modal
+        var modal = document.getElementById('modal-nuevo-dia');
+        if (modal && !modal.dataset.tipoModalBound) {
+            modal.dataset.tipoModalBound = '1';
+            modal.addEventListener('show.bs.modal', function () {
+                checkboxes.forEach(function (cb) { cb.checked = false; });
+                horaInput.value = '';
+                horaWrap.style.display = '';
+                if (docWrap) docWrap.style.display = 'none';
+            });
+        }
+    }
+
+    function bindEditDiaTipoToggle() {
+        document.querySelectorAll('.modal[id^="modal-edit-day-"]').forEach(function(modal) {
+            var checkboxes = modal.querySelectorAll('.js-edit-dia-tipo');
+            var horaWrap = modal.querySelector('.js-edit-dia-hora-wrap');
+            var docWrap  = modal.querySelector('.js-edit-dia-doc-wrap');
+            if (!checkboxes.length || !horaWrap) return;
+
+            function actualizar() {
+                var sinHorario = Array.from(checkboxes).some(function(cb) { return cb.checked; });
+                if (sinHorario) {
+                    var input = horaWrap.querySelector('input[type="time"]');
+                    if (input) input.value = '';
+                    horaWrap.style.display = 'none';
+                } else {
+                    horaWrap.style.display = '';
+                }
+                if (docWrap) {
+                    var cbPermiso     = modal.querySelector('[name="es_permiso"]');
+                    var cbIncapacidad = modal.querySelector('[name="es_incapacidad"]');
+                    var necesitaDoc   = (cbPermiso && cbPermiso.checked) || (cbIncapacidad && cbIncapacidad.checked);
+                    docWrap.style.display = necesitaDoc ? '' : 'none';
+                }
+            }
+
+            function exclusivoEdit(cambiado) {
+                if (cambiado.checked) {
+                    checkboxes.forEach(function(cb) {
+                        if (cb !== cambiado) cb.checked = false;
+                    });
+                }
+                actualizar();
+            }
+
+            checkboxes.forEach(function(cb) {
+                if (cb.dataset.editTipoBound === '1') return;
+                cb.dataset.editTipoBound = '1';
+                cb.addEventListener('change', function() { exclusivoEdit(cb); });
+            });
+
+            if (!modal.dataset.editTipoModalBound) {
+                modal.dataset.editTipoModalBound = '1';
+                modal.addEventListener('show.bs.modal', actualizar);
+            }
+        });
+    }
+
     function initWorkInvoicePageUi() {
         bindWorkSwalConfirmForms();
         bindWorkSubmitLoading();
@@ -2757,6 +3194,8 @@ body.light-mode .list-li-dark { border-color:#e2e8f0 !important; }
         bindWorkProofUploadAjax();
         bindWorkHolidaysCopy();
         bindWorkInvoiceManualBonusModal();
+        bindNuevoDiaTipoToggle();
+        bindEditDiaTipoToggle();
         initWorkInvoiceDataTable();
         showWorkPageFlashToasts();
     }

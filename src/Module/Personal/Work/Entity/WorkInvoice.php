@@ -115,6 +115,20 @@ class WorkInvoice
     #[ORM\Column(name: 'payment_proof_mime', length: 127, nullable: true)]
     private ?string $paymentProofMime = null;
 
+    /** ID del WalletEntry creado al sincronizar el cobro con Wallet. */
+    #[ORM\Column(name: 'wallet_entry_id', nullable: true)]
+    private ?int $walletEntryId = null;
+
+    /** Comprobante del banco (conversión EUR→L, lempiras acreditados, comisión). */
+    #[ORM\Column(name: 'bank_proof_stored_filename', length: 180, nullable: true)]
+    private ?string $bankProofStoredFilename = null;
+
+    #[ORM\Column(name: 'bank_proof_original_name', length: 255, nullable: true)]
+    private ?string $bankProofOriginalName = null;
+
+    #[ORM\Column(name: 'bank_proof_mime', length: 127, nullable: true)]
+    private ?string $bankProofMime = null;
+
     #[ORM\Column]
     private \DateTimeImmutable $createdAt;
 
@@ -289,6 +303,25 @@ class WorkInvoice
         return $this->paymentProofStoredFilename !== null && $this->paymentProofStoredFilename !== '';
     }
 
+    public function getBankProofStoredFilename(): ?string { return $this->bankProofStoredFilename; }
+    public function setBankProofStoredFilename(?string $v): static { $this->bankProofStoredFilename = $v; return $this; }
+
+    public function getBankProofOriginalName(): ?string { return $this->bankProofOriginalName; }
+    public function setBankProofOriginalName(?string $v): static { $this->bankProofOriginalName = $v; return $this; }
+
+    public function getBankProofMime(): ?string { return $this->bankProofMime; }
+    public function setBankProofMime(?string $v): static { $this->bankProofMime = $v; return $this; }
+
+    public function hasBankProof(): bool
+    {
+        return $this->bankProofStoredFilename !== null && $this->bankProofStoredFilename !== '';
+    }
+
     public function getTenantId(): int { return $this->tenantId; }
     public function setTenantId(int $tenantId): static { $this->tenantId = $tenantId; return $this; }
+
+    public function getWalletEntryId(): ?int { return $this->walletEntryId; }
+    public function setWalletEntryId(?int $walletEntryId): static { $this->walletEntryId = $walletEntryId; return $this; }
+
+    public function isSyncedToWallet(): bool { return $this->walletEntryId !== null; }
 }

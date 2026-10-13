@@ -25,12 +25,20 @@ class WalletEntry
     #[ORM\JoinColumn(nullable: true, onDelete: 'SET NULL')]
     private ?WalletCategory $category = null;
 
+    #[ORM\ManyToOne(targetEntity: WalletCuenta::class)]
+    #[ORM\JoinColumn(nullable: true, onDelete: 'SET NULL')]
+    private ?WalletCuenta $cuenta = null;
+
     #[ORM\Column(type: 'decimal', precision: 12, scale: 2)]
     private string $monto = '0.00';
 
     /** ingreso | gasto */
     #[ORM\Column(length: 10)]
     private string $tipo = 'gasto';
+
+    /** True para entradas generadas por transferencias — se excluyen de totales de gastos/ingresos */
+    #[ORM\Column]
+    private bool $esTransferencia = false;
 
     #[ORM\Column(length: 255, nullable: true)]
     private ?string $descripcion = null;
@@ -70,6 +78,9 @@ class WalletEntry
     public function isIngreso(): bool { return $this->tipo === 'ingreso'; }
     public function isGasto(): bool { return $this->tipo === 'gasto'; }
 
+    public function isEsTransferencia(): bool { return $this->esTransferencia; }
+    public function setEsTransferencia(bool $v): static { $this->esTransferencia = $v; return $this; }
+
     public function getMontoSignado(): float
     {
         return $this->isGasto() ? -abs($this->getMontoFloat()) : abs($this->getMontoFloat());
@@ -77,4 +88,7 @@ class WalletEntry
 
     public function getTenantId(): int { return $this->tenantId; }
     public function setTenantId(int $tenantId): static { $this->tenantId = $tenantId; return $this; }
+
+    public function getCuenta(): ?WalletCuenta { return $this->cuenta; }
+    public function setCuenta(?WalletCuenta $cuenta): static { $this->cuenta = $cuenta; return $this; }
 }

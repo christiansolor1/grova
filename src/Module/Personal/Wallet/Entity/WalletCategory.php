@@ -32,6 +32,11 @@ class WalletCategory
     #[ORM\Column(length: 7)]
     private string $color = '#64748b';
 
+    /** Categoría padre — null = es categoría raíz */
+    #[ORM\ManyToOne(targetEntity: self::class)]
+    #[ORM\JoinColumn(nullable: true, onDelete: 'SET NULL')]
+    private ?self $parent = null;
+
     public function getId(): ?int { return $this->id; }
 
     public function getNombre(): string { return $this->nombre; }
@@ -45,6 +50,17 @@ class WalletCategory
 
     public function getColor(): string { return $this->color; }
     public function setColor(string $color): static { $this->color = $color; return $this; }
+
+    public function getParent(): ?self { return $this->parent; }
+    public function setParent(?self $parent): static { $this->parent = $parent; return $this; }
+
+    public function isRaiz(): bool { return $this->parent === null; }
+
+    /** Nombre completo: "Hogar › Agua" o "Hogar" si es raíz */
+    public function getNombreCompleto(): string
+    {
+        return $this->parent ? $this->parent->getNombre() . ' › ' . $this->nombre : $this->nombre;
+    }
 
     public function isIngreso(): bool { return $this->tipo === 'ingreso'; }
     public function isGasto(): bool { return $this->tipo === 'gasto'; }

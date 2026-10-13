@@ -4,6 +4,18 @@
 
 {% block page_styles %}
 <style>
+/* ── Tipo desc ── */
+#gf-tipo-desc { transition: opacity .15s; }
+body.light-mode #gf-tipo-desc { background:#f1f5f9; color:#475569; }
+/* ── Day picker ── */
+.gf-day-picker { display:flex; flex-wrap:wrap; gap:3px; }
+.gf-day-picker .dp-btn { width:26px; height:26px; display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:500; cursor:pointer; border-radius:5px; background:#1e293b; border:1px solid #334155; color:#94a3b8; transition:background .1s, color .1s; padding:0; }
+body.light-mode .gf-day-picker .dp-btn { background:#f1f5f9; border-color:#cbd5e1; color:#64748b; }
+.gf-day-picker .dp-btn:hover { background:#334155; color:#e2e8f0; }
+body.light-mode .gf-day-picker .dp-btn:hover { background:#e2e8f0; color:#0f172a; }
+.gf-day-picker .dp-btn.dp-active { background:#3b82f6; border-color:#3b82f6; color:#fff; font-weight:700; }
+.gf-day-picker .dp-btn.dp-clear { width:auto; padding:0 8px; font-size:10px; color:#64748b; }
+.gf-day-picker .dp-btn.dp-clear.dp-active { background:#475569; border-color:#475569; color:#fff; }
 .wallet-stat { background:#111827; border:1px solid #1e293b; border-radius:12px; padding:1.25rem; }
 body.light-mode .wallet-stat { background:#fff; border-color:#e2e8f0; }
 .wallet-stat-label { font-size:11px; color:#64748b; text-transform:uppercase; letter-spacing:.06em; margin-bottom:.35rem; }
@@ -15,196 +27,823 @@ body.light-mode .wallet-stat { background:#fff; border-color:#e2e8f0; }
 .tipo-gasto   { color:#f87171; }
 .cat-chip { display:inline-flex; align-items:center; gap:.3rem; font-size:11px; padding:2px 8px; border-radius:20px; background:#1e293b; color:#94a3b8; }
 body.light-mode .cat-chip { background:#f1f5f9; color:#475569; }
+.cuenta-chip { display:inline-flex; align-items:center; font-size:11px; padding:2px 8px; border-radius:20px; border:1px solid; color:#94a3b8; }
+/* Tarjetas de cuentas */
+.wallet-cuenta-card { background:#111827; border:1px solid #1e293b; border-radius:10px; padding:1rem 1rem .9rem; position:relative; transition:border-color .15s; }
+body.light-mode .wallet-cuenta-card { background:#fff; border-color:#e2e8f0; }
+.wallet-cuenta-card:hover { border-color:rgba(100,116,139,.5); }
+.wallet-cuenta-tipo { font-size:10px; text-transform:uppercase; letter-spacing:.06em; color:#64748b; margin-bottom:.15rem; }
+.wallet-cuenta-nombre { font-size:14px; font-weight:700; color:#f8fafc; margin-bottom:.1rem; }
+body.light-mode .wallet-cuenta-nombre { color:#0f172a; }
+.wallet-cuenta-inst { font-size:11px; color:#64748b; margin-bottom:.5rem; }
+.wallet-cuenta-saldo { font-size:20px; font-weight:800; }
+.wallet-cuenta-ops { position:absolute; top:.55rem; right:.55rem; display:flex; gap:.2rem; }
 </style>
 {% endblock %}
 
 {% block app_main %}
 
-{# ── Stats ── #}
+{# ── Stats globales ── #}
 <div class="row g-3 mb-4">
     <div class="col-sm-4">
         <div class="wallet-stat">
-            <div class="wallet-stat-label">Saldo total</div>
+            <div class="wallet-stat-label">Saldo cartera</div>
             <div class="wallet-stat-value {{ saldo >= 0 ? 'saldo-pos' : 'saldo-neg' }}">
-                ${{ saldo|number_format(2, '.', ',') }}
+                L {{ saldo|number_format(2, '.', ',') }}
             </div>
-            <div class="wallet-stat-sub">todos los movimientos</div>
+            <div class="wallet-stat-sub">movimientos sin cuenta asignada</div>
         </div>
     </div>
     <div class="col-sm-4">
         <div class="wallet-stat">
             <div class="wallet-stat-label">Ingresos — {{ mes_label }}</div>
-            <div class="wallet-stat-value tipo-ingreso">${{ ingresos_mes|number_format(2, '.', ',') }}</div>
+            <div class="wallet-stat-value tipo-ingreso">L {{ ingresos_mes|number_format(2, '.', ',') }}</div>
             <div class="wallet-stat-sub">este mes</div>
         </div>
     </div>
     <div class="col-sm-4">
         <div class="wallet-stat">
             <div class="wallet-stat-label">Gastos — {{ mes_label }}</div>
-            <div class="wallet-stat-value tipo-gasto">${{ gastos_mes|number_format(2, '.', ',') }}</div>
-            <div class="wallet-stat-sub">este mes · balance: ${{ (ingresos_mes - gastos_mes)|number_format(2, '.', ',') }}</div>
+            <div class="wallet-stat-value tipo-gasto">L {{ gastos_mes|number_format(2, '.', ',') }}</div>
+            <div class="wallet-stat-sub">balance mes: L {{ (ingresos_mes - gastos_mes)|number_format(2, '.', ',') }}</div>
         </div>
     </div>
 </div>
 
-{# ── Tabla de movimientos ── #}
-<div class="content-card">
+{# ── Cuentas ── #}
+<div class="content-card mb-4">
     <div class="content-card-header">
-        Movimientos
-        <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#modal-nuevo-movimiento">
-            <i class="bi bi-plus-lg me-1"></i>Nuevo
-        </button>
+        Cuentas
+        <div class="d-flex align-items-center gap-2">
+            <a href="{{ path('grova_wallet_banca', {_locale: app.request.locale}) }}" class="btn btn-sm btn-outline-secondary">
+                <i class="bi bi-bank me-1"></i>Banca
+            </a>
+            <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#modal-wallet-cuenta">
+                <i class="bi bi-plus-lg me-1"></i>Nueva cuenta
+            </button>
+        </div>
     </div>
-    <div class="content-card-body p-0">
-        {% if entries|length > 0 %}
-        <div class="table-responsive">
-            <table id="wallet-table" class="table table-hover mb-0" style="color:inherit;">
-                <thead>
-                    <tr>
-                        <th style="width:100px;">Fecha</th>
-                        <th>Descripción</th>
-                        <th>Categoría</th>
-                        <th style="width:60px;">Tipo</th>
-                        <th style="width:120px;text-align:right;">Monto</th>
-                        <th style="width:50px;"></th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for entry in entries %}
-                    <tr>
-                        <td style="font-size:12px;color:#64748b;">{{ entry.fecha|date('d/m/Y') }}</td>
-                        <td style="font-size:13px;">{{ entry.descripcion ?? '—' }}</td>
-                        <td>
-                            {% if entry.category %}
-                            <span class="cat-chip">
-                                <i class="{{ entry.category.icono }}" style="color:{{ entry.category.color }};"></i>
-                                {{ entry.category.nombre }}
-                            </span>
-                            {% else %}
-                            <span style="font-size:12px;color:#475569;">Sin categoría</span>
-                            {% endif %}
-                        </td>
-                        <td>
-                            <span class="badge {{ entry.isIngreso ? 'bg-success' : 'bg-danger' }} bg-opacity-20 {{ entry.isIngreso ? 'text-success' : 'text-danger' }}" style="font-size:10px;">
-                                {{ entry.tipo|upper }}
-                            </span>
-                        </td>
-                        <td style="text-align:right;font-weight:600;font-size:13px;" class="{{ entry.isIngreso ? 'tipo-ingreso' : 'tipo-gasto' }}">
-                            {{ entry.isIngreso ? '+' : '-' }}${{ entry.monto|number_format(2, '.', ',') }}
-                        </td>
-                        <td>
-                            <form method="post" action="{{ path('grova_wallet_entry_delete', {id: entry.id, _locale: app.request.locale}) }}" data-swal-confirm="¿Eliminar este movimiento?">
-                                <input type="hidden" name="_token" value="{{ csrf_token('wallet_delete_' ~ entry.id) }}">
-                                <button type="submit" class="btn btn-outline-danger btn-sm" style="padding:2px 7px;font-size:11px;">
-                                    <i class="bi bi-trash3"></i>
-                                </button>
-                            </form>
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+    <div class="content-card-body">
+        {% if cuentas|length == 0 %}
+        <div class="grova-empty-state py-4">
+            <div class="grova-empty-icon"><i class="bi bi-bank2"></i></div>
+            <div class="grova-empty-title">Sin cuentas</div>
+            <div class="grova-empty-desc">Agregá tus cuentas de banco, cooperativa o efectivo.</div>
         </div>
         {% else %}
-        <div class="grova-empty-state">
-            <div class="grova-empty-icon"><i class="bi bi-wallet2"></i></div>
-            <div class="grova-empty-title">Sin movimientos</div>
-            <div class="grova-empty-desc">Registra tu primer ingreso o gasto.</div>
-            <div class="grova-empty-actions">
-                <button type="button" class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#modal-nuevo-movimiento">
-                    <i class="bi bi-plus-lg me-1"></i>Agregar movimiento
-                </button>
+        <div class="row g-3">
+            {% for cuenta in cuentas %}
+            <div class="col-sm-6 col-lg-4" id="wallet-cuenta-col-{{ cuenta.id }}">
+                <div class="wallet-cuenta-card" style="border-top:3px solid {{ cuenta.color }};">
+                    <div class="wallet-cuenta-ops">
+                        <a href="{{ path('grova_wallet_cuenta_detalle', {id: cuenta.id, _locale: app.request.locale}) }}"
+                           class="btn btn-sm btn-link p-0 text-secondary"
+                           title="Ver estado de cuenta"><i class="bi bi-eye"></i></a>
+                        <button type="button"
+                                class="btn btn-sm btn-link p-0 text-secondary js-wallet-cuenta-edit"
+                                data-cuenta-id="{{ cuenta.id }}"
+                                data-nombre="{{ cuenta.nombre }}"
+                                data-institucion-id="{{ cuenta.institucion ? cuenta.institucion.id : '' }}"
+                                data-numero-cuenta="{{ cuenta.numeroCuenta ? cuenta.numeroCuenta|decrypt : '' }}"
+                                data-tarjeta-digitos="{{ cuenta.tarjetaDigitos ? cuenta.tarjetaDigitos|decrypt : '' }}"
+                                data-tipo="{{ cuenta.tipo }}"
+                                data-saldo-inicial="{{ cuenta.saldoInicial }}"
+                                data-color="{{ cuenta.color }}"
+                                data-activo="{{ cuenta.isActivo ? '1' : '0' }}"
+                                data-edit-token="{{ csrf_token('wallet_cuenta_edit_' ~ cuenta.id) }}"
+                                data-edit-url="{{ path('grova_wallet_cuenta_edit', {id: cuenta.id, _locale: app.request.locale}) }}"
+                                data-bs-toggle="modal" data-bs-target="#modal-wallet-cuenta"
+                                title="Editar"><i class="bi bi-pencil"></i></button>
+                        <button type="button"
+                                class="btn btn-sm btn-link p-0 text-danger js-wallet-cuenta-delete"
+                                data-cuenta-id="{{ cuenta.id }}"
+                                data-nombre="{{ cuenta.nombre }}"
+                                data-delete-token="{{ csrf_token('wallet_cuenta_delete_' ~ cuenta.id) }}"
+                                data-delete-url="{{ path('grova_wallet_cuenta_delete', {id: cuenta.id, _locale: app.request.locale}) }}"
+                                title="Eliminar"><i class="bi bi-trash3"></i></button>
+                    </div>
+                    <div class="wallet-cuenta-tipo">{{ cuenta.tipoLabel }}</div>
+                    <div class="wallet-cuenta-nombre">{{ cuenta.nombre }}</div>
+                    {% if cuenta.institucion %}
+                    <div class="wallet-cuenta-inst">
+                        <a href="{{ path('grova_wallet_institucion_detalle', {id: cuenta.institucion.id, _locale: app.request.locale}) }}"
+                           class="text-decoration-none text-muted small">
+                            <i class="bi bi-bank me-1"></i>{{ cuenta.institucion.nombre }}
+                        </a>
+                    </div>
+                    {% endif %}
+                    <div class="wallet-cuenta-saldo js-cuenta-saldo" data-cuenta-id="{{ cuenta.id }}" data-credito="{{ cuenta.isCredito ? '1' : '0' }}">
+                        <span class="text-muted small"><i class="bi bi-arrow-repeat"></i></span>
+                    </div>
+                </div>
             </div>
+            {% endfor %}
         </div>
         {% endif %}
     </div>
 </div>
 
-{# ── Modal nuevo movimiento ── #}
-<div class="modal fade" id="modal-nuevo-movimiento" tabindex="-1" aria-labelledby="modal-wallet-title" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
+{# ── Instituciones ── #}
+<div class="content-card mb-4">
+    <div class="content-card-header">
+        Instituciones
+        <button type="button" class="btn btn-sm btn-primary" id="btn-nueva-inst">
+            <i class="bi bi-plus-lg me-1"></i>Nueva
+        </button>
+    </div>
+    <div class="content-card-body p-0">
+        <div id="wallet-instituciones-lista"></div>
+    </div>
+</div>
+
+{# ── Categorías ── #}
+<div class="content-card mb-4">
+    <div class="content-card-header">
+        Categorías
+        <button type="button" class="btn btn-sm btn-primary" id="btn-nueva-categoria">
+            <i class="bi bi-plus-lg me-1"></i>Nueva
+        </button>
+    </div>
+    <div class="content-card-body p-0">
+        <div id="wallet-categorias-lista"></div>
+    </div>
+</div>
+
+{# ── Modal Categoría ── #}
+<div class="modal fade grova-modal--macos" id="modal-categoria" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-sm">
         <div class="modal-content">
-            <form method="post" action="{{ path('grova_wallet_entry_create', {_locale: app.request.locale}) }}">
-                <input type="hidden" name="_token" value="{{ csrf_token('wallet_entry') }}">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="modal-wallet-title">Nuevo movimiento</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            <div class="modal-header py-2">
+                <h5 class="modal-title" id="modal-categoria-title">Nueva categoría</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body py-3">
+                <input type="hidden" id="cat-mode" value="create">
+                <input type="hidden" id="cat-edit-url" value="">
+                <input type="hidden" id="cat-csrf" value="{{ csrf_token('wallet_category_create') }}">
+                <div class="mb-2">
+                    <label class="form-label small mb-1">Categoría padre <small class="text-muted">(opcional)</small></label>
+                    <select id="cat-parent-id" class="form-select form-select-sm">
+                        <option value="">— Ninguna (categoría raíz) —</option>
+                    </select>
                 </div>
-                <div class="modal-body">
-                    <div class="row g-3">
-
-                        {# Tipo #}
-                        <div class="col-12">
-                            <label class="form-label">Tipo</label>
-                            <div class="d-flex gap-2">
-                                <div class="form-check form-check-inline">
-                                    <input class="form-check-input" type="radio" name="tipo" id="tipo-gasto" value="gasto" checked>
-                                    <label class="form-check-label text-danger" for="tipo-gasto">Gasto</label>
-                                </div>
-                                <div class="form-check form-check-inline">
-                                    <input class="form-check-input" type="radio" name="tipo" id="tipo-ingreso" value="ingreso">
-                                    <label class="form-check-label text-success" for="tipo-ingreso">Ingreso</label>
-                                </div>
-                            </div>
+                <div class="mb-3">
+                    <label class="form-label small mb-1">Nombre <span class="text-danger">*</span></label>
+                    <input type="text" id="cat-nombre" class="form-control form-control-sm" placeholder="Ej: Alimentos, Agua, Netflix" maxlength="80">
+                </div>
+                <div class="row g-2 mb-3" id="cat-tipo-row">
+                    <div class="col-6">
+                        <label class="form-label small mb-1">Tipo</label>
+                        <select id="cat-tipo" class="form-select form-select-sm">
+                            <option value="gasto">Gasto</option>
+                            <option value="ingreso">Ingreso</option>
+                        </select>
+                    </div>
+                    <div class="col-12 mt-1">
+                        <label class="form-label small mb-1">Color</label>
+                        <div class="d-flex flex-wrap gap-1 align-items-center mb-1" id="cat-color-palette"></div>
+                        <div class="d-flex align-items-center gap-2 mt-1">
+                            <button type="button" class="btn btn-outline-secondary btn-sm" id="btn-color-random" title="Color aleatorio disponible"><i class="bi bi-shuffle"></i></button>
+                            <input type="color" id="cat-color" class="form-control form-control-color form-control-sm" value="#64748b" style="width:36px;height:30px;padding:2px;" title="Color personalizado">
+                            <span id="cat-color-preview" class="rounded" style="width:22px;height:22px;display:inline-block;border:1px solid #ccc;background:#64748b;"></span>
+                            <span class="text-muted small" id="cat-color-hex">#64748b</span>
                         </div>
-
-                        {# Monto #}
-                        <div class="col-sm-6">
-                            <label class="form-label" for="monto">Monto</label>
-                            <div class="input-group input-group-sm">
-                                <span class="input-group-text">$</span>
-                                <input type="number" class="form-control" id="monto" name="monto"
-                                       min="0.01" step="0.01" placeholder="0.00" required>
-                            </div>
-                        </div>
-
-                        {# Fecha #}
-                        <div class="col-sm-6">
-                            <label class="form-label" for="fecha">Fecha</label>
-                            <input type="date" class="form-control form-control-sm" id="fecha" name="fecha"
-                                   value="{{ 'now'|date('Y-m-d') }}" required>
-                        </div>
-
-                        {# Categoría #}
-                        <div class="col-12">
-                            <label class="form-label" for="category_id">Categoría</label>
-                            <select class="grova-select2 form-select form-select-sm" id="category_id" name="category_id"
-                                    data-placeholder="Sin categoría" data-allow-clear="true"
-                                    data-dropdown-parent="#modal-nuevo-movimiento">
-                                <option value=""></option>
-                                {% set gastos   = categories|filter(c => c.tipo == 'gasto') %}
-                                {% set ingresos = categories|filter(c => c.tipo == 'ingreso') %}
-                                {% if ingresos|length %}
-                                <optgroup label="Ingresos">
-                                    {% for cat in ingresos %}
-                                    <option value="{{ cat.id }}">{{ cat.nombre }}</option>
-                                    {% endfor %}
-                                </optgroup>
-                                {% endif %}
-                                {% if gastos|length %}
-                                <optgroup label="Gastos">
-                                    {% for cat in gastos %}
-                                    <option value="{{ cat.id }}">{{ cat.nombre }}</option>
-                                    {% endfor %}
-                                </optgroup>
-                                {% endif %}
-                            </select>
-                        </div>
-
-                        {# Descripción #}
-                        <div class="col-12">
-                            <label class="form-label" for="descripcion">Descripción</label>
-                            <input type="text" class="form-control form-control-sm" id="descripcion" name="descripcion"
-                                   placeholder="Opcional" maxlength="255">
-                        </div>
-
                     </div>
                 </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancelar</button>
-                    <button type="submit" class="btn btn-primary btn-sm">Guardar</button>
+                <div class="mb-2">
+                    <label class="form-label small mb-1">Ícono</label>
+                    <input type="hidden" id="cat-icono" value="bi-tag">
+                    <div class="d-flex align-items-center gap-2 mb-2">
+                        <span class="input-group-text rounded" style="width:36px;height:36px;display:flex;align-items:center;justify-content:center;">
+                            <i id="cat-icono-preview" class="bi bi-tag fs-5"></i>
+                        </span>
+                        <button type="button" class="btn btn-outline-secondary btn-sm" id="btn-icono-picker-toggle">Elegir ícono</button>
+                    </div>
+                    <div id="icono-picker-grid" class="d-none border rounded p-2">
+                        <input type="text" id="icono-picker-search" class="form-control form-control-sm mb-2" placeholder="Buscar ícono... ej: internet, agua, casa">
+                        <div class="row g-1" id="icono-picker-items" style="max-height:150px;overflow-y:auto;"></div>
+                        <div id="icono-picker-empty" class="d-none text-muted small text-center py-2">Sin resultados</div>
+                    </div>
                 </div>
-            </form>
+            </div>
+            <div class="modal-footer py-2">
+                <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" id="btn-cat-save" class="btn btn-primary btn-sm">Guardar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{# ── Gastos Fijos ── #}
+<div class="content-card mb-4" id="wallet-gastos-fijos-card">
+    <div class="content-card-header">
+        Gastos Fijos
+        <div class="d-flex align-items-center gap-2">
+            <div class="d-flex align-items-center gap-1" style="font-size:12px;color:#64748b;">
+                <select id="gf-mes-select" class="form-select form-select-sm" style="width:auto;font-size:12px;padding:2px 8px;">
+                    <option value="1">Enero</option><option value="2">Febrero</option><option value="3">Marzo</option>
+                    <option value="4">Abril</option><option value="5">Mayo</option><option value="6">Junio</option>
+                    <option value="7">Julio</option><option value="8">Agosto</option><option value="9">Septiembre</option>
+                    <option value="10">Octubre</option><option value="11">Noviembre</option><option value="12">Diciembre</option>
+                </select>
+                <select id="gf-anio-select" class="form-select form-select-sm" style="width:auto;font-size:12px;padding:2px 8px;">
+                    {% set anioActual = "now"|date("Y")|number_format(0, '', '') %}
+                    {% for y in range(anioActual - 1, anioActual + 1) %}
+                    <option value="{{ y }}">{{ y }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <button type="button" class="btn btn-sm btn-primary" id="btn-nuevo-gasto-fijo">
+                <i class="bi bi-plus-lg me-1"></i>Nuevo
+            </button>
+        </div>
+    </div>
+    <div class="content-card-body">
+        {# Stats del mes #}
+        <div class="row g-2 mb-3" id="gf-stats-row" style="display:none!important;">
+            <div class="col-4">
+                <div class="wallet-stat py-2 px-3">
+                    <div class="wallet-stat-label">Total mensual</div>
+                    <div class="wallet-stat-value" id="gf-stat-total" style="font-size:18px;">L 0.00</div>
+                </div>
+            </div>
+            <div class="col-4">
+                <div class="wallet-stat py-2 px-3">
+                    <div class="wallet-stat-label">Pagado</div>
+                    <div class="wallet-stat-value saldo-pos" id="gf-stat-pagado" style="font-size:18px;">L 0.00</div>
+                </div>
+            </div>
+            <div class="col-4">
+                <div class="wallet-stat py-2 px-3">
+                    <div class="wallet-stat-label">Pendiente</div>
+                    <div class="wallet-stat-value tipo-gasto" id="gf-stat-pendiente" style="font-size:18px;">L 0.00</div>
+                </div>
+            </div>
+        </div>
+        <div id="gf-lista"></div>
+    </div>
+</div>
+
+{# ── Modal Gasto Fijo ── #}
+<div class="modal fade grova-modal--macos" id="modal-gasto-fijo" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content">
+            <div class="modal-header py-2">
+                <h5 class="modal-title" id="modal-gasto-fijo-title">Nuevo gasto fijo</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body py-3">
+                <input type="hidden" id="gf-mode" value="create">
+                <input type="hidden" id="gf-edit-url" value="">
+                <input type="hidden" id="gf-csrf" value="{{ csrf_token('wallet_gasto_fijo_create') }}">
+
+                {# ── Selector de tipo ── #}
+                <div class="mb-3">
+                    <label class="form-label small mb-2">Tipo de gasto</label>
+                    <div class="d-flex flex-wrap gap-2 mb-2" id="gf-tipo-btns">
+                        <button type="button" class="btn btn-sm js-gf-tipo active" data-tipo="generico"
+                                style="border:1px solid #334155;border-radius:8px;padding:.4rem .9rem;">
+                            <i class="bi bi-tag me-1"></i>Simple
+                        </button>
+                        <button type="button" class="btn btn-sm js-gf-tipo" data-tipo="financiado"
+                                style="border:1px solid #334155;border-radius:8px;padding:.4rem .9rem;">
+                            <i class="bi bi-box-seam me-1"></i>Compra financiada
+                        </button>
+                        <button type="button" class="btn btn-sm js-gf-tipo" data-tipo="prestamo"
+                                style="border:1px solid #334155;border-radius:8px;padding:.4rem .9rem;">
+                            <i class="bi bi-bank me-1"></i>Préstamo
+                        </button>
+                        <button type="button" class="btn btn-sm js-gf-tipo" data-tipo="suscripcion"
+                                style="border:1px solid #334155;border-radius:8px;padding:.4rem .9rem;">
+                            <i class="bi bi-arrow-repeat me-1"></i>Suscripción
+                        </button>
+                    </div>
+                    <div id="gf-tipo-desc" style="font-size:11.5px;color:#64748b;background:#0f172a22;border-left:3px solid #3b82f6;border-radius:0 6px 6px 0;padding:.45rem .75rem;line-height:1.5;"></div>
+                    <input type="hidden" id="gf-tipo" value="generico">
+                </div>
+
+                {# ── Nombre ── #}
+                <div class="mb-3">
+                    <label class="form-label small mb-1">Nombre <span class="text-danger">*</span></label>
+                    <input type="text" id="gf-nombre" class="form-control form-control-sm"
+                           placeholder="Ej: Netflix, Claro iPhone, Banco Atlántida" maxlength="100">
+                </div>
+
+                {# ── Días de pago y corte ── #}
+                <div class="row g-2 mb-3">
+                    <div class="col-sm-6">
+                        <label class="form-label small mb-1">Frecuencia</label>
+                        <select id="gf-frecuencia" class="form-select form-select-sm">
+                            <option value="mensual">Mensual</option>
+                            <option value="quincenal">Quincenal</option>
+                            <option value="semanal">Semanal</option>
+                            <option value="irregular">Irregular</option>
+                        </select>
+                    </div>
+                    <div class="col-12 col-sm-6">
+                        <label class="form-label small mb-1">Día de pago</label>
+                        <div class="gf-day-picker" id="gf-dia-pago-picker"></div>
+                        <input type="hidden" id="gf-dia-pago" value="1">
+                    </div>
+                    <div class="col-12 col-sm-6 js-gf-corte-col">
+                        <label class="form-label small mb-1">Día de corte <small class="text-muted">(opcional)</small></label>
+                        <div class="gf-day-picker" id="gf-dia-corte-picker"></div>
+                        <input type="hidden" id="gf-dia-corte" value="">
+                    </div>
+                </div>
+
+                {# ── Bloque: Financiamiento (financiado | prestamo) ── #}
+                <div id="gf-bloque-financiamiento" style="display:none;">
+                    <hr class="my-2">
+                    <div class="small fw-semibold text-muted mb-2" id="gf-financiamiento-label">Datos del financiamiento</div>
+                    <div class="row g-2 mb-2">
+                        <div class="col-sm-4">
+                            <label class="form-label small mb-1">Fecha de inicio</label>
+                            <input type="date" id="gf-fecha-inicio-plan" class="form-control form-control-sm">
+                        </div>
+                        <div class="col-sm-4">
+                            <label class="form-label small mb-1">Total de cuotas / meses</label>
+                            <input type="number" id="gf-meses-financiamiento" class="form-control form-control-sm" min="1" placeholder="18">
+                        </div>
+                        <div class="col-sm-4">
+                            <label class="form-label small mb-1">Prima / enganche (L)</label>
+                            <input type="number" id="gf-monto-prima" class="form-control form-control-sm" min="0" step="0.01" placeholder="0.00">
+                        </div>
+                    </div>
+
+                    {# Tramos de cuotas #}
+                    <div class="mb-2">
+                        <div class="d-flex align-items-center justify-content-between mb-1">
+                            <label class="form-label small mb-0">Tramos de cuota <small class="text-muted">(si el monto varía)</small></label>
+                            <button type="button" class="btn btn-xs btn-outline-secondary" id="btn-gf-add-tramo" style="font-size:11px;padding:1px 8px;">
+                                <i class="bi bi-plus-lg"></i> Tramo
+                            </button>
+                        </div>
+                        <div id="gf-tramos-lista">
+                            {# Se generan dinámicamente #}
+                        </div>
+                        <input type="hidden" id="gf-cuotas-especiales" value="">
+                    </div>
+
+                    <div class="row g-2 mb-2">
+                        <div class="col-sm-6">
+                            <label class="form-label small mb-1">Monto mensual base (L) <span class="text-danger">*</span></label>
+                            <input type="number" id="gf-monto" class="form-control form-control-sm" min="0.01" step="0.01" placeholder="0.00">
+                            <div class="form-text" id="gf-monto-hint-fin">Si usás tramos, ponés el monto de la última cuota (o el que aplica si no hay tramo).</div>
+                        </div>
+                        <div class="col-sm-6" id="gf-post-fin-wrap">
+                            <label class="form-label small mb-1">Monto tras terminar el financiamiento (L)</label>
+                            <input type="number" id="gf-monto-post-financiamiento" class="form-control form-control-sm" min="0" step="0.01" placeholder="Ej: 1600">
+                            <div class="form-text">Ej: solo el plan de internet que queda. Vacío = gasto termina.</div>
+                        </div>
+                    </div>
+                    <hr class="my-2">
+                </div>
+
+                {# ── Bloque: Monto simple (generico | suscripcion) ── #}
+                <div id="gf-bloque-monto-simple">
+                    <div class="row g-2 mb-2">
+                        <div class="col-sm-6">
+                            <label class="form-label small mb-1">Monto (L) <span class="text-danger">*</span></label>
+                            <input type="number" id="gf-monto-simple" class="form-control form-control-sm" min="0.01" step="0.01" placeholder="0.00">
+                        </div>
+                        <div class="col-sm-6 d-flex align-items-end pb-1">
+                            <div class="form-check form-switch mb-0">
+                                <input class="form-check-input" type="checkbox" id="gf-check-unidades" role="switch">
+                                <label class="form-check-label small" for="gf-check-unidades">Manejo por unidades</label>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="gf-bloque-unidades" style="display:none;">
+                        <div class="row g-2 mb-2">
+                            <div class="col-sm-4">
+                                <label class="form-label small mb-1">Unidad</label>
+                                <select id="gf-unidad-sel" class="form-select form-select-sm">
+                                    <option value="">— elige —</option>
+                                    <option value="botellón">botellón</option>
+                                    <option value="galón">galón</option>
+                                    <option value="litro">litro</option>
+                                    <option value="libra">libra</option>
+                                    <option value="kilo">kilo</option>
+                                    <option value="gramo">gramo</option>
+                                    <option value="unidad">unidad</option>
+                                    <option value="caja">caja</option>
+                                    <option value="bolsa">bolsa</option>
+                                    <option value="paquete">paquete</option>
+                                    <option value="botella">botella</option>
+                                    <option value="lata">lata</option>
+                                    <option value="servicio">servicio</option>
+                                    <option value="mes">mes</option>
+                                    <option value="__otro__">Otra unidad…</option>
+                                </select>
+                                <input type="text" id="gf-unidad-custom" class="form-control form-control-sm mt-1"
+                                       placeholder="escribe la unidad" maxlength="50" style="display:none;">
+                            </div>
+                            <div class="col-sm-4">
+                                <label class="form-label small mb-1">Presentación</label>
+                                <select id="gf-presentacion-sel" class="form-select form-select-sm">
+                                    <option value="">— elige —</option>
+                                    <option value="20L">20L</option>
+                                    <option value="5 galones">5 galones</option>
+                                    <option value="1 galón">1 galón</option>
+                                    <option value="500ml">500ml</option>
+                                    <option value="1L">1L</option>
+                                    <option value="2L">2L</option>
+                                    <option value="25 lbs">25 lbs</option>
+                                    <option value="50 lbs">50 lbs</option>
+                                    <option value="1 kg">1 kg</option>
+                                    <option value="500g">500g</option>
+                                    <option value="6 unidades">6 unidades</option>
+                                    <option value="12 unidades">12 unidades</option>
+                                    <option value="24 unidades">24 unidades</option>
+                                    <option value="__otro__">Otra…</option>
+                                </select>
+                                <input type="text" id="gf-presentacion-custom" class="form-control form-control-sm mt-1"
+                                       placeholder="ej: 18 kg, 750ml…" maxlength="50" style="display:none;">
+                            </div>
+                            <div class="col-sm-4">
+                                <label class="form-label small mb-1">Cant. base <small class="text-muted">/ período</small></label>
+                                <input type="number" id="gf-cantidad-base" class="form-control form-control-sm" min="0.01" step="0.01" placeholder="7">
+                            </div>
+                        </div>
+                        <div class="row g-2 mb-2">
+                            <div class="col-sm-5">
+                                <label class="form-label small mb-1">Precio por unidad (L)</label>
+                                <input type="number" id="gf-precio-unitario" class="form-control form-control-sm" min="0.01" step="0.01" placeholder="57.00">
+                            </div>
+                            <div class="col-sm-7 d-flex align-items-end pb-1">
+                                <small class="text-muted">Cantidad × precio = presupuesto.</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {# ── Cuenta y categoría (siempre visible) ── #}
+                <div class="mb-2">
+                    <label class="form-label small mb-1">Cuenta (opcional)</label>
+                    <select id="gf-cuenta-id" class="form-select form-select-sm">
+                        <option value="">— Cartera general —</option>
+                        {% for cuenta in cuentas %}
+                        <option value="{{ cuenta.id }}">{{ cuenta.nombre }}{% if cuenta.institucion %} · {{ cuenta.institucion }}{% endif %}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="mb-2">
+                    <label class="form-label small mb-1">Categoría (opcional)</label>
+                    <div class="input-group input-group-sm">
+                        <select id="gf-category-id" class="form-select form-select-sm">
+                            <option value="">— Sin categoría —</option>
+                            {% for cat in categories %}
+                            <option value="{{ cat.id }}">{{ cat.nombre }}</option>
+                            {% endfor %}
+                        </select>
+                        <button type="button" class="btn btn-outline-secondary js-quick-add-cat" data-target="gf-category-id" title="Nueva categoría"><i class="bi bi-plus-lg"></i></button>
+                    </div>
+                </div>
+                <div class="mb-2">
+                    <label class="form-label small mb-1">Nota (opcional)</label>
+                    <input type="text" id="gf-nota" class="form-control form-control-sm" placeholder="Ej: trabajo me reembolsa el plan" maxlength="255">
+                </div>
+
+                {# ── Acceso / Pago ── #}
+                <div class="mt-2">
+                    <button type="button" class="btn btn-link btn-sm p-0 text-secondary js-gf-toggle-acceso" style="font-size:12px;text-decoration:none;">
+                        <i class="bi bi-chevron-right js-gf-acceso-chevron" style="font-size:10px;transition:transform .2s;"></i>
+                        Datos de acceso y pago <small class="text-muted">(opcional)</small>
+                    </button>
+                    <div id="gf-bloque-acceso" style="display:none;" class="mt-2">
+                        <div class="row g-2 mb-2">
+                            <div class="col-12">
+                                <label class="form-label small mb-1"><i class="bi bi-link-45deg me-1"></i>Link de pago</label>
+                                <input type="url" id="gf-url-pago" class="form-control form-control-sm"
+                                       placeholder="https://pagos.claro.com.hn/…" maxlength="500">
+                            </div>
+                        </div>
+                        <div class="row g-2">
+                            <div class="col-sm-6">
+                                <label class="form-label small mb-1"><i class="bi bi-person me-1"></i>N.º cliente / cuenta</label>
+                                <input type="text" id="gf-numero-cliente" class="form-control form-control-sm"
+                                       placeholder="Ej: 504-1234567" maxlength="100">
+                            </div>
+                            <div class="col-sm-6">
+                                <label class="form-label small mb-1"><i class="bi bi-at me-1"></i>Usuario / correo</label>
+                                <input type="text" id="gf-usuario-acceso" class="form-control form-control-sm"
+                                       placeholder="usuario@correo.com" maxlength="150">
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label small mb-1"><i class="bi bi-key me-1"></i>Contraseña <small class="text-muted">(cifrada)</small></label>
+                                <div class="input-group input-group-sm">
+                                    <input type="password" id="gf-clave-acceso" class="form-control form-control-sm"
+                                           placeholder="••••••••" maxlength="200" autocomplete="new-password">
+                                    <button type="button" class="btn btn-outline-secondary js-gf-toggle-clave" tabindex="-1">
+                                        <i class="bi bi-eye"></i>
+                                    </button>
+                                </div>
+                                <div class="form-text" style="font-size:10px;">Se guarda cifrada. Dejá en blanco para no cambiarla al editar.</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-check mt-2 js-gf-activo-row" style="display:none;">
+                    <input class="form-check-input" type="checkbox" id="gf-activo" checked>
+                    <label class="form-check-label small" for="gf-activo">Activo</label>
+                </div>
+            </div>
+            <div class="modal-footer py-2">
+                <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" id="btn-gf-save" class="btn btn-primary btn-sm">Guardar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{# ── Movimientos (DataTable AJAX) ── #}
+<div class="content-card">
+    <div class="content-card-header">
+        Movimientos
+        <div class="d-flex gap-2">
+            <button type="button" class="btn btn-sm btn-outline-secondary" id="btn-nueva-transferencia">
+                <i class="bi bi-arrow-left-right me-1"></i>Transferir
+            </button>
+            <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#modal-nuevo-movimiento">
+                <i class="bi bi-plus-lg me-1"></i>Nuevo
+            </button>
+        </div>
+    </div>
+    <div class="content-card-body p-0">
+        <div class="table-responsive">
+            <table id="wallet-entries-table" class="table table-hover mb-0" style="color:inherit;">
+                <thead>
+                    <tr>
+                        <th style="width:100px;">Fecha</th>
+                        <th>Descripción</th>
+                        <th>Categoría</th>
+                        <th>Cuenta</th>
+                        <th style="width:70px;">Tipo</th>
+                        <th style="width:130px;text-align:right;">Monto</th>
+                        <th style="width:50px;"></th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+{# ── Modal nueva/editar cuenta ── #}
+<div class="modal fade grova-modal--macos" id="modal-wallet-cuenta" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header py-2">
+                <h5 class="modal-title" id="modal-wallet-cuenta-title">Nueva cuenta</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body py-3">
+                <input type="hidden" id="wallet-cuenta-mode" value="create">
+                <input type="hidden" id="wallet-cuenta-edit-url" value="">
+                <input type="hidden" id="wallet-cuenta-csrf" value="">
+                <div class="mb-3">
+                    <label class="form-label small mb-1">Nombre <span class="text-danger">*</span></label>
+                    <input type="text" id="wallet-cuenta-nombre" class="form-control form-control-sm" placeholder="Ej: BAC Visa Crédito" maxlength="100">
+                </div>
+                <div class="row g-2 mb-3">
+                    <div class="col-sm-6">
+                        <label class="form-label small mb-1">Institución / Banco</label>
+                        <div class="input-group input-group-sm">
+                            <select id="wallet-cuenta-institucion-id" class="form-select form-select-sm">
+                                <option value="">— Sin institución —</option>
+                            </select>
+                            <button type="button" class="btn btn-outline-secondary" id="btn-nueva-inst-inline" title="Nueva institución">
+                                <i class="bi bi-plus-lg"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="col-sm-6">
+                        <label class="form-label small mb-1">Número de cuenta <small class="text-muted">(encriptado)</small></label>
+                        <input type="text" id="wallet-cuenta-numero-cuenta" class="form-control form-control-sm" placeholder="0011234567890" maxlength="30" inputmode="numeric">
+                    </div>
+                </div>
+                <div class="row g-2 mb-3" id="wallet-cuenta-tarjeta-row">
+                    <div class="col-sm-6">
+                        <label class="form-label small mb-1">Número de tarjeta <small class="text-muted">(encriptado)</small></label>
+                        <input type="text" id="wallet-cuenta-tarjeta-digitos" class="form-control form-control-sm" placeholder="4111 1234 5678 9010" maxlength="19" inputmode="numeric">
+                    </div>
+                    <div class="col-sm-6 d-flex align-items-end pb-1">
+                        <small class="text-muted">Solo si tiene tarjeta de débito asociada.</small>
+                    </div>
+                </div>
+                <div class="row g-2 mb-3">
+                    <div class="col-sm-6">
+                        <label class="form-label small mb-1">Tipo <span class="text-danger">*</span></label>
+                        <select id="wallet-cuenta-tipo" class="form-select form-select-sm">
+                            <option value="debito">Débito</option>
+                            <option value="credito">Crédito</option>
+                            <option value="ahorro">Ahorro</option>
+                            <option value="ahorro_retirable">Ahorro retirable</option>
+                            <option value="aportaciones">Aportaciones</option>
+                            <option value="efectivo">Efectivo</option>
+                        </select>
+                    </div>
+                    <div class="col-sm-6">
+                        <label class="form-label small mb-1">Saldo inicial (L)</label>
+                        <input type="number" id="wallet-cuenta-saldo-inicial" class="form-control form-control-sm" value="0" min="0" step="0.01">
+                    </div>
+                </div>
+                <div class="mb-2">
+                    <label class="form-label small mb-1">Color</label>
+                    <input type="color" id="wallet-cuenta-color" class="form-control form-control-color form-control-sm" value="#64748b">
+                </div>
+                <div class="form-check mt-2 js-wallet-cuenta-activo-row" style="display:none;">
+                    <input class="form-check-input" type="checkbox" id="wallet-cuenta-activo" checked>
+                    <label class="form-check-label small" for="wallet-cuenta-activo">Cuenta activa</label>
+                </div>
+            </div>
+            <div class="modal-footer py-2">
+                <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" id="btn-wallet-cuenta-save" class="btn btn-primary btn-sm">Guardar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{# ── Modal nuevo movimiento ── #}
+<div class="modal fade grova-modal--macos" id="modal-nuevo-movimiento" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header py-2">
+                <h5 class="modal-title">Nuevo movimiento</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body py-3">
+                <input type="hidden" id="wallet-entry-csrf" value="{{ csrf_token('wallet_entry') }}">
+                <div class="row g-3">
+                    <div class="col-12">
+                        <label class="form-label small mb-1">Tipo</label>
+                        <div class="d-flex gap-3">
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="wallet-tipo" id="wallet-tipo-gasto" value="gasto" checked>
+                                <label class="form-check-label text-danger" for="wallet-tipo-gasto">Gasto</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="wallet-tipo" id="wallet-tipo-ingreso" value="ingreso">
+                                <label class="form-check-label text-success" for="wallet-tipo-ingreso">Ingreso</label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-sm-6">
+                        <label class="form-label small mb-1" for="wallet-monto">Monto (L) <span class="text-danger">*</span></label>
+                        <input type="number" class="form-control form-control-sm" id="wallet-monto" min="0.01" step="0.01" placeholder="0.00">
+                    </div>
+                    <div class="col-sm-6">
+                        <label class="form-label small mb-1" for="wallet-fecha">Fecha <span class="text-danger">*</span></label>
+                        <input type="date" class="form-control form-control-sm" id="wallet-fecha" value="{{ 'now'|date('Y-m-d') }}">
+                    </div>
+                    <div class="col-sm-6">
+                        <label class="form-label small mb-1" for="wallet-category">Categoría</label>
+                        <div class="input-group input-group-sm">
+                        <select class="form-select form-select-sm" id="wallet-category"
+                                data-placeholder="Sin categoría" data-allow-clear="true"
+                                data-dropdown-parent="#modal-nuevo-movimiento">
+                            <option value=""></option>
+                            {% set gastos_cat   = categories|filter(c => c.tipo == 'gasto') %}
+                            {% set ingresos_cat = categories|filter(c => c.tipo == 'ingreso') %}
+                            {% if ingresos_cat|length %}
+                            <optgroup label="Ingresos">{% for cat in ingresos_cat %}<option value="{{ cat.id }}">{{ cat.nombre }}</option>{% endfor %}</optgroup>
+                            {% endif %}
+                            {% if gastos_cat|length %}
+                            <optgroup label="Gastos">{% for cat in gastos_cat %}<option value="{{ cat.id }}">{{ cat.nombre }}</option>{% endfor %}</optgroup>
+                            {% endif %}
+                        </select>
+                        <button type="button" class="btn btn-outline-secondary js-quick-add-cat" data-target="wallet-category" title="Nueva categoría"><i class="bi bi-plus-lg"></i></button>
+                        </div>
+                    </div>
+                    <div class="col-sm-6">
+                        <label class="form-label small mb-1" for="wallet-cuenta-sel">Cuenta</label>
+                        <select class="form-select form-select-sm grova-select2" id="wallet-cuenta-sel"
+                                data-placeholder="Cartera general" data-allow-clear="true"
+                                data-dropdown-parent="#modal-nuevo-movimiento">
+                            <option value=""></option>
+                            {% for cuenta in cuentas %}
+                            <option value="{{ cuenta.id }}">{{ cuenta.nombre }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label small mb-1" for="wallet-desc">Descripción</label>
+                        <input type="text" class="form-control form-control-sm" id="wallet-desc" placeholder="Opcional" maxlength="255">
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer py-2">
+                <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" id="btn-wallet-entry-save" class="btn btn-primary btn-sm">Guardar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{# ── Historial de transferencias ── #}
+<div class="content-card mt-4">
+    <div class="content-card-header">
+        <span><i class="bi bi-arrow-left-right me-1"></i>Transferencias entre cuentas</span>
+    </div>
+    <div class="content-card-body p-0">
+        <div id="wallet-transferencias-lista"></div>
+    </div>
+</div>
+
+{# ── Modal Transferencia ── #}
+<div class="modal fade grova-modal--macos" id="modal-transferencia" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header py-2">
+                <h5 class="modal-title"><i class="bi bi-arrow-left-right me-2"></i>Transferencia entre cuentas</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body py-3">
+                <input type="hidden" id="tf-csrf" value="{{ csrf_token('wallet_transferencia_create') }}">
+                <div class="row g-3">
+                    <div class="col-sm-6">
+                        <label class="form-label small mb-1">Fecha <span class="text-danger">*</span></label>
+                        <input type="date" class="form-control form-control-sm" id="tf-fecha" value="{{ 'now'|date('Y-m-d') }}">
+                    </div>
+                    <div class="col-sm-6">
+                        <label class="form-label small mb-1">Monto (L) <span class="text-danger">*</span></label>
+                        <input type="number" class="form-control form-control-sm" id="tf-monto" min="0.01" step="0.01" placeholder="0.00">
+                    </div>
+                    <div class="col-sm-6">
+                        <label class="form-label small mb-1">Desde <span class="text-danger">*</span></label>
+                        <select class="form-select form-select-sm" id="tf-origen">
+                            <option value="">— Cartera general —</option>
+                            {% for cuenta in cuentas %}
+                            <option value="{{ cuenta.id }}">{{ cuenta.nombre }}{% if cuenta.numeroCuenta %} · {{ cuenta.numeroCuenta|decrypt }}{% endif %}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-sm-6">
+                        <label class="form-label small mb-1">Hacia <span class="text-danger">*</span></label>
+                        <select class="form-select form-select-sm" id="tf-destino">
+                            <option value="">— Cartera general —</option>
+                            {% for cuenta in cuentas %}
+                            <option value="{{ cuenta.id }}">{{ cuenta.nombre }}{% if cuenta.numeroCuenta %} · {{ cuenta.numeroCuenta|decrypt }}{% endif %}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-sm-6">
+                        <label class="form-label small mb-1">Comisión (L) <small class="text-muted">opcional</small></label>
+                        <input type="number" class="form-control form-control-sm" id="tf-comision" min="0" step="0.01" placeholder="0.00" value="0">
+                    </div>
+                    <div class="col-sm-6">
+                        <label class="form-label small mb-1">Concepto <small class="text-muted">opcional</small></label>
+                        <input type="text" class="form-control form-control-sm" id="tf-concepto" placeholder="Ej: pago tarjeta" maxlength="255">
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer py-2">
+                <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" id="btn-tf-save" class="btn btn-primary btn-sm">
+                    <i class="bi bi-arrow-left-right me-1"></i>Transferir
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{# ── Modal Institución ── #}
+<div class="modal fade grova-modal--macos" id="modal-institucion" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-sm">
+        <div class="modal-content">
+            <div class="modal-header py-2">
+                <h5 class="modal-title" id="modal-inst-title"><i class="bi bi-bank me-2"></i>Nueva institución</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body py-3">
+                <input type="hidden" id="inst-mode" value="create">
+                <input type="hidden" id="inst-edit-id" value="">
+                <input type="hidden" id="inst-csrf" value="{{ csrf_token('wallet_institucion_create') }}">
+                <input type="hidden" id="inst-delete-token" value="">
+                <div class="mb-3">
+                    <label class="form-label small mb-1">Nombre <span class="text-danger">*</span></label>
+                    <input type="text" class="form-control form-control-sm" id="inst-nombre" placeholder="Ej: Banco Atlántida" maxlength="100">
+                </div>
+                <div class="mb-2">
+                    <label class="form-label small mb-1">Color de marca</label>
+                    <div class="d-flex gap-2 align-items-center">
+                        <input type="color" class="form-control form-control-color form-control-sm" id="inst-color" value="#64748b" style="width:48px;height:32px;padding:2px;">
+                        <span class="small text-muted">Color representativo del banco</span>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer py-2 justify-content-between">
+                <button type="button" id="btn-inst-delete" class="btn btn-sm btn-link text-danger p-0" style="display:none;">
+                    <i class="bi bi-trash3 me-1"></i>Eliminar
+                </button>
+                <div class="d-flex gap-2">
+                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" id="btn-inst-save" class="btn btn-primary btn-sm">Guardar</button>
+                </div>
+            </div>
         </div>
     </div>
 </div>
@@ -213,11 +852,1686 @@ body.light-mode .cat-chip { background:#f1f5f9; color:#475569; }
 
 {% block app_page_scripts %}
 <script>
-// Inicializar Select2 cuando el modal se abre
-document.getElementById('modal-nuevo-movimiento').addEventListener('shown.bs.modal', function () {
-    if (window.GrovaSelect2) {
-        GrovaSelect2.initAll(this);
+(function () {
+    var ENTRIES_URL       = {{ path('grova_wallet_entries_data', {_locale: app.request.locale})|json_encode|raw }};
+    var CUENTAS_DATA_URL  = {{ path('grova_wallet_cuenta_data', {_locale: app.request.locale})|json_encode|raw }};
+    var CREATE_CUENTA_URL = {{ path('grova_wallet_cuenta_create', {_locale: app.request.locale})|json_encode|raw }};
+    var CREATE_ENTRY_URL  = {{ path('grova_wallet_entry_create', {_locale: app.request.locale})|json_encode|raw }};
+    var CREATE_CUENTA_TOKEN = {{ csrf_token('wallet_cuenta_create')|json_encode|raw }};
+
+    var INST_DATA_URL    = {{ path('grova_wallet_institucion_data', {_locale: app.request.locale})|json_encode|raw }};
+    var INST_CREATE_URL  = {{ path('grova_wallet_institucion_create', {_locale: app.request.locale})|json_encode|raw }};
+    var INST_EDIT_URL_TPL   = {{ path('grova_wallet_institucion_edit',   {id: '__ID__', _locale: app.request.locale})|json_encode|raw }};
+    var INST_DELETE_URL_TPL = {{ path('grova_wallet_institucion_delete', {id: '__ID__', _locale: app.request.locale})|json_encode|raw }};
+
+    var walletDt = null;
+
+    function toast(icon, title) {
+        if (!window.Swal) return;
+        window.Swal.fire({ toast: true, position: 'top-end', icon: icon, title: title,
+            showConfirmButton: false, timer: icon === 'error' ? 9000 : 5000, timerProgressBar: true });
     }
-});
+
+    async function postJson(url, fd) {
+        var r = await fetch(url, { method: 'POST', body: fd, credentials: 'same-origin',
+            headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' } });
+        var txt = await r.text();
+        try { return [r.ok, JSON.parse(txt)]; } catch(e) { return [false, { message: txt }]; }
+    }
+
+    /* ── DataTable movimientos ── */
+    function initEntriesTable() {
+        var el = document.getElementById('wallet-entries-table');
+        if (!el || typeof DataTable === 'undefined' || el.dataset.dtInit) return;
+        el.dataset.dtInit = '1';
+
+        var locale = {{ app.request.locale|json_encode|raw }};
+        var dtLang = locale === 'en'
+            ? 'https://cdn.datatables.net/plug-ins/2.1.8/i18n/en-GB.json'
+            : 'https://cdn.datatables.net/plug-ins/2.1.8/i18n/es-ES.json';
+
+        walletDt = new DataTable(el, {
+            ajax: { url: ENTRIES_URL, dataSrc: 'data' },
+            columns: [
+                { data: { _: 'fecha', sort: 'fecha_sort' } },
+                { data: 'desc' },
+                { data: 'categoria', orderable: false },
+                { data: 'cuenta', orderable: false },
+                { data: 'tipo', orderable: false },
+                { data: { _: 'monto', sort: 'monto_sort' }, className: 'text-end' },
+                { data: 'ops', orderable: false },
+            ],
+            language: { url: dtLang },
+            pageLength: 20,
+            order: [[0, 'desc']],
+            layout: { topStart: { pageLength: { menu: [10, 20, 50, -1] } }, topEnd: 'search' },
+            initComplete: function() { bindDeleteEntries(); },
+            drawCallback:  function() { bindDeleteEntries(); },
+        });
+    }
+
+    function bindDeleteEntries() {
+        document.querySelectorAll('.js-wallet-entry-delete').forEach(function(form) {
+            if (form.dataset.bound) return;
+            form.dataset.bound = '1';
+            form.addEventListener('submit', async function(e) {
+                e.preventDefault();
+                if (!window.Swal) { return; }
+                var res = await window.Swal.fire({
+                    title: '¿Eliminar movimiento?', icon: 'warning',
+                    showCancelButton: true, confirmButtonColor: '#dc3545',
+                    confirmButtonText: 'Sí, eliminar', cancelButtonText: 'Cancelar'
+                });
+                if (!res.isConfirmed) return;
+                var fd = new FormData();
+                fd.append('_token', form.dataset.token);
+                var [ok, json] = await postJson(form.dataset.action, fd);
+                if (ok && json.success) {
+                    toast('success', json.message || 'Eliminado.');
+                    if (walletDt) walletDt.ajax.reload(null, false);
+                    loadCuentasSaldos();
+                } else {
+                    toast('error', (json && json.message) || 'Error.');
+                }
+            });
+        });
+    }
+
+    /* ── Saldos de cuentas (carga asíncrona) ── */
+    async function loadCuentasSaldos() {
+        try {
+            var r = await fetch(CUENTAS_DATA_URL, { credentials: 'same-origin',
+                headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' } });
+            var json = await r.json();
+            (json.data || []).forEach(function(row) {
+                var el = document.querySelector('.js-cuenta-saldo[data-cuenta-id="' + row.id + '"]');
+                if (!el) return;
+                var isCredito = el.dataset.credito === '1';
+                var saldo = parseFloat(row.saldo);
+                el.textContent = (isCredito ? 'Deuda: ' : '') + row.saldoFmt;
+                el.className = 'wallet-cuenta-saldo js-cuenta-saldo ' + (isCredito ? 'tipo-gasto' : (saldo >= 0 ? 'saldo-pos' : 'saldo-neg'));
+                el.dataset.cuentaId = row.id;
+                el.dataset.credito  = el.dataset.credito;
+            });
+        } catch(e) {}
+    }
+
+    /* ── Modal nueva/editar cuenta ── */
+    function bindCuentaModal() {
+        var modal = document.getElementById('modal-wallet-cuenta');
+        if (!modal || modal.dataset.bound) return;
+        modal.dataset.bound = '1';
+
+        modal.addEventListener('show.bs.modal', function(ev) {
+            var btn    = ev.relatedTarget;
+            var isEdit = btn && btn.classList.contains('js-wallet-cuenta-edit');
+            document.getElementById('modal-wallet-cuenta-title').textContent = isEdit ? 'Editar cuenta' : 'Nueva cuenta';
+            document.getElementById('wallet-cuenta-mode').value = isEdit ? 'edit' : 'create';
+            document.querySelector('.js-wallet-cuenta-activo-row').style.display = isEdit ? '' : 'none';
+
+            if (isEdit) {
+                document.getElementById('wallet-cuenta-edit-url').value      = btn.dataset.editUrl;
+                document.getElementById('wallet-cuenta-csrf').value          = btn.dataset.editToken;
+                document.getElementById('wallet-cuenta-nombre').value          = btn.dataset.nombre;
+                document.getElementById('wallet-cuenta-institucion-id').value  = btn.dataset.institucionId || '';
+                document.getElementById('wallet-cuenta-numero-cuenta').value    = btn.dataset.numeroCuenta || '';
+                document.getElementById('wallet-cuenta-tarjeta-digitos').value  = btn.dataset.tarjetaDigitos || '';
+                document.getElementById('wallet-cuenta-tipo').value             = btn.dataset.tipo;
+                document.getElementById('wallet-cuenta-saldo-inicial').value    = btn.dataset.saldoInicial;
+                document.getElementById('wallet-cuenta-color').value            = btn.dataset.color;
+                document.getElementById('wallet-cuenta-activo').checked         = btn.dataset.activo === '1';
+            } else {
+                document.getElementById('wallet-cuenta-edit-url').value         = '';
+                document.getElementById('wallet-cuenta-csrf').value             = CREATE_CUENTA_TOKEN;
+                document.getElementById('wallet-cuenta-nombre').value           = '';
+                document.getElementById('wallet-cuenta-institucion-id').value   = '';
+                document.getElementById('wallet-cuenta-numero-cuenta').value    = '';
+                document.getElementById('wallet-cuenta-tarjeta-digitos').value  = '';
+                document.getElementById('wallet-cuenta-tipo').value             = 'debito';
+                document.getElementById('wallet-cuenta-saldo-inicial').value    = '0';
+                document.getElementById('wallet-cuenta-color').value            = '#64748b';
+                document.getElementById('wallet-cuenta-activo').checked         = true;
+            }
+        });
+
+        document.getElementById('btn-wallet-cuenta-save').addEventListener('click', async function() {
+            var nombre = document.getElementById('wallet-cuenta-nombre').value.trim();
+            if (!nombre) { toast('warning', 'El nombre es obligatorio.'); return; }
+
+            var mode = document.getElementById('wallet-cuenta-mode').value;
+            var url  = mode === 'edit' ? document.getElementById('wallet-cuenta-edit-url').value : CREATE_CUENTA_URL;
+
+            var fd = new FormData();
+            fd.append('_token',        document.getElementById('wallet-cuenta-csrf').value);
+            fd.append('nombre',        nombre);
+            fd.append('institucion_id',   document.getElementById('wallet-cuenta-institucion-id').value);
+            fd.append('numero_cuenta',    document.getElementById('wallet-cuenta-numero-cuenta').value.trim());
+            fd.append('tarjeta_digitos',  document.getElementById('wallet-cuenta-tarjeta-digitos').value.trim());
+            fd.append('tipo',             document.getElementById('wallet-cuenta-tipo').value);
+            fd.append('saldo_inicial', document.getElementById('wallet-cuenta-saldo-inicial').value);
+            fd.append('color',         document.getElementById('wallet-cuenta-color').value);
+            fd.append('activo',        document.getElementById('wallet-cuenta-activo').checked ? '1' : '0');
+
+            var [ok, json] = await postJson(url, fd);
+            if (ok && json.success) {
+                toast('success', json.message || 'Guardado.');
+                var inst = window.bootstrap && window.bootstrap.Modal.getInstance(modal);
+                if (inst) inst.hide();
+                setTimeout(function() { window.location.reload(); }, 700);
+            } else {
+                toast('error', (json && json.message) || 'Error al guardar.');
+            }
+        });
+    }
+
+    /* ── Eliminar cuenta ── */
+    function bindCuentaDelete() {
+        document.querySelectorAll('.js-wallet-cuenta-delete').forEach(function(btn) {
+            if (btn.dataset.bound) return;
+            btn.dataset.bound = '1';
+            btn.addEventListener('click', async function() {
+                if (!window.Swal) return;
+                var res = await window.Swal.fire({
+                    title: '¿Eliminar cuenta?',
+                    text: '"' + btn.dataset.nombre + '" — los movimientos asociados quedarán en Cartera general.',
+                    icon: 'warning', showCancelButton: true, confirmButtonColor: '#dc3545',
+                    confirmButtonText: 'Sí, eliminar', cancelButtonText: 'Cancelar'
+                });
+                if (!res.isConfirmed) return;
+                var fd = new FormData();
+                fd.append('_token', btn.dataset.deleteToken);
+                var [ok, json] = await postJson(btn.dataset.deleteUrl, fd);
+                if (ok && json.success) {
+                    toast('success', json.message || 'Cuenta eliminada.');
+                    var col = document.getElementById('wallet-cuenta-col-' + btn.dataset.cuentaId);
+                    if (col) col.remove();
+                } else {
+                    toast('error', (json && json.message) || 'Error.');
+                }
+            });
+        });
+    }
+
+    /* ── Nuevo movimiento ── */
+    function bindNuevoMovimiento() {
+        var modal = document.getElementById('modal-nuevo-movimiento');
+        if (!modal || modal.dataset.bound) return;
+        modal.dataset.bound = '1';
+
+        modal.addEventListener('shown.bs.modal', function() {
+            if (window.GrovaSelect2) GrovaSelect2.initAll(modal);
+        });
+
+        document.getElementById('btn-wallet-entry-save').addEventListener('click', async function() {
+            var monto = parseFloat(document.getElementById('wallet-monto').value);
+            if (!monto || monto <= 0) { toast('warning', 'Ingresá un monto válido.'); return; }
+
+            var tipo = document.querySelector('input[name="wallet-tipo"]:checked').value;
+            var fd   = new FormData();
+            fd.append('_token',      document.getElementById('wallet-entry-csrf').value);
+            fd.append('tipo',        tipo);
+            fd.append('monto',       monto);
+            fd.append('fecha',       document.getElementById('wallet-fecha').value);
+            fd.append('descripcion', document.getElementById('wallet-desc').value);
+            fd.append('category_id', document.getElementById('wallet-category').value || '');
+            fd.append('cuenta_id',   document.getElementById('wallet-cuenta-sel').value || '');
+
+            var [ok, json] = await postJson(CREATE_ENTRY_URL, fd);
+            if (ok && json.success) {
+                toast('success', json.message || 'Registrado.');
+                var inst = window.bootstrap && window.bootstrap.Modal.getInstance(modal);
+                if (inst) inst.hide();
+                document.getElementById('wallet-monto').value = '';
+                document.getElementById('wallet-desc').value  = '';
+                if (walletDt) walletDt.ajax.reload(null, false);
+                loadCuentasSaldos();
+            } else {
+                toast('error', (json && json.message) || 'Error al guardar.');
+            }
+        });
+    }
+
+    // ── Categorías ───────────────────────────────────────────────────────────
+
+    var CAT_DATA_URL   = {{ path('grova_wallet_category_data', {_locale: app.request.locale})|json_encode|raw }};
+    var CAT_CREATE_URL = {{ path('grova_wallet_category_create', {_locale: app.request.locale})|json_encode|raw }};
+    var CAT_CREATE_TOKEN = {{ csrf_token('wallet_category_create')|json_encode|raw }};
+
+    var allCategories = [];
+
+    function loadCategorias() {
+        fetch(CAT_DATA_URL, { credentials: 'same-origin', headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' } })
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                allCategories = data.categories || [];
+                rebuildCategorySelects(allCategories);
+
+                var lista = document.getElementById('wallet-categorias-lista');
+                if (allCategories.length === 0) {
+                    lista.innerHTML = '<div class="grova-empty-state py-4"><div class="grova-empty-icon"><i class="bi bi-tags"></i></div><div class="grova-empty-title">Sin categorías</div><div class="grova-empty-desc">Creá categorías para clasificar tus gastos e ingresos.</div></div>';
+                    return;
+                }
+                var html = '<div class="table-responsive"><table class="table table-hover mb-0" style="color:inherit;font-size:13px;"><thead><tr>'
+                    + '<th>Nombre</th><th style="width:80px;">Tipo</th><th style="width:80px;">Ícono</th><th style="width:60px;"></th>'
+                    + '</tr></thead><tbody>';
+                allCategories.forEach(function(c) {
+                    var nombreDisplay = c.parentNombre
+                        ? '<span class="text-muted" style="font-size:11px;">' + c.parentNombre + ' ›</span> <span style="color:' + c.color + ';font-weight:600;">' + c.nombre + '</span>'
+                        : '<span style="color:' + c.color + ';font-weight:700;">' + c.nombre + '</span>';
+                    html += '<tr data-id="' + c.id + '" data-color="' + c.color + '"' + (c.parentId ? ' style="background:rgba(255,255,255,.02);"' : '') + '>'
+                        + '<td>' + nombreDisplay + '</td>'
+                        + '<td><span class="badge ' + (c.tipo === 'ingreso' ? 'bg-success bg-opacity-20 text-success' : 'bg-danger bg-opacity-20 text-danger') + '" style="font-size:10px;">' + c.tipo.toUpperCase() + '</span></td>'
+                        + '<td><i class="' + iconoClass(c.icono) + '" style="color:' + c.color + ';font-size:16px;"></i></td>'
+                        + '<td class="text-end d-flex gap-1 justify-content-end">'
+                        + '<button class="btn btn-link btn-sm p-0 text-secondary js-cat-edit" data-id="' + c.id + '" data-nombre="' + c.nombre.replace(/"/g,'&quot;') + '" data-tipo="' + c.tipo + '" data-icono="' + c.icono + '" data-color="' + c.color + '" data-parent-id="' + (c.parentId || '') + '" data-token-edit="' + c.tokenEdit + '" title="Editar"><i class="bi bi-pencil" style="font-size:11px;"></i></button>'
+                        + '<button class="btn btn-link btn-sm p-0 text-danger js-cat-delete" data-id="' + c.id + '" data-nombre="' + c.nombre.replace(/"/g,'&quot;') + '" data-token-delete="' + c.tokenDelete + '" title="Eliminar"><i class="bi bi-trash3" style="font-size:11px;"></i></button>'
+                        + '</td></tr>';
+                });
+                html += '</tbody></table></div>';
+                lista.innerHTML = html;
+                bindCatEdit();
+                bindCatDelete();
+            });
+    }
+
+    // ── Rebuild category selects con optgroups ───────────────────────────────
+    function rebuildCategorySelects(categories) {
+        ['gf-category-id', 'wallet-category'].forEach(function(selId) {
+            var sel = document.getElementById(selId);
+            if (!sel) { return; }
+            var currentVal = sel.value;
+            // Conservar solo el primer option vacío
+            while (sel.options.length > 1) { sel.remove(1); }
+
+            // Separar raíces con hijos, raíces sin hijos, y subcategorías
+            var raicesConHijos = {};
+            categories.forEach(function(c) {
+                if (c.parentId) { raicesConHijos[c.parentId] = true; }
+            });
+
+            // Agrupar
+            var grupos = {};   // parentId → hijos[]
+            var sueltas = [];  // raíces sin hijos
+            categories.forEach(function(c) {
+                if (!c.parentId) {
+                    if (raicesConHijos[c.id]) {
+                        grupos[c.id] = grupos[c.id] || { parent: c, hijos: [] };
+                    } else {
+                        sueltas.push(c);
+                    }
+                } else {
+                    grupos[c.parentId] = grupos[c.parentId] || { parent: null, hijos: [] };
+                    grupos[c.parentId].hijos.push(c);
+                }
+            });
+
+            // Agregar raíces con subcategorías como optgroup
+            Object.values(grupos).forEach(function(g) {
+                if (!g.parent) { return; }
+                var grp = document.createElement('optgroup');
+                grp.label = g.parent.icono ? g.parent.nombre : g.parent.nombre;
+                // La raíz misma también es seleccionable
+                var optParent = document.createElement('option');
+                optParent.value = g.parent.id;
+                optParent.textContent = g.parent.nombre;
+                grp.appendChild(optParent);
+                g.hijos.forEach(function(h) {
+                    var opt = document.createElement('option');
+                    opt.value = h.id;
+                    opt.textContent = '› ' + h.nombre;
+                    grp.appendChild(opt);
+                });
+                sel.appendChild(grp);
+            });
+
+            // Raíces sin hijos al final
+            sueltas.forEach(function(c) {
+                var opt = document.createElement('option');
+                opt.value = c.id;
+                opt.textContent = c.nombre;
+                sel.appendChild(opt);
+            });
+
+            sel.value = currentVal;
+        });
+    }
+
+    function addOptionToSelects(cat) {
+        var id     = cat.id;
+        var nombre = cat.nombreCompleto || cat.nombre;
+        ['gf-category-id', 'wallet-category'].forEach(function(selId) {
+            var sel = document.getElementById(selId);
+            if (!sel) { return; }
+            var opt = document.createElement('option');
+            opt.value = id;
+            opt.textContent = cat.parentId ? '› ' + cat.nombre : cat.nombre;
+            opt.selected = true;
+            sel.appendChild(opt);
+        });
+    }
+
+    // ── Poblar select de padre en modal de categoría ─────────────────────────
+    function rebuildParentSelect(categories, currentParentId, editId) {
+        var sel = document.getElementById('cat-parent-id');
+        while (sel.options.length > 1) { sel.remove(1); }
+        categories.filter(function(c) {
+            return !c.parentId && c.id !== editId;  // solo raíces, no la propia
+        }).forEach(function(c) {
+            var opt = document.createElement('option');
+            opt.value = c.id;
+            opt.textContent = c.nombre;
+            if (c.id === currentParentId) { opt.selected = true; }
+            sel.appendChild(opt);
+        });
+        sel.value = currentParentId || '';
+        // Ocultar tipo si hay padre seleccionado (hereda del padre)
+        document.getElementById('cat-tipo-row').style.display = sel.value ? 'none' : '';
+    }
+
+    document.getElementById('cat-parent-id').addEventListener('change', function() {
+        document.getElementById('cat-tipo-row').style.display = this.value ? 'none' : '';
+    });
+
+    function openCatModal(mode, data) {
+        document.getElementById('cat-mode').value  = mode;
+        document.getElementById('modal-categoria-title').textContent = mode === 'create' ? 'Nueva categoría' : 'Editar categoría';
+        document.getElementById('cat-nombre').value = data.nombre || '';
+        document.getElementById('cat-tipo').value   = data.tipo || 'gasto';
+        const iconoActivo = data.icono || 'bi-tag';
+        document.getElementById('cat-icono').value  = iconoActivo;
+        document.getElementById('cat-icono-preview').className = iconoClass(iconoActivo) + ' fs-5';
+        document.querySelectorAll('.js-icono-opt').forEach(function(b) {
+            const activo = b.dataset.icono === iconoActivo;
+            b.classList.toggle('btn-primary', activo);
+            b.classList.toggle('text-white',  activo);
+            b.classList.toggle('btn-outline-secondary', !activo);
+        });
+        document.getElementById('icono-picker-grid').classList.add('d-none');
+        const colorActivo = data.color || '#64748b';
+        setColorActivo(colorActivo);
+        renderColorPalette(colorActivo, data.excludeId || null);
+        document.getElementById('cat-csrf').value   = data.csrf || CAT_CREATE_TOKEN;
+        document.getElementById('cat-edit-url').value = data.editUrl || '';
+        rebuildParentSelect(allCategories, data.parentId || null, data.excludeId || null);
+        bootstrap.Modal.getOrCreateInstance(document.getElementById('modal-categoria')).show();
+    }
+
+    // ── Color palette ────────────────────────────────────────────────────────
+    const COLORES_PALETA = [
+        '#ef4444','#f97316','#f59e0b','#eab308','#84cc16',
+        '#22c55e','#10b981','#14b8a6','#06b6d4','#3b82f6',
+        '#6366f1','#8b5cf6','#a855f7','#ec4899','#f43f5e',
+        '#64748b','#6b7280','#78716c','#0ea5e9','#d97706',
+    ];
+
+    function setColorActivo(hex) {
+        document.getElementById('cat-color').value = hex;
+        document.getElementById('cat-color-preview').style.background = hex;
+        document.getElementById('cat-color-hex').textContent = hex;
+    }
+
+    function getColoresUsados(excludeId) {
+        const usados = new Set();
+        document.querySelectorAll('#wallet-categorias-lista [data-color]').forEach(function(el) {
+            if (excludeId && el.dataset.id === String(excludeId)) return;
+            usados.add(el.dataset.color);
+        });
+        return usados;
+    }
+
+    function renderColorPalette(colorActivo, excludeId) {
+        const paleta  = document.getElementById('cat-color-palette');
+        const usados  = getColoresUsados(excludeId);
+        paleta.innerHTML = '';
+        COLORES_PALETA.forEach(function(hex) {
+            if (usados.has(hex)) return; // ya está en uso
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'js-color-opt rounded border-0';
+            btn.dataset.color = hex;
+            btn.style.cssText = 'width:22px;height:22px;background:' + hex + ';cursor:pointer;outline:' + (hex === colorActivo ? '2px solid #1d4ed8' : 'none') + ';outline-offset:1px;';
+            btn.title = hex;
+            paleta.appendChild(btn);
+        });
+    }
+
+    document.getElementById('cat-color-palette').addEventListener('click', function(e) {
+        const btn = e.target.closest('.js-color-opt');
+        if (!btn) return;
+        setColorActivo(btn.dataset.color);
+        document.querySelectorAll('.js-color-opt').forEach(function(b) {
+            b.style.outline = b.dataset.color === btn.dataset.color ? '2px solid #1d4ed8' : 'none';
+        });
+    });
+
+    document.getElementById('cat-color').addEventListener('input', function() {
+        setColorActivo(this.value);
+        document.querySelectorAll('.js-color-opt').forEach(function(b) { b.style.outline = 'none'; });
+    });
+
+    document.getElementById('btn-color-random').addEventListener('click', function() {
+        const excludeId = document.getElementById('cat-mode').value === 'edit'
+            ? parseInt(document.getElementById('cat-edit-url').value.match(/\/(\d+)\/edit/)?.[1]) || null
+            : null;
+        const usados    = getColoresUsados(excludeId);
+        const disponibles = COLORES_PALETA.filter(function(c) { return !usados.has(c); });
+        if (!disponibles.length) { return; }
+        const random = disponibles[Math.floor(Math.random() * disponibles.length)];
+        setColorActivo(random);
+        renderColorPalette(random, excludeId);
+    });
+
+    // ── Icon picker ─────────────────────────────────────────────────────────
+    // Formato: si empieza con 'fa-' se usa tal cual (Font Awesome), sino se antepone 'bi ' (Bootstrap Icons)
+    function iconoClass(icono) {
+        return icono.startsWith('fa-') ? icono : 'bi ' + icono;
+    }
+
+    // [icono, "tags de búsqueda"]
+    const ICONOS_DISPONIBLES = [
+        // Bootstrap Icons
+        ['bi-tag',             'categoria etiqueta general'],
+        ['bi-tags',            'categorias etiquetas'],
+        ['bi-star',            'estrella favorito'],
+        ['bi-trophy',          'trofeo logro premio'],
+        ['bi-gift',            'regalo regalo presente'],
+        ['bi-balloon',         'globo celebracion fiesta'],
+        ['bi-house',           'casa hogar vivienda'],
+        ['bi-house-door',      'casa hogar vivienda entrada'],
+        ['bi-building',        'edificio oficina empresa'],
+        ['bi-shop',            'tienda comercio'],
+        ['bi-lightbulb',       'luz electricidad bombilla luz hogar'],
+        ['bi-droplet',         'agua gota liquido agua beber botellones'],
+        ['bi-droplet-fill',    'agua gota liquido agua beber botellones'],
+        ['bi-water',           'agua agua potable botellones'],
+        ['bi-lightning',       'electricidad luz energia rayo'],
+        ['bi-cup-hot',         'cafe te bebida caliente'],
+        ['bi-cup-straw',       'bebida jugo refresco'],
+        ['bi-egg-fried',       'comida huevo desayuno'],
+        ['bi-basket',          'compras supermercado mercado'],
+        ['bi-cart',            'carrito compras supermercado'],
+        ['bi-bag',             'bolsa compras ropa'],
+        ['bi-bag-heart',       'bolsa compras moda ropa'],
+        ['bi-wifi',            'internet wifi red'],
+        ['bi-phone',           'celular telefono movil'],
+        ['bi-tv',              'television tv entretenimiento'],
+        ['bi-pc-display',      'computadora ordenador trabajo'],
+        ['bi-headphones',      'audifonos musica entretenimiento'],
+        ['bi-camera',          'camara foto fotografia'],
+        ['bi-controller',      'videojuegos juegos consola'],
+        ['bi-car-front',       'carro coche auto transporte'],
+        ['bi-bus-front',       'autobus bus transporte publico'],
+        ['bi-bicycle',         'bicicleta bici transporte'],
+        ['bi-fuel-pump',       'gasolina combustible gasolinera'],
+        ['bi-airplane',        'avion vuelo viaje vacaciones'],
+        ['bi-compass',         'brujula viaje exploracion'],
+        ['bi-geo-alt',         'ubicacion lugar mapa'],
+        ['bi-map',             'mapa viaje turismo'],
+        ['bi-heart-pulse',     'salud medico hospital'],
+        ['bi-hospital',        'hospital clinica medico salud'],
+        ['bi-capsule',         'medicamento pastilla medicina salud'],
+        ['bi-bandaid',         'cura herida salud'],
+        ['bi-book',            'libro lectura educacion estudios'],
+        ['bi-mortarboard',     'educacion universidad graduacion'],
+        ['bi-pencil',          'lapiz trabajo educacion'],
+        ['bi-briefcase',       'trabajo oficina maletin'],
+        ['bi-tools',           'herramientas trabajo reparacion'],
+        ['bi-wrench',          'llave herramienta reparacion'],
+        ['bi-hammer',          'martillo construccion reparacion'],
+        ['bi-box-seam',        'caja envio paquete'],
+        ['bi-credit-card',     'tarjeta credito debito pago'],
+        ['bi-cash',            'efectivo dinero billete'],
+        ['bi-cash-coin',       'dinero moneda efectivo'],
+        ['bi-piggy-bank',      'ahorro alcancia banco'],
+        ['bi-wallet2',         'cartera billetera dinero'],
+        ['bi-graph-up',        'grafico ingresos ganancias'],
+        ['bi-graph-down',      'grafico gastos perdidas'],
+        ['bi-bar-chart',       'grafico estadistica'],
+        ['bi-people',          'personas grupo familia social'],
+        ['bi-person',          'persona usuario perfil'],
+        ['bi-shield',          'seguridad proteccion'],
+        ['bi-lock',            'candado seguridad privado'],
+        ['bi-music-note',      'musica entretenimiento'],
+        ['bi-tree',            'arbol naturaleza'],
+        ['bi-dog',             'perro mascota animal'],
+        ['bi-scissors',        'tijeras peluqueria estilista belleza'],
+        ['bi-pie-chart',       'grafico estadistica presupuesto'],
+        // Font Awesome
+        ['fa-solid fa-house',               'casa hogar vivienda'],
+        ['fa-solid fa-bolt',                'electricidad luz energia rayo'],
+        ['fa-solid fa-fire-flame-curved',   'gas fuego energia calor'],
+        ['fa-solid fa-faucet',              'agua grifo plomeria'],
+        ['fa-solid fa-broom',               'limpieza hogar orden'],
+        ['fa-solid fa-utensils',            'comida comer restaurante'],
+        ['fa-solid fa-burger',              'comida rapida hamburguesa'],
+        ['fa-solid fa-pizza-slice',         'pizza comida'],
+        ['fa-solid fa-mug-hot',             'cafe te bebida caliente'],
+        ['fa-solid fa-wine-glass',          'copa vino licor bebida'],
+        ['fa-solid fa-car',                 'carro auto transporte'],
+        ['fa-solid fa-motorcycle',          'moto motocicleta transporte'],
+        ['fa-solid fa-gas-pump',            'gasolina combustible'],
+        ['fa-solid fa-taxi',                'taxi transporte'],
+        ['fa-solid fa-train',               'tren metro transporte'],
+        ['fa-solid fa-heart-pulse',         'salud medico doctor'],
+        ['fa-solid fa-pills',               'pastilla medicamento medicina salud'],
+        ['fa-solid fa-syringe',             'inyeccion vacuna medico'],
+        ['fa-solid fa-tooth',               'diente dentista dental salud'],
+        ['fa-solid fa-spa',                 'spa bienestar relajacion belleza'],
+        ['fa-solid fa-scissors',            'peluqueria barberia belleza corte'],
+        ['fa-solid fa-mobile-screen',       'celular telefono movil internet'],
+        ['fa-solid fa-laptop',              'computadora laptop trabajo'],
+        ['fa-solid fa-wifi',                'internet wifi red'],
+        ['fa-solid fa-headphones',          'audifonos musica'],
+        ['fa-solid fa-gamepad',             'videojuegos juegos consola entretenimiento'],
+        ['fa-solid fa-money-bill-wave',     'dinero efectivo billete'],
+        ['fa-solid fa-coins',               'monedas dinero'],
+        ['fa-solid fa-piggy-bank',          'ahorro alcancia banco'],
+        ['fa-solid fa-wallet',              'cartera billetera'],
+        ['fa-solid fa-receipt',             'recibo factura compra'],
+        ['fa-solid fa-film',               'pelicula cine entretenimiento'],
+        ['fa-solid fa-music',              'musica entretenimiento'],
+        ['fa-solid fa-futbol',             'futbol deporte pelota'],
+        ['fa-solid fa-dumbbell',           'gimnasio ejercicio deporte pesa'],
+        ['fa-solid fa-fish',               'pesca pescado mar'],
+        ['fa-solid fa-campground',         'camping acampar naturaleza'],
+        ['fa-solid fa-graduation-cap',     'educacion universidad graduacion'],
+        ['fa-solid fa-book',               'libro educacion lectura'],
+        ['fa-solid fa-briefcase',          'trabajo oficina'],
+        ['fa-solid fa-screwdriver-wrench', 'herramientas reparacion trabajo'],
+        ['fa-solid fa-dog',                'perro mascota animal'],
+        ['fa-solid fa-cat',                'gato mascota animal'],
+        ['fa-solid fa-leaf',               'naturaleza planta ecologia'],
+        ['fa-solid fa-seedling',           'planta jardin naturaleza'],
+        ['fa-solid fa-user',               'persona usuario perfil'],
+        ['fa-solid fa-users',              'personas grupo familia'],
+        ['fa-solid fa-gift',               'regalo presente cumpleanos'],
+        ['fa-solid fa-baby',               'bebe nino hijo familia'],
+        ['fa-solid fa-church',             'iglesia religion fe'],
+    ];
+
+    (function initIconoPicker() {
+        const grid      = document.getElementById('icono-picker-items');
+        const hidden    = document.getElementById('cat-icono');
+        const preview   = document.getElementById('cat-icono-preview');
+        const container = document.getElementById('icono-picker-grid');
+        const searchEl  = document.getElementById('icono-picker-search');
+        const emptyEl   = document.getElementById('icono-picker-empty');
+
+        function renderIconos(filtro) {
+            grid.innerHTML = '';
+            const q = (filtro || '').toLowerCase().trim();
+            const lista = q
+                ? ICONOS_DISPONIBLES.filter(function(entry) { return entry[1].includes(q) || entry[0].includes(q); })
+                : ICONOS_DISPONIBLES;
+
+            emptyEl.classList.toggle('d-none', lista.length > 0);
+
+            const selectedIcono = hidden.value;
+            lista.forEach(function(entry) {
+                const icono = entry[0];
+                const activo = icono === selectedIcono;
+                const col = document.createElement('div');
+                col.className = 'col-auto';
+                col.innerHTML = '<button type="button" class="btn btn-sm p-1 js-icono-opt ' + (activo ? 'btn-primary text-white' : 'btn-outline-secondary') + '" data-icono="' + icono + '" title="' + entry[1] + '" style="width:34px;height:34px;"><i class="' + iconoClass(icono) + '"></i></button>';
+                grid.appendChild(col);
+            });
+        }
+
+        renderIconos('');
+
+        searchEl.addEventListener('input', function() { renderIconos(this.value); });
+
+        document.getElementById('btn-icono-picker-toggle').addEventListener('click', function() {
+            const abriendo = container.classList.contains('d-none');
+            container.classList.toggle('d-none');
+            if (abriendo) {
+                searchEl.value = '';
+                renderIconos('');
+                searchEl.focus();
+            }
+        });
+
+        document.addEventListener('click', function(e) {
+            const btn = e.target.closest('.js-icono-opt');
+            if (btn) {
+                const icono = btn.dataset.icono;
+                hidden.value = icono;
+                preview.className = iconoClass(icono) + ' fs-5';
+                container.classList.add('d-none');
+                renderIconos(searchEl.value);
+                return;
+            }
+            if (!container.contains(e.target) && e.target.id !== 'btn-icono-picker-toggle') {
+                container.classList.add('d-none');
+            }
+        });
+    })();
+
+    document.getElementById('btn-nueva-categoria').addEventListener('click', function() {
+        openCatModal('create', {});
+    });
+
+    document.getElementById('btn-cat-save').addEventListener('click', async function() {
+        var nombre = document.getElementById('cat-nombre').value.trim();
+        if (!nombre) { toast('error', 'El nombre es obligatorio.'); return; }
+
+        var mode   = document.getElementById('cat-mode').value;
+        var url    = mode === 'edit' ? document.getElementById('cat-edit-url').value : CAT_CREATE_URL;
+        var fd     = new FormData();
+        fd.append('_token',    document.getElementById('cat-csrf').value);
+        fd.append('nombre',    nombre);
+        fd.append('tipo',      document.getElementById('cat-tipo').value);
+        fd.append('icono',     document.getElementById('cat-icono').value.trim() || 'bi-tag');
+        fd.append('color',     document.getElementById('cat-color').value);
+        fd.append('parent_id', document.getElementById('cat-parent-id').value);
+
+        var r    = await fetch(url, { method: 'POST', body: fd, credentials: 'same-origin', headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' } });
+        var json = await r.json();
+        if (json.success) {
+            bootstrap.Modal.getOrCreateInstance(document.getElementById('modal-categoria')).hide();
+            toast('success', json.message);
+            loadCategorias();
+            if (mode === 'create' && json.id) {
+                allCategories.push(json);
+                addOptionToSelects(json);
+            }
+        } else {
+            toast('error', json.message);
+        }
+    });
+
+    function bindCatEdit() {
+        document.querySelectorAll('.js-cat-edit').forEach(function(btn) {
+            if (btn.dataset.bound) return;
+            btn.dataset.bound = '1';
+            btn.addEventListener('click', function() {
+                var editUrl = {{ path('grova_wallet_category_edit', {id: '__ID__', _locale: app.request.locale})|json_encode|raw }}.replace('__ID__', btn.dataset.id);
+                openCatModal('edit', {
+                    nombre: btn.dataset.nombre, tipo: btn.dataset.tipo,
+                    icono: btn.dataset.icono, color: btn.dataset.color,
+                    parentId: btn.dataset.parentId ? parseInt(btn.dataset.parentId) : null,
+                    excludeId: parseInt(btn.dataset.id),
+                    csrf: btn.dataset.tokenEdit, editUrl: editUrl,
+                });
+            });
+        });
+    }
+
+    function bindCatDelete() {
+        document.querySelectorAll('.js-cat-delete').forEach(function(btn) {
+            if (btn.dataset.bound) return;
+            btn.dataset.bound = '1';
+            btn.addEventListener('click', async function() {
+                var res = await window.Swal.fire({
+                    title: '¿Eliminar categoría?',
+                    html: '<p class="mb-0 small"><strong>' + btn.dataset.nombre + '</strong> será eliminada. Los movimientos con esta categoría quedarán sin categoría.</p>',
+                    icon: 'warning', showCancelButton: true,
+                    confirmButtonText: 'Eliminar', cancelButtonText: 'Cancelar', confirmButtonColor: '#ef4444',
+                });
+                if (!res.isConfirmed) return;
+                var fd = new FormData();
+                fd.append('_token', btn.dataset.tokenDelete);
+                var url = {{ path('grova_wallet_category_delete', {id: '__ID__', _locale: app.request.locale})|json_encode|raw }}.replace('__ID__', btn.dataset.id);
+                var r = await fetch(url, { method: 'POST', body: fd, credentials: 'same-origin', headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' } });
+                var json = await r.json();
+                if (json.success) { toast('success', json.message); loadCategorias(); }
+                else { toast('error', json.message); }
+            });
+        });
+    }
+
+    // Botón "+" al lado de cualquier select de categoría
+    document.addEventListener('click', async function(e) {
+        var btn = e.target.closest('.js-quick-add-cat');
+        if (!btn) return;
+        openCatModal('create', {});
+        // Guardar el select destino para cuando se cree
+        document.getElementById('modal-categoria').dataset.targetSelect = btn.dataset.target || '';
+    });
+
+    // Al crear desde el "+", agregar al select específico
+    document.getElementById('modal-categoria').addEventListener('hidden.bs.modal', function() {
+        this.dataset.targetSelect = '';
+    });
+
+    // ── Gastos Fijos ──────────────────────────────────────────────────────────
+
+    var GF_DATA_URL     = {{ path('grova_wallet_gasto_fijo_data', {_locale: app.request.locale})|json_encode|raw }};
+    var GF_CREATE_URL   = {{ path('grova_wallet_gasto_fijo_create', {_locale: app.request.locale})|json_encode|raw }};
+    var GF_CREATE_TOKEN = {{ csrf_token('wallet_gasto_fijo_create')|json_encode|raw }};
+    var GF_DETALLE_TPL  = GF_DATA_URL.replace('/gastos-fijos/data', '/gastos-fijos/__ID__');
+
+    var gfAnio = new Date().getFullYear();
+    var gfMes  = new Date().getMonth() + 1;
+
+    function fmtL(n) { return 'L ' + parseFloat(n).toLocaleString('es-HN', {minimumFractionDigits:2, maximumFractionDigits:2}); }
+
+    function estadoBadge(estado) {
+        if (estado === 'pagado')    return '<span class="badge bg-success bg-opacity-20 text-success" style="font-size:10px;">PAGADO</span>';
+        if (estado === 'vencido')   return '<span class="badge bg-danger bg-opacity-20 text-danger" style="font-size:10px;">VENCIDO</span>';
+        if (estado === 'en_riesgo') return '<span class="badge bg-warning bg-opacity-20 text-warning" style="font-size:10px;">EN RIESGO</span>';
+        return '<span class="badge" style="font-size:10px;background:#1e293b;color:#94a3b8;">PENDIENTE</span>';
+    }
+
+    function renderGastosFijos(data) {
+        var gastos   = data.gastos || [];
+        var lista    = document.getElementById('gf-lista');
+        var statsRow = document.getElementById('gf-stats-row');
+
+        if (gastos.length === 0) {
+            lista.innerHTML = '<div class="grova-empty-state py-4"><div class="grova-empty-icon"><i class="bi bi-calendar-check"></i></div><div class="grova-empty-title">Sin gastos fijos</div><div class="grova-empty-desc">Agregá tus gastos recurrentes: luz, agua, suscripciones, créditos, etc.</div></div>';
+            statsRow.style.setProperty('display', 'none', 'important');
+            return;
+        }
+
+        statsRow.style.removeProperty('display');
+        document.getElementById('gf-stat-total').textContent     = fmtL(data.totalMes);
+        document.getElementById('gf-stat-pagado').textContent    = fmtL(data.totalPagado);
+        document.getElementById('gf-stat-pendiente').textContent = fmtL(data.totalPendiente);
+
+        var html = '<div class="table-responsive"><table class="table table-hover mb-0" style="color:inherit;font-size:13px;"><thead><tr>'
+            + '<th>Nombre</th><th style="width:80px;">Pago</th><th style="width:120px;">Monto</th>'
+            + '<th style="width:110px;">Cuenta</th><th style="width:90px;">Estado</th><th style="width:100px;"></th>'
+            + '</tr></thead><tbody>';
+
+        gastos.forEach(function(g) {
+            // Subinfo para financiados/préstamos
+            var subInfo = '';
+            if ((g.tipo === 'financiado' || g.tipo === 'prestamo') && g.cuotaActual) {
+                var restLabel = g.mesesRestantes !== null ? g.mesesRestantes + ' mes' + (g.mesesRestantes !== 1 ? 'es' : '') + ' restante' + (g.mesesRestantes !== 1 ? 's' : '') : '';
+                subInfo = '<br><span style="font-size:10px;color:#64748b;">Cuota ' + g.cuotaActual + '/' + (g.mesesFinanciamiento || '?')
+                    + (restLabel ? ' · ' + restLabel : '')
+                    + (g.fechaFinPlan ? ' · termina ' + g.fechaFinPlan : '') + '</span>';
+            }
+            if (g.tipo === 'suscripcion') {
+                subInfo = '<br><span style="font-size:10px;color:#64748b;"><i class="bi bi-arrow-repeat"></i> Suscripción</span>';
+            }
+
+            var diaInfo = g.diaPago;
+            if (g.diaCorte) { diaInfo += '<br><small class="text-muted" title="Día de corte">✂ ' + g.diaCorte + '</small>'; }
+
+            var pagos   = g.pagos || [];
+            var opsPagar = '';
+            if (g.activo) {
+                if (g.estado !== 'pagado') {
+                    opsPagar = '<button class="btn btn-success btn-sm js-gf-pagar" style="font-size:11px;padding:2px 8px;"'
+                        + ' data-id="' + g.id + '" data-nombre="' + g.nombre.replace(/"/g,'&quot;') + '" data-monto="' + g.monto + '"'
+                        + ' data-unidad="' + (g.unidad || '') + '" data-precio-unitario="' + (g.precioUnitario || '') + '"'
+                        + ' data-cantidad-base="' + (g.cantidadBase || '') + '"'
+                        + ' data-token="' + g.tokenPagar + '">'
+                        + '<i class="bi bi-check-lg"></i> Pagar</button>';
+                } else if (pagos.length > 0) {
+                    opsPagar = '<button class="btn btn-outline-secondary btn-sm js-gf-revertir" style="font-size:11px;padding:2px 8px;"'
+                        + ' data-pago-id="' + pagos[0].id + '" data-nombre="' + g.nombre.replace(/"/g,'&quot;') + '"'
+                        + ' data-token="' + pagos[0].tokenRevertir + '">'
+                        + '<i class="bi bi-arrow-counterclockwise"></i></button>';
+                }
+            }
+
+            var verBtn = '<a class="btn btn-link btn-sm p-0 text-secondary ms-1"'
+                + ' href="' + GF_DETALLE_TPL.replace('__ID__', g.id) + '"'
+                + ' title="Ver detalle"><i class="bi bi-eye" style="font-size:11px;"></i></a>';
+
+            var editBtn = '<button class="btn btn-link btn-sm p-0 text-secondary js-gf-edit ms-1"'
+                + ' data-id="' + g.id + '"'
+                + ' data-nombre="' + g.nombre.replace(/"/g,'&quot;') + '"'
+                + ' data-tipo="' + (g.tipo || 'generico') + '"'
+                + ' data-monto-base="' + g.montoBase + '"'
+                + ' data-dia-pago="' + g.diaPago + '"'
+                + ' data-dia-corte="' + (g.diaCorte || '') + '"'
+                + ' data-frecuencia="' + (g.frecuencia || 'mensual') + '"'
+                + ' data-unidad="' + (g.unidad || '') + '"'
+                + ' data-presentacion="' + (g.presentacion || '') + '"'
+                + ' data-cantidad-base="' + (g.cantidadBase || '') + '"'
+                + ' data-precio-unitario="' + (g.precioUnitario || '') + '"'
+                + ' data-fecha-inicio-plan="' + (g.fechaInicioPlan || '') + '"'
+                + ' data-meses-financiamiento="' + (g.mesesFinanciamiento || '') + '"'
+                + ' data-monto-prima="' + (g.montoPrima || '') + '"'
+                + ' data-cuotas-especiales=\'' + JSON.stringify(g.cuotasEspeciales || []) + '\''
+                + ' data-monto-post-financiamiento="' + (g.montoPostFinanciamiento || '') + '"'
+                + ' data-cuenta-id="' + (g.cuentaId || '') + '"'
+                + ' data-category-id="' + (g.categoryId || '') + '"'
+                + ' data-nota="' + (g.nota || '').replace(/"/g,'&quot;') + '"'
+                + ' data-activo="' + (g.activo ? '1' : '0') + '"'
+                + ' data-url-pago="' + (g.urlPago || '').replace(/"/g,'&quot;') + '"'
+                + ' data-numero-cliente="' + (g.numeroCliente || '').replace(/"/g,'&quot;') + '"'
+                + ' data-usuario-acceso="' + (g.usuarioAcceso || '').replace(/"/g,'&quot;') + '"'
+                + ' data-clave-acceso="' + (g.claveAcceso || '').replace(/"/g,'&quot;') + '"'
+                + ' data-token-edit="' + g.tokenEdit + '"'
+                + ' title="Editar"><i class="bi bi-pencil" style="font-size:11px;"></i></button>';
+
+            var linkPago = g.urlPago
+                ? ' <a href="' + g.urlPago + '" target="_blank" rel="noopener" title="Ir a pagar" style="font-size:11px;color:#3b82f6;">'
+                  + '<i class="bi bi-box-arrow-up-right"></i></a>'
+                : '';
+
+            html += '<tr' + (!g.activo ? ' style="opacity:.5;"' : '') + '>'
+                + '<td><span style="font-weight:600;">' + g.nombre + '</span>' + linkPago + subInfo + (g.nota ? '<br><small class="text-muted">' + g.nota + '</small>' : '') + '</td>'
+                + '<td>' + diaInfo + '</td>'
+                + '<td class="tipo-gasto fw-semibold">' + g.montoFmt + '</td>'
+                + '<td style="font-size:11px;color:#64748b;">' + (g.cuenta || '—') + '</td>'
+                + '<td>' + estadoBadge(g.estado) + '</td>'
+                + '<td class="text-end">' + opsPagar + verBtn + editBtn + '</td>'
+                + '</tr>';
+        });
+
+        html += '</tbody></table></div>';
+        lista.innerHTML = html;
+        bindGfPagar();
+        bindGfRevertir();
+        bindGfEdit();
+    }
+
+    function loadGastosFijos() {
+        fetch(GF_DATA_URL + '?anio=' + gfAnio + '&mes=' + gfMes, {
+            credentials: 'same-origin',
+            headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
+        }).then(function(r) { return r.json(); }).then(renderGastosFijos).catch(function() {
+            document.getElementById('gf-lista').innerHTML = '<p class="text-danger small p-3">Error al cargar gastos fijos.</p>';
+        });
+    }
+
+    // ── Tipo de gasto fijo ───────────────────────────────────────────────────
+    function gfSetTipo(tipo) {
+        document.getElementById('gf-tipo').value = tipo;
+        document.querySelectorAll('.js-gf-tipo').forEach(function(b) {
+            var activo = b.dataset.tipo === tipo;
+            b.classList.toggle('btn-primary', activo);
+            b.classList.toggle('text-white', activo);
+            b.style.borderColor = activo ? '' : '#334155';
+            b.style.background  = activo ? '' : 'transparent';
+        });
+
+        var esFinanciado = tipo === 'financiado' || tipo === 'prestamo';
+        document.getElementById('gf-bloque-financiamiento').style.display = esFinanciado ? '' : 'none';
+        document.getElementById('gf-bloque-monto-simple').style.display   = esFinanciado ? 'none' : '';
+
+        var labelMap = { financiado: 'Datos del financiamiento (compra a crédito)', prestamo: 'Datos del préstamo' };
+        if (labelMap[tipo]) document.getElementById('gf-financiamiento-label').textContent = labelMap[tipo];
+
+        // Para préstamo no hay monto post-financiamiento (termina solo)
+        document.getElementById('gf-post-fin-wrap').style.display = tipo === 'financiado' ? '' : 'none';
+
+        // Descripción orientativa por tipo
+        var descs = {
+            generico:   '<strong>Servicio o gasto recurrente simple.</strong> Agua, luz, gym, cable, internet. ' +
+                        'El servicio existe aunque no pagues (solo te cortan). Puede registrar precio por unidad ' +
+                        '(ej: botellones de agua a L 45 c/u).',
+            financiado: '<strong>Compra a crédito sin interés.</strong> Artículo con prima inicial + cuotas ' +
+                        'que pueden variar por tramos. Ej: iPhone en Claro (cuotas 1-4 diferentes a 5-18). ' +
+                        'Al terminar el financiamiento puede quedar solo el plan de consumo.',
+            prestamo:   '<strong>Préstamo bancario o personal.</strong> El interés varía cada cuota según el ' +
+                        'saldo decreciente. Ej: Cooperativa Guadalupe, ITA, préstamo personal. ' +
+                        'La tabla de amortización se genera automáticamente.',
+            suscripcion:'<strong>Suscripción digital.</strong> Se cancela automáticamente si no pagás. ' +
+                        'Ej: Netflix, Spotify, YouTube Premium, Adobe. Activa recordatorio antes del vencimiento ' +
+                        'para no perder acceso.',
+        };
+        var descEl = document.getElementById('gf-tipo-desc');
+        descEl.innerHTML = descs[tipo] || '';
+    }
+
+    document.querySelectorAll('.js-gf-tipo').forEach(function(btn) {
+        btn.addEventListener('click', function() { gfSetTipo(btn.dataset.tipo); });
+    });
+
+    // ── Tramos de cuotas especiales ──────────────────────────────────────────
+    var gfTramos = [];
+
+    function renderTramos() {
+        var lista = document.getElementById('gf-tramos-lista');
+        if (gfTramos.length === 0) {
+            lista.innerHTML = '<div class="small text-muted" style="font-size:11px;">Sin tramos — todas las cuotas usan el monto base.</div>';
+            document.getElementById('gf-cuotas-especiales').value = '';
+            return;
+        }
+
+        var html = '<div class="table-responsive"><table class="table table-sm mb-1" style="font-size:12px;"><thead><tr>'
+            + '<th>Cuota desde</th><th>Cuota hasta</th><th>Monto (L)</th><th></th></tr></thead><tbody>';
+        gfTramos.forEach(function(t, i) {
+            html += '<tr>'
+                + '<td><input type="number" class="form-control form-control-sm" value="' + t.desde + '" min="1" onchange="gfTramos[' + i + '].desde=parseInt(this.value);syncTramos();" style="width:70px;"></td>'
+                + '<td><input type="number" class="form-control form-control-sm" value="' + t.hasta + '" min="1" onchange="gfTramos[' + i + '].hasta=parseInt(this.value);syncTramos();" style="width:70px;"></td>'
+                + '<td><input type="number" class="form-control form-control-sm" value="' + t.monto + '" min="0.01" step="0.01" onchange="gfTramos[' + i + '].monto=parseFloat(this.value);syncTramos();" style="width:100px;"></td>'
+                + '<td><button type="button" class="btn btn-link btn-sm text-danger p-0" onclick="gfTramos.splice(' + i + ',1);renderTramos();" title="Quitar"><i class="bi bi-x-lg"></i></button></td>'
+                + '</tr>';
+        });
+        html += '</tbody></table></div>';
+        lista.innerHTML = html;
+        syncTramos();
+    }
+
+    function syncTramos() {
+        document.getElementById('gf-cuotas-especiales').value = gfTramos.length > 0 ? JSON.stringify(gfTramos) : '';
+    }
+
+    document.getElementById('btn-gf-add-tramo').addEventListener('click', function() {
+        var meses = parseInt(document.getElementById('gf-meses-financiamiento').value) || 12;
+        var ultimo = gfTramos.length > 0 ? gfTramos[gfTramos.length - 1].hasta + 1 : 1;
+        gfTramos.push({ desde: ultimo, hasta: meses, monto: 0 });
+        renderTramos();
+    });
+
+    // ── Day Picker ───────────────────────────────────────────────────────────
+    function initDayPicker(pickerId, hiddenId, allowClear) {
+        var picker = document.getElementById(pickerId);
+        var hidden = document.getElementById(hiddenId);
+        var html   = '';
+        if (allowClear) {
+            html += '<button type="button" class="dp-btn dp-clear" data-day="">Ninguno</button>';
+        }
+        for (var d = 1; d <= 31; d++) {
+            html += '<button type="button" class="dp-btn" data-day="' + d + '">' + d + '</button>';
+        }
+        picker.innerHTML = html;
+        picker.addEventListener('click', function (e) {
+            var btn = e.target.closest('.dp-btn');
+            if (!btn) { return; }
+            picker.querySelectorAll('.dp-btn').forEach(function (b) { b.classList.remove('dp-active'); });
+            btn.classList.add('dp-active');
+            hidden.value = btn.dataset.day;
+        });
+    }
+
+    function setDayPicker(pickerId, hiddenId, value) {
+        var picker = document.getElementById(pickerId);
+        var hidden = document.getElementById(hiddenId);
+        var strVal = value !== null && value !== undefined ? String(value) : '';
+        hidden.value = strVal;
+        picker.querySelectorAll('.dp-btn').forEach(function (b) {
+            b.classList.toggle('dp-active', b.dataset.day === strVal);
+        });
+    }
+
+    function setDiaPago(dia) { setDayPicker('gf-dia-pago-picker', 'gf-dia-pago', dia || 1); }
+    function setDiaCorte(dia) { setDayPicker('gf-dia-corte-picker', 'gf-dia-corte', dia || ''); }
+
+    initDayPicker('gf-dia-pago-picker', 'gf-dia-pago', false);
+    initDayPicker('gf-dia-corte-picker', 'gf-dia-corte', true);
+    setDiaPago(1);
+
+    // ── Toggle unidades (tipo simple) ────────────────────────────────────────
+    // ── Helpers unidad / presentación (select + "Otro" libre) ───────────────
+    function getGfUnidad() {
+        var sel = document.getElementById('gf-unidad-sel');
+        return sel.value === '__otro__'
+            ? document.getElementById('gf-unidad-custom').value.trim()
+            : sel.value;
+    }
+    function setGfUnidad(val) {
+        var sel    = document.getElementById('gf-unidad-sel');
+        var custom = document.getElementById('gf-unidad-custom');
+        var inList = val === '' || Array.from(sel.options).some(function(o) { return o.value === val && o.value !== '__otro__'; });
+        if (inList) {
+            sel.value = val || '';
+            custom.style.display = 'none';
+            custom.value = '';
+        } else {
+            sel.value = '__otro__';
+            custom.style.display = '';
+            custom.value = val;
+        }
+    }
+    function getGfPresentacion() {
+        var sel = document.getElementById('gf-presentacion-sel');
+        return sel.value === '__otro__'
+            ? document.getElementById('gf-presentacion-custom').value.trim()
+            : sel.value;
+    }
+    function setGfPresentacion(val) {
+        var sel    = document.getElementById('gf-presentacion-sel');
+        var custom = document.getElementById('gf-presentacion-custom');
+        var inList = val === '' || Array.from(sel.options).some(function(o) { return o.value === val && o.value !== '__otro__'; });
+        if (inList) {
+            sel.value = val || '';
+            custom.style.display = 'none';
+            custom.value = '';
+        } else {
+            sel.value = '__otro__';
+            custom.style.display = '';
+            custom.value = val;
+        }
+    }
+    document.getElementById('gf-unidad-sel').addEventListener('change', function() {
+        var custom = document.getElementById('gf-unidad-custom');
+        custom.style.display = this.value === '__otro__' ? '' : 'none';
+        if (this.value !== '__otro__') { custom.value = ''; }
+    });
+    document.getElementById('gf-presentacion-sel').addEventListener('change', function() {
+        var custom = document.getElementById('gf-presentacion-custom');
+        custom.style.display = this.value === '__otro__' ? '' : 'none';
+        if (this.value !== '__otro__') { custom.value = ''; }
+    });
+
+    // ── Acceso / Pago ────────────────────────────────────────────────────────
+    document.querySelector('.js-gf-toggle-acceso').addEventListener('click', function() {
+        var bloque   = document.getElementById('gf-bloque-acceso');
+        var chevron  = document.querySelector('.js-gf-acceso-chevron');
+        var abierto  = bloque.style.display !== 'none';
+        bloque.style.display  = abierto ? 'none' : '';
+        chevron.style.transform = abierto ? '' : 'rotate(90deg)';
+    });
+    document.querySelector('.js-gf-toggle-clave').addEventListener('click', function() {
+        var inp = document.getElementById('gf-clave-acceso');
+        var ico = this.querySelector('i');
+        if (inp.type === 'password') { inp.type = 'text';     ico.className = 'bi bi-eye-slash'; }
+        else                         { inp.type = 'password'; ico.className = 'bi bi-eye'; }
+    });
+
+    function resetGfAcceso() {
+        document.getElementById('gf-url-pago').value        = '';
+        document.getElementById('gf-numero-cliente').value  = '';
+        document.getElementById('gf-usuario-acceso').value  = '';
+        document.getElementById('gf-clave-acceso').value    = '';
+        document.getElementById('gf-clave-acceso').type     = 'password';
+        document.querySelector('.js-gf-toggle-clave i').className = 'bi bi-eye';
+        document.getElementById('gf-bloque-acceso').style.display = 'none';
+        document.querySelector('.js-gf-acceso-chevron').style.transform = '';
+    }
+
+    function restoreGfAcceso(btn) {
+        var urlPago       = btn.dataset.urlPago       || '';
+        var numeroCliente = btn.dataset.numeroCliente || '';
+        var usuarioAcceso = btn.dataset.usuarioAcceso || '';
+        var claveAcceso   = btn.dataset.claveAcceso   || '';
+        document.getElementById('gf-url-pago').value        = urlPago;
+        document.getElementById('gf-numero-cliente').value  = numeroCliente;
+        document.getElementById('gf-usuario-acceso').value  = usuarioAcceso;
+        document.getElementById('gf-clave-acceso').value    = claveAcceso;
+        // Abrir el panel si tiene algún dato
+        var tieneAcceso = urlPago || numeroCliente || usuarioAcceso || claveAcceso;
+        document.getElementById('gf-bloque-acceso').style.display = tieneAcceso ? '' : 'none';
+        document.querySelector('.js-gf-acceso-chevron').style.transform = tieneAcceso ? 'rotate(90deg)' : '';
+    }
+
+    function gfToggleUnidades() {
+        var activo = document.getElementById('gf-check-unidades').checked;
+        document.getElementById('gf-bloque-unidades').style.display = activo ? '' : 'none';
+    }
+
+    function gfRecalcMonto() {
+        var cant  = parseFloat(document.getElementById('gf-cantidad-base').value);
+        var price = parseFloat(document.getElementById('gf-precio-unitario').value);
+        if (cant > 0 && price > 0) {
+            document.getElementById('gf-monto-simple').value = (cant * price).toFixed(2);
+        }
+    }
+
+    document.getElementById('gf-check-unidades').addEventListener('change', gfToggleUnidades);
+    document.getElementById('gf-cantidad-base').addEventListener('input', gfRecalcMonto);
+    document.getElementById('gf-precio-unitario').addEventListener('input', gfRecalcMonto);
+
+    // ── Abrir modal (nuevo) ──────────────────────────────────────────────────
+    document.getElementById('btn-nuevo-gasto-fijo').addEventListener('click', function() {
+        document.getElementById('gf-mode').value = 'create';
+        document.getElementById('modal-gasto-fijo-title').textContent = 'Nuevo gasto fijo';
+        document.getElementById('gf-nombre').value               = '';
+        document.getElementById('gf-monto').value                = '';
+        document.getElementById('gf-monto-simple').value         = '';
+        document.getElementById('gf-frecuencia').value           = 'mensual';
+        setDiaPago(1);
+        setDiaCorte('');
+        document.getElementById('gf-check-unidades').checked     = false;
+        setGfUnidad('');
+        setGfPresentacion('');
+        document.getElementById('gf-cantidad-base').value        = '';
+        document.getElementById('gf-precio-unitario').value      = '';
+        document.getElementById('gf-fecha-inicio-plan').value    = '';
+        document.getElementById('gf-meses-financiamiento').value = '';
+        document.getElementById('gf-monto-prima').value          = '';
+        document.getElementById('gf-monto-post-financiamiento').value = '';
+        document.getElementById('gf-cuenta-id').value            = '';
+        document.getElementById('gf-category-id').value          = '';
+        document.getElementById('gf-nota').value                 = '';
+        resetGfAcceso();
+        document.getElementById('gf-csrf').value                 = GF_CREATE_TOKEN;
+        document.getElementById('gf-edit-url').value             = '';
+        document.querySelector('.js-gf-activo-row').style.display = 'none';
+        gfTramos = [];
+        renderTramos();
+        gfSetTipo('generico');
+        gfToggleUnidades();
+        bootstrap.Modal.getOrCreateInstance(document.getElementById('modal-gasto-fijo')).show();
+    });
+
+    // ── Abrir modal (editar) ─────────────────────────────────────────────────
+    function bindGfEdit() {
+        document.querySelectorAll('.js-gf-edit').forEach(function(btn) {
+            if (btn.dataset.bound) return;
+            btn.dataset.bound = '1';
+            btn.addEventListener('click', function() {
+                var tipo = btn.dataset.tipo || 'generico';
+                var id   = btn.dataset.id;
+
+                document.getElementById('gf-mode').value = 'edit';
+                document.getElementById('modal-gasto-fijo-title').textContent = 'Editar gasto fijo';
+                document.getElementById('gf-nombre').value    = btn.dataset.nombre;
+                document.getElementById('gf-frecuencia').value = btn.dataset.frecuencia || 'mensual';
+                setDiaPago(btn.dataset.diaPago || 1);
+                setDiaCorte(btn.dataset.diaCorte || '');
+
+                var esFinanciado = tipo === 'financiado' || tipo === 'prestamo';
+                if (esFinanciado) {
+                    document.getElementById('gf-monto').value                    = btn.dataset.montoBase;
+                    document.getElementById('gf-fecha-inicio-plan').value        = btn.dataset.fechaInicioPlan || '';
+                    document.getElementById('gf-meses-financiamiento').value     = btn.dataset.mesesFinanciamiento || '';
+                    document.getElementById('gf-monto-prima').value              = btn.dataset.montoPrima || '';
+                    document.getElementById('gf-monto-post-financiamiento').value = btn.dataset.montoPostFinanciamiento || '';
+                    try { gfTramos = JSON.parse(btn.dataset.cuotasEspeciales) || []; } catch(e) { gfTramos = []; }
+                } else {
+                    document.getElementById('gf-monto-simple').value = btn.dataset.montoBase;
+                    var tieneUnidad = !!(btn.dataset.unidad);
+                    document.getElementById('gf-check-unidades').checked    = tieneUnidad;
+                    setGfUnidad(btn.dataset.unidad || '');
+                    setGfPresentacion(btn.dataset.presentacion || '');
+                    document.getElementById('gf-cantidad-base').value       = btn.dataset.cantidadBase || '';
+                    document.getElementById('gf-precio-unitario').value     = btn.dataset.precioUnitario || '';
+                    gfTramos = [];
+                }
+
+                renderTramos();
+                document.getElementById('gf-cuenta-id').value   = btn.dataset.cuentaId || '';
+                document.getElementById('gf-category-id').value = btn.dataset.categoryId || '';
+                document.getElementById('gf-nota').value        = btn.dataset.nota || '';
+                restoreGfAcceso(btn);
+                document.getElementById('gf-activo').checked    = btn.dataset.activo === '1';
+                document.querySelector('.js-gf-activo-row').style.display = '';
+
+                gfSetTipo(tipo);
+                gfToggleUnidades();
+
+                var editUrl = {{ path('grova_wallet_gasto_fijo_edit', {id: '__ID__', _locale: app.request.locale})|json_encode|raw }}.replace('__ID__', id);
+                document.getElementById('gf-edit-url').value = editUrl;
+                document.getElementById('gf-csrf').value     = btn.dataset.tokenEdit;
+
+                bootstrap.Modal.getOrCreateInstance(document.getElementById('modal-gasto-fijo')).show();
+            });
+        });
+    }
+
+    // ── Guardar ──────────────────────────────────────────────────────────────
+    document.getElementById('btn-gf-save').addEventListener('click', async function() {
+        var nombre = document.getElementById('gf-nombre').value.trim();
+        var tipo   = document.getElementById('gf-tipo').value;
+        var esFinanciado = tipo === 'financiado' || tipo === 'prestamo';
+
+        var monto = esFinanciado
+            ? parseFloat(document.getElementById('gf-monto').value)
+            : parseFloat(document.getElementById('gf-monto-simple').value);
+
+        if (!nombre || isNaN(monto) || monto <= 0) {
+            toast('error', 'Nombre y monto son obligatorios.');
+            return;
+        }
+
+        var mode    = document.getElementById('gf-mode').value;
+        var url     = mode === 'edit' ? document.getElementById('gf-edit-url').value : GF_CREATE_URL;
+        var diaPago = parseInt(document.getElementById('gf-dia-pago').value) || 1;
+
+        var fd = new FormData();
+        fd.append('_token',    document.getElementById('gf-csrf').value);
+        fd.append('nombre',    nombre);
+        fd.append('monto',     monto);
+        fd.append('tipo',      tipo);
+        fd.append('frecuencia', document.getElementById('gf-frecuencia').value);
+        fd.append('dia_pago',  diaPago);
+        fd.append('dia_corte', document.getElementById('gf-dia-corte').value);
+
+        if (esFinanciado) {
+            fd.append('fecha_inicio_plan',         document.getElementById('gf-fecha-inicio-plan').value);
+            fd.append('meses_financiamiento',      document.getElementById('gf-meses-financiamiento').value);
+            fd.append('monto_prima',               document.getElementById('gf-monto-prima').value);
+            fd.append('cuotas_especiales',         document.getElementById('gf-cuotas-especiales').value);
+            fd.append('monto_post_financiamiento', document.getElementById('gf-monto-post-financiamiento').value);
+        } else {
+            var usaUnidades = document.getElementById('gf-check-unidades').checked;
+            fd.append('unidad',          usaUnidades ? getGfUnidad() : '');
+            fd.append('presentacion',    usaUnidades ? getGfPresentacion() : '');
+            fd.append('cantidad_base',   usaUnidades ? document.getElementById('gf-cantidad-base').value : '');
+            fd.append('precio_unitario', usaUnidades ? document.getElementById('gf-precio-unitario').value : '');
+        }
+
+        fd.append('cuenta_id',   document.getElementById('gf-cuenta-id').value);
+        fd.append('category_id', document.getElementById('gf-category-id').value);
+        fd.append('nota',            document.getElementById('gf-nota').value.trim());
+        fd.append('url_pago',        document.getElementById('gf-url-pago').value.trim());
+        fd.append('numero_cliente',  document.getElementById('gf-numero-cliente').value.trim());
+        fd.append('usuario_acceso',  document.getElementById('gf-usuario-acceso').value.trim());
+        fd.append('clave_acceso',    document.getElementById('gf-clave-acceso').value);
+        if (mode === 'edit') fd.append('activo', document.getElementById('gf-activo').checked ? '1' : '0');
+
+        var r    = await fetch(url, { method:'POST', body:fd, credentials:'same-origin', headers:{'Accept':'application/json','X-Requested-With':'XMLHttpRequest'} });
+        var json = await r.json();
+        if (json.success) {
+            bootstrap.Modal.getOrCreateInstance(document.getElementById('modal-gasto-fijo')).hide();
+            toast('success', json.message);
+            loadGastosFijos();
+        } else {
+            toast('error', json.message);
+        }
+    });
+
+    // ── Pagar ────────────────────────────────────────────────────────────────
+    function bindGfPagar() {
+        document.querySelectorAll('.js-gf-pagar').forEach(function(btn) {
+            if (btn.dataset.bound) return;
+            btn.dataset.bound = '1';
+            btn.addEventListener('click', async function() {
+                var id           = btn.dataset.id;
+                var nombre       = btn.dataset.nombre;
+                var monto        = btn.dataset.monto;
+                var tieneUnidades = btn.dataset.unidad && btn.dataset.unidad !== '';
+                var unidad       = btn.dataset.unidad || '';
+                var precioBase   = parseFloat(btn.dataset.precioUnitario || '0');
+                var cantidadBase = parseFloat(btn.dataset.cantidadBase || '0');
+                var hoy          = new Date().toISOString().split('T')[0];
+
+                var htmlPago = '<p class="mb-2 small fw-semibold">' + nombre + '</p><div class="row g-2">'
+                    + '<div class="col-6"><label class="form-label small mb-1">Fecha</label>'
+                    + '<input id="swal-gf-fecha" type="date" class="form-control form-control-sm" value="' + hoy + '"></div>';
+
+                if (tieneUnidades) {
+                    htmlPago += '<div class="col-3"><label class="form-label small mb-1">Cantidad (' + unidad + ')</label>'
+                        + '<input id="swal-gf-cantidad" type="number" class="form-control form-control-sm" value="' + (cantidadBase || '') + '" min="0.01" step="0.01"></div>'
+                        + '<div class="col-3"><label class="form-label small mb-1">Precio/u (L)</label>'
+                        + '<input id="swal-gf-precio-unit" type="number" class="form-control form-control-sm" value="' + (precioBase || '') + '" min="0.01" step="0.01"></div>'
+                        + '</div><div class="row g-2 mt-1">'
+                        + '<div class="col-6"><label class="form-label small mb-1">Total (L)</label>'
+                        + '<input id="swal-gf-monto" type="number" class="form-control form-control-sm" value="' + parseFloat(monto).toFixed(2) + '" min="0.01" step="0.01"></div>';
+                } else {
+                    htmlPago += '<div class="col-6"><label class="form-label small mb-1">Monto (L)</label>'
+                        + '<input id="swal-gf-monto" type="number" class="form-control form-control-sm" value="' + parseFloat(monto).toFixed(2) + '" min="0.01" step="0.01"></div>'
+                        + '</div><div class="row g-2 mt-1">';
+                }
+
+                htmlPago += '<div class="col-6"><div class="form-check mt-1"><input class="form-check-input" type="checkbox" id="swal-gf-extra">'
+                    + '<label class="form-check-label small" for="swal-gf-extra">Pago extra</label></div></div></div>'
+                    + '<div class="form-check mt-2"><input class="form-check-input" type="checkbox" id="swal-gf-actualizar">'
+                    + '<label class="form-check-label small" for="swal-gf-actualizar">Actualizar precio base</label></div>';
+
+                var res = await window.Swal.fire({
+                    title: 'Registrar pago',
+                    html: htmlPago,
+                    showCancelButton: true,
+                    confirmButtonText: 'Registrar', cancelButtonText: 'Cancelar', confirmButtonColor: '#22c55e',
+                    didOpen: function() {
+                        if (tieneUnidades) {
+                            var inpCant = document.getElementById('swal-gf-cantidad');
+                            var inpPrice = document.getElementById('swal-gf-precio-unit');
+                            var inpTotal = document.getElementById('swal-gf-monto');
+                            function recalc() {
+                                var c = parseFloat(inpCant.value), p = parseFloat(inpPrice.value);
+                                if (c > 0 && p > 0) inpTotal.value = (c * p).toFixed(2);
+                            }
+                            inpCant.addEventListener('input', recalc);
+                            inpPrice.addEventListener('input', recalc);
+                        }
+                    },
+                    preConfirm: function() {
+                        var v = parseFloat(document.getElementById('swal-gf-monto').value);
+                        if (isNaN(v) || v <= 0) { window.Swal.showValidationMessage('El monto debe ser mayor a 0.'); return false; }
+                        return {
+                            monto: v,
+                            fecha: document.getElementById('swal-gf-fecha').value,
+                            cantidad: tieneUnidades ? document.getElementById('swal-gf-cantidad').value : '',
+                            precioUnit: tieneUnidades ? document.getElementById('swal-gf-precio-unit').value : '',
+                            esExtra: document.getElementById('swal-gf-extra').checked,
+                            actualizar: document.getElementById('swal-gf-actualizar').checked,
+                        };
+                    }
+                });
+                if (!res.isConfirmed) return;
+
+                var fd = new FormData();
+                fd.append('_token',          btn.dataset.token);
+                fd.append('fecha',           res.value.fecha);
+                fd.append('monto',           res.value.monto);
+                fd.append('cantidad',        res.value.cantidad);
+                fd.append('precio_unitario', res.value.precioUnit);
+                fd.append('es_extra',        res.value.esExtra ? '1' : '0');
+                fd.append('actualizar_monto', res.value.actualizar ? '1' : '0');
+
+                var url = {{ path('grova_wallet_gasto_fijo_pagar', {id: '__ID__', _locale: app.request.locale})|json_encode|raw }}.replace('__ID__', id);
+                var r   = await fetch(url, { method:'POST', body:fd, credentials:'same-origin', headers:{'Accept':'application/json','X-Requested-With':'XMLHttpRequest'} });
+                var json = await r.json();
+                if (json.success) { toast('success', json.message); loadGastosFijos(); }
+                else { toast('error', json.message); }
+            });
+        });
+    }
+
+    // ── Revertir ─────────────────────────────────────────────────────────────
+    function bindGfRevertir() {
+        document.querySelectorAll('.js-gf-revertir').forEach(function(btn) {
+            if (btn.dataset.bound) return;
+            btn.dataset.bound = '1';
+            btn.addEventListener('click', async function() {
+                var res = await window.Swal.fire({
+                    title: '¿Revertir pago?',
+                    html: '<p class="mb-0 small">Se eliminará el movimiento de <strong>' + btn.dataset.nombre + '</strong>.</p>',
+                    icon: 'warning', showCancelButton: true,
+                    confirmButtonText: 'Sí, revertir', cancelButtonText: 'Cancelar', confirmButtonColor: '#ef4444',
+                });
+                if (!res.isConfirmed) return;
+
+                var fd = new FormData();
+                fd.append('_token', btn.dataset.token);
+                var url = {{ path('grova_wallet_gasto_fijo_revertir', {pagoId: '__ID__', _locale: app.request.locale})|json_encode|raw }}.replace('__ID__', btn.dataset.pagoId);
+                var r   = await fetch(url, { method:'POST', body:fd, credentials:'same-origin', headers:{'Accept':'application/json','X-Requested-With':'XMLHttpRequest'} });
+                var json = await r.json();
+                if (json.success) { toast('success', json.message); loadGastosFijos(); }
+                else { toast('error', json.message); }
+            });
+        });
+    }
+
+    document.getElementById('gf-mes-select').addEventListener('change', function() { gfMes = parseInt(this.value); loadGastosFijos(); });
+    document.getElementById('gf-anio-select').addEventListener('change', function() { gfAnio = parseInt(this.value); loadGastosFijos(); });
+
+    (function() {
+        var mesEl  = document.getElementById('gf-mes-select');
+        var anioEl = document.getElementById('gf-anio-select');
+        mesEl.value  = gfMes;
+        anioEl.value = gfAnio;
+    })();
+
+    // ── Transferencias ───────────────────────────────────────────────────────
+
+    var TF_CREATE_URL      = {{ path('grova_wallet_transferencia_create', {_locale: app.request.locale})|json_encode|raw }};
+    var TF_DATA_URL        = {{ path('grova_wallet_transferencia_data', {_locale: app.request.locale})|json_encode|raw }};
+    var TF_REVERTIR_TPL    = {{ path('grova_wallet_transferencia_revertir', {id: '__ID__', _locale: app.request.locale})|json_encode|raw }};
+
+    function loadTransferencias() {
+        fetch(TF_DATA_URL, { credentials: 'same-origin', headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' } })
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                var lista = document.getElementById('wallet-transferencias-lista');
+                if (!data.transferencias || data.transferencias.length === 0) {
+                    lista.innerHTML = '<div class="grova-empty-state py-4"><div class="grova-empty-icon"><i class="bi bi-arrow-left-right"></i></div><div class="grova-empty-title">Sin transferencias</div><div class="grova-empty-desc">Las transferencias entre cuentas aparecerán aquí.</div></div>';
+                    return;
+                }
+                var html = '<div class="table-responsive"><table class="table table-sm grova-table mb-0"><thead><tr>'
+                    + '<th>Fecha</th><th>Desde</th><th>Hacia</th><th class="text-end">Monto</th><th class="text-end">Comisión</th><th>Concepto</th><th></th>'
+                    + '</tr></thead><tbody>';
+                data.transferencias.forEach(function(t) {
+                    html += '<tr>'
+                        + '<td class="text-nowrap">' + t.fecha + '</td>'
+                        + '<td>' + t.cuentaOrigen + '</td>'
+                        + '<td>' + t.cuentaDestino + '</td>'
+                        + '<td class="text-end">' + t.montoFmt + '</td>'
+                        + '<td class="text-end">' + (t.comisionFmt ?? '—') + '</td>'
+                        + '<td>' + (t.concepto ?? '') + '</td>'
+                        + '<td class="text-end"><button type="button" class="btn btn-sm btn-link text-danger p-0 js-tf-revertir" data-id="' + t.id + '" data-token="' + t.tokenRevertir + '" title="Revertir"><i class="bi bi-arrow-counterclockwise"></i></button></td>'
+                        + '</tr>';
+                });
+                html += '</tbody></table></div>';
+                lista.innerHTML = html;
+            })
+            .catch(function() { toast('error', 'Error al cargar transferencias.'); });
+    }
+
+    document.getElementById('btn-nueva-transferencia').addEventListener('click', function() {
+        document.getElementById('tf-fecha').value    = new Date().toISOString().slice(0, 10);
+        document.getElementById('tf-monto').value   = '';
+        document.getElementById('tf-origen').value  = '';
+        document.getElementById('tf-destino').value = '';
+        document.getElementById('tf-comision').value = '0';
+        document.getElementById('tf-concepto').value = '';
+        bootstrap.Modal.getOrCreateInstance(document.getElementById('modal-transferencia')).show();
+    });
+
+    document.getElementById('btn-tf-save').addEventListener('click', async function() {
+        var monto = parseFloat(document.getElementById('tf-monto').value);
+        if (isNaN(monto) || monto <= 0) { toast('error', 'El monto debe ser mayor a 0.'); return; }
+
+        var origen  = document.getElementById('tf-origen').value;
+        var destino = document.getElementById('tf-destino').value;
+        if (origen === '' && destino === '') { toast('error', 'Origen y destino no pueden ser ambos Cartera general.'); return; }
+        if (origen !== '' && origen === destino) { toast('error', 'Origen y destino no pueden ser la misma cuenta.'); return; }
+
+        var fd = new FormData();
+        fd.append('_token',           document.getElementById('tf-csrf').value);
+        fd.append('fecha',            document.getElementById('tf-fecha').value);
+        fd.append('monto',            monto);
+        fd.append('cuenta_origen_id', origen);
+        fd.append('cuenta_destino_id', destino);
+        fd.append('comision',         document.getElementById('tf-comision').value || '0');
+        fd.append('concepto',         document.getElementById('tf-concepto').value.trim());
+
+        var r    = await fetch(TF_CREATE_URL, { method: 'POST', body: fd, credentials: 'same-origin', headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' } });
+        var json = await r.json();
+        if (json.success) {
+            bootstrap.Modal.getOrCreateInstance(document.getElementById('modal-transferencia')).hide();
+            toast('success', json.message);
+            loadTransferencias();
+            loadCuentasSaldos();
+        } else {
+            toast('error', json.message);
+        }
+    });
+
+    document.getElementById('wallet-transferencias-lista').addEventListener('click', async function(e) {
+        var btn = e.target.closest('.js-tf-revertir');
+        if (!btn) return;
+        var id    = btn.dataset.id;
+        var token = btn.dataset.token;
+        var ok = await Swal.fire({
+            title: '¿Revertir transferencia?',
+            text:  'Se eliminarán los movimientos asociados.',
+            icon:  'warning',
+            showCancelButton:  true,
+            confirmButtonText: 'Sí, revertir',
+            cancelButtonText:  'Cancelar',
+            confirmButtonColor: '#ef4444'
+        });
+        if (!ok.isConfirmed) return;
+
+        var url = TF_REVERTIR_TPL.replace('__ID__', id);
+        var fd  = new FormData();
+        fd.append('_token', token);
+        var r    = await fetch(url, { method: 'POST', body: fd, credentials: 'same-origin', headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' } });
+        var json = await r.json();
+        if (json.success) {
+            toast('success', json.message);
+            loadTransferencias();
+            loadCuentasSaldos();
+        } else {
+            toast('error', json.message);
+        }
+    });
+
+    // ── Instituciones ────────────────────────────────────────────────────────
+
+    var INST_CREATE_TOKEN = {{ csrf_token('wallet_institucion_create')|json_encode|raw }};
+
+    var _instOnDone = null;
+
+    function abrirModalInst(modo, datos) {
+        _instOnDone = datos._onDone || null;
+        document.getElementById('inst-mode').value         = modo;
+        document.getElementById('inst-edit-id').value      = datos.id          || '';
+        document.getElementById('inst-nombre').value       = datos.nombre      || '';
+        document.getElementById('inst-color').value        = datos.color       || '#64748b';
+        document.getElementById('inst-csrf').value         = datos.csrf        || INST_CREATE_TOKEN;
+        document.getElementById('inst-delete-token').value = datos.deleteToken || '';
+        document.getElementById('modal-inst-title').textContent = modo === 'edit' ? 'Editar institución' : 'Nueva institución';
+        document.getElementById('btn-inst-delete').style.display = modo === 'edit' ? '' : 'none';
+        bootstrap.Modal.getOrCreateInstance(document.getElementById('modal-institucion')).show();
+    }
+
+    function loadInstituciones() {
+        fetch(INST_DATA_URL, { credentials: 'same-origin', headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' } })
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                var lista = document.getElementById('wallet-instituciones-lista');
+                var insts = data.instituciones || [];
+
+                // Actualizar select del modal de cuenta
+                var sel = document.getElementById('wallet-cuenta-institucion-id');
+                var current = sel.value;
+                sel.innerHTML = '<option value="">— Sin institución —</option>';
+                insts.forEach(function(i) {
+                    var opt = document.createElement('option');
+                    opt.value = i.id; opt.textContent = i.nombre;
+                    if (String(i.id) === String(current)) opt.selected = true;
+                    sel.appendChild(opt);
+                });
+
+                if (insts.length === 0) {
+                    lista.innerHTML = '<div class="grova-empty-state py-4"><div class="grova-empty-icon"><i class="bi bi-bank2"></i></div><div class="grova-empty-title">Sin instituciones</div><div class="grova-empty-desc">Agregá tus bancos o cooperativas.</div></div>';
+                    return;
+                }
+
+                var html = '<div class="table-responsive"><table class="table table-sm grova-table mb-0"><thead><tr><th>Color</th><th>Nombre</th><th></th></tr></thead><tbody>';
+                insts.forEach(function(i) {
+                    html += '<tr>'
+                        + '<td><span style="display:inline-block;width:16px;height:16px;border-radius:50%;background:' + i.color + ';"></span></td>'
+                        + '<td><a href="' + i.detalleUrl + '" class="text-decoration-none fw-semibold">' + i.nombre + '</a></td>'
+                        + '<td class="text-end d-flex gap-2 justify-content-end">'
+                        +   '<button type="button" class="btn btn-sm btn-link p-0 text-secondary js-inst-edit" data-id="' + i.id + '" data-nombre="' + i.nombre + '" data-color="' + i.color + '" data-csrf="' + i.editToken + '" data-delete-token="' + i.deleteToken + '" title="Editar"><i class="bi bi-pencil"></i></button>'
+                        +   '<button type="button" class="btn btn-sm btn-link p-0 text-danger js-inst-delete" data-id="' + i.id + '" data-nombre="' + i.nombre + '" data-delete-token="' + i.deleteToken + '" title="Eliminar"><i class="bi bi-trash3"></i></button>'
+                        + '</td>'
+                        + '</tr>';
+                });
+                html += '</tbody></table></div>';
+                lista.innerHTML = html;
+            });
+    }
+
+    document.getElementById('btn-nueva-inst').addEventListener('click', function() {
+        abrirModalInst('create', {});
+    });
+
+    document.getElementById('btn-nueva-inst-inline').addEventListener('click', function() {
+        var modalInst = document.getElementById('modal-institucion');
+        modalInst.style.zIndex = '1080';
+
+        // Asegurar que el backdrop de la inst quede encima también
+        modalInst.addEventListener('shown.bs.modal', function() {
+            var backdrops = document.querySelectorAll('.modal-backdrop');
+            if (backdrops.length > 1) {
+                backdrops[backdrops.length - 1].style.zIndex = '1075';
+            }
+        }, { once: true });
+
+        modalInst.addEventListener('hidden.bs.modal', function() {
+            modalInst.style.zIndex = '';
+            loadInstituciones();
+        }, { once: true });
+
+        abrirModalInst('create', {});
+    });
+
+    document.getElementById('wallet-instituciones-lista').addEventListener('click', async function(e) {
+        var btnEdit = e.target.closest('.js-inst-edit');
+        if (btnEdit) {
+            abrirModalInst('edit', {
+                id:          btnEdit.dataset.id,
+                nombre:      btnEdit.dataset.nombre,
+                color:       btnEdit.dataset.color,
+                csrf:        btnEdit.dataset.csrf,
+                deleteToken: btnEdit.dataset.deleteToken,
+            });
+            return;
+        }
+
+        var btnDel = e.target.closest('.js-inst-delete');
+        if (!btnDel) return;
+
+        var ok = await Swal.fire({
+            title: '¿Eliminar "' + btnDel.dataset.nombre + '"?',
+            text:  'Las cuentas asociadas quedarán sin institución.',
+            icon:  'warning', showCancelButton: true,
+            confirmButtonText: 'Sí, eliminar', cancelButtonText: 'Cancelar',
+            confirmButtonColor: '#ef4444'
+        });
+        if (!ok.isConfirmed) return;
+
+        var fd = new FormData();
+        fd.append('_token', btnDel.dataset.deleteToken);
+        var r    = await fetch(INST_DELETE_URL_TPL.replace('__ID__', btnDel.dataset.id), { method: 'POST', body: fd, credentials: 'same-origin', headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' } });
+        var json = await r.json();
+        if (json.success) { toast('success', json.message); loadInstituciones(); }
+        else { toast('error', json.message); }
+    });
+
+    document.getElementById('btn-inst-save').addEventListener('click', async function() {
+        var nombre = document.getElementById('inst-nombre').value.trim();
+        if (!nombre) { toast('error', 'El nombre es obligatorio.'); return; }
+
+        var mode = document.getElementById('inst-mode').value;
+        var id   = document.getElementById('inst-edit-id').value;
+        var url  = mode === 'edit' ? INST_EDIT_URL_TPL.replace('__ID__', id) : INST_CREATE_URL;
+
+        var fd = new FormData();
+        fd.append('_token', document.getElementById('inst-csrf').value);
+        fd.append('nombre', nombre);
+        fd.append('color',  document.getElementById('inst-color').value);
+
+        var r    = await fetch(url, { method: 'POST', body: fd, credentials: 'same-origin', headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' } });
+        var txt  = await r.text();
+        var json;
+        try { json = JSON.parse(txt); } catch(e) { console.error('Resp inst:', txt); toast('error', 'Error inesperado.'); return; }
+        if (json.success) {
+            bootstrap.Modal.getOrCreateInstance(document.getElementById('modal-institucion')).hide();
+            toast('success', json.message);
+            if (_instOnDone) {
+                var cb = _instOnDone;
+                _instOnDone = null;
+                document.getElementById('modal-institucion').addEventListener('hidden.bs.modal', function() {
+                    cb(json.id || null);
+                }, { once: true });
+            } else {
+                loadInstituciones();
+            }
+        } else {
+            toast('error', json.message);
+        }
+    });
+
+    document.getElementById('btn-inst-delete').addEventListener('click', async function() {
+        var id          = document.getElementById('inst-edit-id').value;
+        var deleteToken = document.getElementById('inst-delete-token').value;
+
+        bootstrap.Modal.getOrCreateInstance(document.getElementById('modal-institucion')).hide();
+
+        var ok = await Swal.fire({
+            title: '¿Eliminar institución?',
+            text:  'Las cuentas asociadas quedarán sin institución.',
+            icon:  'warning', showCancelButton: true,
+            confirmButtonText: 'Sí, eliminar', cancelButtonText: 'Cancelar',
+            confirmButtonColor: '#ef4444'
+        });
+        if (!ok.isConfirmed) return;
+
+        var fd = new FormData();
+        fd.append('_token', deleteToken);
+        var r    = await fetch(INST_DELETE_URL_TPL.replace('__ID__', id), { method: 'POST', body: fd, credentials: 'same-origin', headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' } });
+        var json = await r.json();
+        if (json.success) {
+            toast('success', json.message);
+            loadInstituciones();
+        } else {
+            toast('error', json.message);
+        }
+    });
+
+    // Repoblar select cuando se abre el modal de cuenta
+    document.getElementById('modal-wallet-cuenta').addEventListener('show.bs.modal', function() {
+        loadInstituciones();
+    });
+
+    document.addEventListener('DOMContentLoaded', function() {
+        initEntriesTable();
+        loadCuentasSaldos();
+        bindCuentaModal();
+        bindCuentaDelete();
+        bindNuevoMovimiento();
+        loadGastosFijos();
+        loadCategorias();
+        loadTransferencias();
+        loadInstituciones();
+    });
+})();
 </script>
 {% endblock %}

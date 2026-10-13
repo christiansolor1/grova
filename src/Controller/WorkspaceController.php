@@ -19,10 +19,20 @@ final class WorkspaceController extends AbstractController
     #[Route('/', name: 'workspace', methods: ['GET'])]
     public function homeRedirect(Request $request): RedirectResponse
     {
+        $locale = $request->getLocale();
+
+        // Usuarios solo con rol de guardia → garita directamente
+        if ($this->isGranted('ROLE_RESIDENCIAL_GUARDIA') && !$this->isGranted('ROLE_RESIDENCIAL_ADMIN')) {
+            return $this->redirectToRoute('grova_residencial_guardia_garita', ['_locale' => $locale]);
+        }
+
+        // Usuarios solo con rol de residente → sus invitaciones directamente
+        if ($this->isGranted('ROLE_RESIDENCIAL_RESIDENTE') && !$this->isGranted('ROLE_RESIDENCIAL_ADMIN')) {
+            return $this->redirectToRoute('grova_residencial_residente_index', ['_locale' => $locale]);
+        }
+
         $route = WorkspaceLeafRoutes::routeNameForMenuKey(MenuTreeBuilder::HOME_MENU_KEY);
 
-        return $this->redirectToRoute($route, [
-            '_locale' => $request->getLocale(),
-        ], Response::HTTP_FOUND);
+        return $this->redirectToRoute($route, ['_locale' => $locale], Response::HTTP_FOUND);
     }
 }

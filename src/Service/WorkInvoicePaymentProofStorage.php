@@ -130,6 +130,110 @@ final class WorkInvoicePaymentProofStorage
         return $path;
     }
 
+    /**
+     * Sustituye el comprobante del banco (conversión EUR→L). Devuelve clave de error o null si OK.
+     */
+    public function tryReplaceBankProof(WorkInvoice $invoice, ?UploadedFile $file): ?string
+    {
+        if ($file === null || $file->getClientOriginalName() === '') {
+            return null;
+        }
+
+        if (!$file->isValid()) {
+            return 'work.flash_payment_proof_upload_invalid';
+        }
+
+        if ($file->getSize() > self::MAX_BYTES) {
+            return 'work.flash_payment_proof_too_large';
+        }
+
+        $mime = $this->detectMime($file);
+        if ($mime === null || !\in_array($mime, self::ALLOWED_MIMES, true)) {
+            return 'work.flash_payment_proof_type_invalid';
+        }
+
+        $ext = strtolower((string) $file->guessExtension());
+        if ($ext === '') {
+            $ext = match ($mime) {
+                'application/pdf' => 'pdf',
+                'image/jpeg'      => 'jpg',
+                'image/png'       => 'png',
+                'image/webp'      => 'webp',
+                default           => 'bin',
+            };
+        }
+
+        $allowedExt = ['pdf', 'jpg', 'jpeg', 'png', 'webp'];
+        if (!\in_array($ext, $allowedExt, true)) {
+            return 'work.flash_payment_proof_type_invalid';
+        }
+
+        if ($ext === 'jpeg') {
+            $ext = 'jpg';
+        }
+
+        $dir = $this->baseDir();
+        if (!is_dir($dir) && !@mkdir($dir, 0775, true) && !is_dir($dir)) {
+            return 'work.flash_payment_proof_dir_error';
+        }
+
+        $stored = bin2hex(random_bytes(16)) . '.' . $ext;
+        $target = $dir . '/' . $stored;
+
+        try {
+            $file->move($dir, $stored);
+        } catch (\Throwable) {
+            return 'work.flash_payment_proof_move_failed';
+        }
+
+        if (!is_file($target)) {
+            return 'work.flash_payment_proof_move_failed';
+        }
+
+        $prev = $invoice->getBankProofStoredFilename();
+        if ($prev !== null && $prev !== '') {
+            $oldPath = $dir . '/' . basename($prev);
+            if (is_file($oldPath)) {
+                @unlink($oldPath);
+            }
+        }
+
+        $invoice->setBankProofStoredFilename($stored);
+        $invoice->setBankProofOriginalName($file->getClientOriginalName());
+        $invoice->setBankProofMime($mime);
+
+        return null;
+    }
+
+    public function removeBankProof(WorkInvoice $invoice): void
+    {
+        $fn = $invoice->getBankProofStoredFilename();
+        if ($fn !== null && $fn !== '') {
+            $path = $this->baseDir() . '/' . basename($fn);
+            if (is_file($path)) {
+                @unlink($path);
+            }
+        }
+        $invoice->setBankProofStoredFilename(null);
+        $invoice->setBankProofOriginalName(null);
+        $invoice->setBankProofMime(null);
+    }
+
+    public function absoluteBankProofPath(WorkInvoice $invoice): ?string
+    {
+        $fn = $invoice->getBankProofStoredFilename();
+        if ($fn === null || $fn === '') {
+            return null;
+        }
+
+        $path = $this->baseDir() . '/' . basename($fn);
+        if (!is_file($path)) {
+            return null;
+        }
+
+        return $path;
+    }
+
     private function removeStoredFileIfExists(WorkInvoice $invoice): void
     {
         $fn = $invoice->getPaymentProofStoredFilename();

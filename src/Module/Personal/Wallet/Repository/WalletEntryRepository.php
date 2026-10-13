@@ -40,6 +40,7 @@ class WalletEntryRepository extends ServiceEntityRepository
             ->select('SUM(e.monto) as total')
             ->where('e.tipo = :tipo')
             ->andWhere('e.fecha BETWEEN :from AND :to')
+            ->andWhere('e.esTransferencia = false')
             ->setParameter('tipo', $tipo)
             ->setParameter('from', $from)
             ->setParameter('to', $to)
@@ -47,6 +48,25 @@ class WalletEntryRepository extends ServiceEntityRepository
             ->getSingleScalarResult();
 
         return (float) ($result ?? 0);
+    }
+
+    /** @return WalletEntry[] */
+    public function findByCuentaAndPeriodo(int $cuentaId, int $year, int $month): array
+    {
+        $from = sprintf('%04d-%02d-01', $year, $month);
+        $to   = (new \DateTimeImmutable($from))->modify('last day of this month')->format('Y-m-d');
+
+        return $this->createQueryBuilder('e')
+            ->leftJoin('e.category', 'c')->addSelect('c')
+            ->where('e.cuenta = :cid')
+            ->andWhere('e.fecha BETWEEN :from AND :to')
+            ->setParameter('cid', $cuentaId)
+            ->setParameter('from', $from)
+            ->setParameter('to', $to)
+            ->orderBy('e.fecha', 'DESC')
+            ->addOrderBy('e.createdAt', 'DESC')
+            ->getQuery()
+            ->getResult();
     }
 
     public function getSaldoTotal(): float

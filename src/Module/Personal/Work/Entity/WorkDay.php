@@ -37,6 +37,21 @@ class WorkDay
     #[ORM\Column]
     private bool $esVacacion = false;
 
+    #[ORM\Column]
+    private bool $esPermiso = false;
+
+    #[ORM\Column]
+    private bool $esIncapacidad = false;
+
+    #[ORM\Column(length: 180, nullable: true)]
+    private ?string $documentoStoredFilename = null;
+
+    #[ORM\Column(length: 255, nullable: true)]
+    private ?string $documentoOriginalName = null;
+
+    #[ORM\Column(length: 127, nullable: true)]
+    private ?string $documentoMime = null;
+
     #[ORM\Column(length: 255, nullable: true)]
     private ?string $notas = null;
 
@@ -66,15 +81,35 @@ class WorkDay
     public function isEsVacacion(): bool { return $this->esVacacion; }
     public function setEsVacacion(bool $esVacacion): static { $this->esVacacion = $esVacacion; return $this; }
 
+    public function isEsPermiso(): bool { return $this->esPermiso; }
+    public function setEsPermiso(bool $esPermiso): static { $this->esPermiso = $esPermiso; return $this; }
+
+    public function isEsIncapacidad(): bool { return $this->esIncapacidad; }
+    public function setEsIncapacidad(bool $esIncapacidad): static { $this->esIncapacidad = $esIncapacidad; return $this; }
+
+    public function getDocumentoStoredFilename(): ?string { return $this->documentoStoredFilename; }
+    public function setDocumentoStoredFilename(?string $documentoStoredFilename): static { $this->documentoStoredFilename = $documentoStoredFilename; return $this; }
+
+    public function getDocumentoOriginalName(): ?string { return $this->documentoOriginalName; }
+    public function setDocumentoOriginalName(?string $documentoOriginalName): static { $this->documentoOriginalName = $documentoOriginalName; return $this; }
+
+    public function getDocumentoMime(): ?string { return $this->documentoMime; }
+    public function setDocumentoMime(?string $documentoMime): static { $this->documentoMime = $documentoMime; return $this; }
+
     public function getNotas(): ?string { return $this->notas; }
     public function setNotas(?string $notas): static { $this->notas = $notas; return $this; }
 
     public function getCreatedAt(): \DateTimeImmutable { return $this->createdAt; }
 
+    public function hasDocumento(): bool
+    {
+        return $this->documentoStoredFilename !== null && $this->documentoStoredFilename !== '';
+    }
+
     /** Devuelve true si la hora de entrada es antes del límite del cliente */
     public function bonusAplica(): bool
     {
-        if ($this->horaEntrada === null) {
+        if ($this->horaEntrada === null || $this->esVacacion || $this->esFeriado || $this->esPermiso || $this->esIncapacidad) {
             return false;
         }
 
@@ -86,7 +121,7 @@ class WorkDay
 
     public function trabajado(): bool
     {
-        return $this->horaEntrada !== null && !$this->esFeriado && !$this->esVacacion;
+        return $this->horaEntrada !== null && !$this->esFeriado && !$this->esVacacion && !$this->esPermiso && !$this->esIncapacidad;
     }
 
     public function getTenantId(): int { return $this->tenantId; }
