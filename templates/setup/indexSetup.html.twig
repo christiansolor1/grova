@@ -168,7 +168,17 @@
                 <div class="setup-section">
                     <div class="setup-section-title"><i class="bi bi-shield-lock me-1"></i> Superusuario</div>
                     <div class="row g-3">
-                        <div class="col-12">
+                        <div class="col-md-6">
+                            <label for="admin_username" class="form-label">Nombre de usuario</label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="bi bi-person"></i></span>
+                                <input type="text" class="form-control{% if errors.admin_username is defined %} is-invalid{% endif %}"
+                                       id="admin_username" name="admin_username" value="{{ f.admin_username|default('') }}"
+                                       placeholder="ej. christiansolorzano" required autocomplete="username">
+                            </div>
+                            {% if errors.admin_username is defined %}<div class="invalid-feedback d-block">{{ errors.admin_username }}</div>{% endif %}
+                        </div>
+                        <div class="col-md-6">
                             <label for="admin_email" class="form-label">Email</label>
                             <div class="input-group">
                                 <span class="input-group-text"><i class="bi bi-envelope"></i></span>

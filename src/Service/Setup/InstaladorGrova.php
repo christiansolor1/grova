@@ -34,6 +34,7 @@ final class InstaladorGrova
                 'grova:instalacion:finalizar',
                 '--espacio-trabajo='.$solicitud->nombreWorkspace,
                 '--email='.$solicitud->emailAdmin,
+                '--username='.$solicitud->usernameAdmin,
                 '--contrasena='.$solicitud->contrasenaAdmin,
                 '--no-interaction',
             ]);

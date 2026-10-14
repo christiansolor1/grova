@@ -13,6 +13,7 @@ final readonly class SolicitudInstalacion
         public string $usuarioBd,
         public string $contrasenaBd,
         public string $emailAdmin,
+        public string $usernameAdmin,
         public string $contrasenaAdmin,
         public string $nombreWorkspace,
     ) {
@@ -41,6 +42,7 @@ final readonly class SolicitudInstalacion
             usuarioBd: trim((string) ($datos['db_user'] ?? '')),
             contrasenaBd: (string) ($datos['db_password'] ?? ''),
             emailAdmin: trim((string) ($datos['admin_email'] ?? '')),
+            usernameAdmin: trim((string) ($datos['admin_username'] ?? '')),
             contrasenaAdmin: (string) ($datos['admin_password'] ?? ''),
             nombreWorkspace: trim((string) ($datos['workspace_name'] ?? '')),
         );

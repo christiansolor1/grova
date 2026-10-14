@@ -41,6 +41,7 @@ final class ComandoFinalizarInstalacion extends Command
         $this
             ->addOption('espacio-trabajo', null, InputOption::VALUE_REQUIRED, 'Nombre del workspace / empresa')
             ->addOption('email', null, InputOption::VALUE_REQUIRED, 'Email del superusuario')
+            ->addOption('username', null, InputOption::VALUE_REQUIRED, 'Nombre de usuario del superusuario')
             ->addOption('contrasena', null, InputOption::VALUE_REQUIRED, 'Contraseña del superusuario');
     }
 
@@ -50,10 +51,11 @@ final class ComandoFinalizarInstalacion extends Command
 
         $espacioTrabajo = trim((string) $input->getOption('espacio-trabajo'));
         $correo = trim((string) $input->getOption('email'));
+        $username = trim((string) $input->getOption('username'));
         $contrasena = (string) $input->getOption('contrasena');
 
-        if ($espacioTrabajo === '' || $correo === '' || $contrasena === '') {
-            $io->error('Faltan opciones obligatorias (--espacio-trabajo, --email, --contrasena).');
+        if ($espacioTrabajo === '' || $correo === '' || $username === '' || $contrasena === '') {
+            $io->error('Faltan opciones obligatorias (--espacio-trabajo, --email, --username, --contrasena).');
 
             return Command::FAILURE;
         }
@@ -97,7 +99,7 @@ final class ComandoFinalizarInstalacion extends Command
 
         $usuario = new User();
         $usuario->setEmail($correo);
-        $usuario->setUsername($correo);
+        $usuario->setUsername($username);
         $usuario->setRoles(['ROLE_SUPER_ADMIN', 'ROLE_DEVELOPER']);
         $usuario->setTenant($inquilino);
         $usuario->setNombre($this->extraerPrimerNombre($espacioTrabajo, $correo));

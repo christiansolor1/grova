@@ -100,6 +100,12 @@ final class ControladorInstalacion extends AbstractController
             $errores['db_password'] = 'Indica la contraseña de la base de datos (en local suele ser la de tu usuario MySQL).';
         }
 
+        if ($solicitud->usernameAdmin === '') {
+            $errores['admin_username'] = 'Indica un nombre de usuario.';
+        } elseif (!preg_match('/^[a-zA-Z0-9_]+$/', $solicitud->usernameAdmin)) {
+            $errores['admin_username'] = 'Solo letras, números y guión bajo.';
+        }
+
         if ($solicitud->emailAdmin === '' || !filter_var($solicitud->emailAdmin, \FILTER_VALIDATE_EMAIL)) {
             $errores['admin_email'] = 'Indica un email válido.';
         }
