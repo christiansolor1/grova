@@ -79,18 +79,18 @@ final class InstaladorGrova
 
     private function conectar(SolicitudInstalacion $solicitud): \Doctrine\DBAL\Connection
     {
-        $conexion = DriverManager::getConnection([
+        // "localhost" hace que PDO use socket Unix; forzar 127.0.0.1 para TCP siempre
+        $host = $solicitud->hostBd === 'localhost' ? '127.0.0.1' : $solicitud->hostBd;
+
+        // DBAL 4: connect() es protegido — la conexión se abre en el primer executeStatement()
+        return DriverManager::getConnection([
             'driver'   => 'pdo_mysql',
-            'host'     => $solicitud->hostBd,
+            'host'     => $host,
             'port'     => $solicitud->puertoBd,
             'user'     => $solicitud->usuarioBd,
             'password' => $solicitud->contrasenaBd,
             'charset'  => 'utf8mb4',
         ]);
-
-        $conexion->connect();
-
-        return $conexion;
     }
 
     private function escribirEnvLocal(SolicitudInstalacion $solicitud, string $urlBd): string
@@ -278,11 +278,14 @@ ENV;
 
     private function construirUrlBaseDatos(SolicitudInstalacion $solicitud): string
     {
+        // "localhost" → 127.0.0.1 para forzar TCP (evita problemas de socket en PHP)
+        $host = $solicitud->hostBd === 'localhost' ? '127.0.0.1' : $solicitud->hostBd;
+
         return sprintf(
             'mysql://%s:%s@%s:%d/%s?serverVersion=mariadb-10.11.16&charset=utf8mb4',
             rawurlencode($solicitud->usuarioBd),
             rawurlencode($solicitud->contrasenaBd),
-            $solicitud->hostBd,
+            $host,
             $solicitud->puertoBd,
             rawurlencode($solicitud->nombreBd),
         );

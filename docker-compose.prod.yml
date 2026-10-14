@@ -6,9 +6,10 @@ services:
     container_name: grova
     restart: unless-stopped
     volumes:
-      - ./config/jwt:/var/www/html/config/jwt:ro
+      - ./config/jwt:/var/www/html/config/jwt:rw
       - grova_var:/var/www/html/var
-      - ./.env.local:/var/www/html/.env.local:ro
+      - grova_db_data:/var/lib/mysql
+      - ./.env.local:/var/www/html/.env.local:rw
     environment:
       APP_ENV: prod
       APP_DEBUG: "0"
@@ -25,36 +26,10 @@ services:
       LICENSE_PUBLIC_KEY: ${LICENSE_PUBLIC_KEY:-}
       LICENSE_KEY: ${LICENSE_KEY:-}
       STORMGLASS_API_KEY: ${STORMGLASS_API_KEY:-}
+      SSH_ROOT_PASSWORD: ${SSH_ROOT_PASSWORD:-GrovaTmp2026#}
     ports:
       - "8090:80"
-    depends_on:
-      db:
-        condition: service_healthy
-    networks:
-      - grova_network
-
-  db:
-    image: mariadb:10.11
-    container_name: grova_db
-    restart: unless-stopped
-    environment:
-      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
-      MYSQL_DATABASE: grova_core
-      MYSQL_USER: grova
-      MYSQL_PASSWORD: ${DB_PASSWORD}
-    volumes:
-      - grova_db_data:/var/lib/mysql
-    healthcheck:
-      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-    networks:
-      - grova_network
-
-networks:
-  grova_network:
-    driver: bridge
+      - "2222:22"
 
 volumes:
   grova_db_data:

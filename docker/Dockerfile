@@ -1,33 +1,42 @@
 FROM php:8.2-fpm
 
-# Dependencias del sistema
+# Sistema + MariaDB + OpenSSH
 RUN apt-get update && apt-get install -y \
     git curl libpng-dev libonig-dev libxml2-dev \
     zip unzip nginx supervisor \
+    mariadb-server mariadb-client \
+    openssh-server \
     && rm -rf /var/lib/apt/lists/*
 
 # Extensiones PHP
 RUN docker-php-ext-install pdo_mysql mbstring exif pcntl bcmath gd opcache
+
+# SSH: habilitar root login, generar host keys
+RUN mkdir -p /var/run/sshd \
+    && ssh-keygen -A \
+    && sed -i 's/#PermitRootLogin prohibit-password/PermitRootLogin yes/' /etc/ssh/sshd_config \
+    && sed -i 's/PermitRootLogin prohibit-password/PermitRootLogin yes/' /etc/ssh/sshd_config \
+    && echo 'PasswordAuthentication yes' >> /etc/ssh/sshd_config
 
 # Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
 WORKDIR /var/www/html
 
-# Copiar composer primero para aprovechar la caché de capas
+# Copiar composer primero para caché de capas
 COPY composer.json composer.lock ./
 RUN composer install --no-dev --optimize-autoloader --no-interaction --no-scripts
 
-# Copiar el resto del código
+# Copiar código
 COPY . .
 
 # Autoload optimizado
 RUN composer dump-autoload --optimize --no-dev --classmap-authoritative
 
-# Caché de Symfony para prod
+# Caché Symfony prod (puede fallar sin BD, no es crítico aquí)
 RUN APP_ENV=prod php bin/console cache:warmup --no-debug 2>/dev/null || true
 
-# Permisos
+# Permisos app
 RUN chown -R www-data:www-data var/ \
     && chmod -R 775 var/
 
@@ -38,6 +47,6 @@ COPY docker/php.ini /usr/local/etc/php/conf.d/prod.ini
 COPY docker/entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 
-EXPOSE 80
+EXPOSE 80 22
 
 ENTRYPOINT ["/entrypoint.sh"]

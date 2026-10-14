@@ -25,6 +25,15 @@ final class DbErrorLogHandler extends AbstractProcessingHandler
 
     protected function write(LogRecord $record): void
     {
+        try {
+            $this->doWrite($record);
+        } catch (\Throwable) {
+            // BD no disponible (ej: antes de la instalación) — silenciar para no generar un 500
+        }
+    }
+
+    private function doWrite(LogRecord $record): void
+    {
         if (!$this->em->isOpen()) {
             return;
         }
