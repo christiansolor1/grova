@@ -11,26 +11,15 @@ final class Version20260511124500 extends AbstractMigration
 {
     public function getDescription(): string
     {
-        return 'Work: add pagada_at to work_invoice';
+        return 'Work: pagada_at already included in work_invoice grova_core schema (no-op)';
     }
 
     public function up(Schema $schema): void
     {
-        $this->addSql("USE grova_christian");
-
-        $this->addSql("ALTER TABLE work_invoice ADD COLUMN IF NOT EXISTS pagada_at DATETIME DEFAULT NULL AFTER enviada_at");
-
-        // Dejar la conexión en grova para que Doctrine pueda leer doctrine_migration_versions
-        $this->addSql("USE grova");
     }
 
     public function down(Schema $schema): void
     {
-        $this->addSql("USE grova_christian");
-
-        $this->addSql("ALTER TABLE work_invoice DROP COLUMN IF EXISTS pagada_at");
-
-        $this->addSql("USE grova");
     }
 }
 

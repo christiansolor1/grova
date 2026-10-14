@@ -18,22 +18,26 @@ final class Version20260603130000 extends AbstractMigration
     {
         // Campos nuevos en gasto fijo
         $this->addSql("ALTER TABLE wallet_gasto_fijo
-            ADD COLUMN frecuencia VARCHAR(20) NOT NULL DEFAULT 'mensual',
-            ADD COLUMN unidad VARCHAR(50) DEFAULT NULL,
-            ADD COLUMN precio_unitario DECIMAL(10,2) DEFAULT NULL,
-            ADD COLUMN cantidad_base DECIMAL(8,2) DEFAULT NULL
+            ADD COLUMN IF NOT EXISTS frecuencia VARCHAR(20) NOT NULL DEFAULT 'mensual',
+            ADD COLUMN IF NOT EXISTS unidad VARCHAR(50) DEFAULT NULL,
+            ADD COLUMN IF NOT EXISTS precio_unitario DECIMAL(10,2) DEFAULT NULL,
+            ADD COLUMN IF NOT EXISTS cantidad_base DECIMAL(8,2) DEFAULT NULL
         ");
 
         // Eliminar restricción única (permite múltiples pagos por mes)
-        $this->addSql('ALTER TABLE wallet_gasto_fijo_pago DROP INDEX uq_gasto_fijo_mes');
+        // MariaDB 10.4+: DROP FOREIGN KEY IF EXISTS / DROP INDEX IF EXISTS
+        $this->addSql('ALTER TABLE wallet_gasto_fijo_pago DROP FOREIGN KEY IF EXISTS FK_gasto_fijo_pago_gasto');
+        $this->addSql('ALTER TABLE wallet_gasto_fijo_pago DROP INDEX IF EXISTS uq_gasto_fijo_mes');
+        $this->addSql('ALTER TABLE wallet_gasto_fijo_pago ADD INDEX IF NOT EXISTS idx_gasto_fijo_id (gasto_fijo_id)');
+        $this->addSql('ALTER TABLE wallet_gasto_fijo_pago ADD CONSTRAINT FK_gasto_fijo_pago_gasto FOREIGN KEY (gasto_fijo_id) REFERENCES wallet_gasto_fijo(id) ON DELETE CASCADE');
 
         // Campos nuevos en pago
         $this->addSql("ALTER TABLE wallet_gasto_fijo_pago
-            ADD COLUMN cantidad DECIMAL(8,2) DEFAULT NULL,
-            ADD COLUMN unidad VARCHAR(50) DEFAULT NULL,
-            ADD COLUMN precio_unitario DECIMAL(10,2) DEFAULT NULL,
-            ADD COLUMN es_extra TINYINT(1) NOT NULL DEFAULT 0,
-            ADD COLUMN fecha DATE NOT NULL DEFAULT (CURRENT_DATE)
+            ADD COLUMN IF NOT EXISTS cantidad DECIMAL(8,2) DEFAULT NULL,
+            ADD COLUMN IF NOT EXISTS unidad VARCHAR(50) DEFAULT NULL,
+            ADD COLUMN IF NOT EXISTS precio_unitario DECIMAL(10,2) DEFAULT NULL,
+            ADD COLUMN IF NOT EXISTS es_extra TINYINT(1) NOT NULL DEFAULT 0,
+            ADD COLUMN IF NOT EXISTS fecha DATE NOT NULL DEFAULT (CURRENT_DATE)
         ");
     }
 

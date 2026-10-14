@@ -19,9 +19,6 @@ final class Version20260509060000 extends AbstractMigration
         // Password: grova2026
         $hash = '$2y$13$GYmBp207s684/9vH66LgHeSzYRrDwZG2l.4/4yaglAgZWF0krNG/e';
 
-        $this->addSql("USE grova");
-
-        // Tenant IDs
         $this->addSql("
             INSERT IGNORE INTO user (username, email, password, roles, nombre, apellido, tenant_id)
             SELECT 'alcides', 'alcides@grova.com', :hash, '[\"ROLE_USER\"]', 'Alcides', 'Tenant',
