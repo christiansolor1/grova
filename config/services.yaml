@@ -110,6 +110,10 @@ services:
         arguments:
             $cacheDir: '%kernel.cache_dir%'
 
+    App\Controller\ControladorInstalacion:
+        arguments:
+            $setupAttemptLimiter: '@limiter.setup_attempt'
+
     App\Controller\ControladorRecuperacion:
         arguments:
             $recaptchaSiteKey: '%env(RECAPTCHA_SITE_KEY)%'

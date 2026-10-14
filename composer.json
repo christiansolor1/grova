@@ -30,6 +30,7 @@
         "symfony/mailer": "7.4.*",
         "symfony/mercure-bundle": "^0.4.2",
         "symfony/monolog-bundle": "^4.0",
+        "symfony/process": "7.4.*",
         "symfony/rate-limiter": "7.4.*",
         "symfony/resend-mailer": "7.4.*",
         "symfony/runtime": "7.4.*",

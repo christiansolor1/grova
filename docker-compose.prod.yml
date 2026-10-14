@@ -8,26 +8,23 @@ services:
     volumes:
       - ./config/jwt:/var/www/html/config/jwt:ro
       - grova_var:/var/www/html/var
+      - ./.env.local:/var/www/html/.env.local:ro
     environment:
       APP_ENV: prod
       APP_DEBUG: "0"
-      APP_SECRET: ${APP_SECRET}
-      DATABASE_URL: "mysql://grova:${DB_PASSWORD}@db:3306/grova_core?serverVersion=mariadb-10.11.16&charset=utf8mb4"
-      DATABASE_CORE_URL: "mysql://grova:${DB_PASSWORD}@db:3306/grova_core?serverVersion=mariadb-10.11.16&charset=utf8mb4"
       JWT_SECRET_KEY: /var/www/html/config/jwt/private.pem
       JWT_PUBLIC_KEY: /var/www/html/config/jwt/public.pem
-      JWT_PASSPHRASE: ${JWT_PASSPHRASE}
       DEFAULT_URI: https://grovaapp.com
       CORS_ALLOW_ORIGIN: "^https://grovaapp\\.com$"
-      MAILER_DSN: ${MAILER_DSN}
-      MAILER_FROM_EMAIL: ${MAILER_FROM_EMAIL}
-      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
-      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET}
-      RECAPTCHA_SITE_KEY: ${RECAPTCHA_SITE_KEY}
-      RECAPTCHA_SECRET_KEY: ${RECAPTCHA_SECRET_KEY}
-      LICENSE_PUBLIC_KEY: ${LICENSE_PUBLIC_KEY}
+      MAILER_DSN: ${MAILER_DSN:-null://null}
+      MAILER_FROM_EMAIL: ${MAILER_FROM_EMAIL:-noreply@grovaapp.com}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
+      RECAPTCHA_SITE_KEY: ${RECAPTCHA_SITE_KEY:-}
+      RECAPTCHA_SECRET_KEY: ${RECAPTCHA_SECRET_KEY:-}
+      LICENSE_PUBLIC_KEY: ${LICENSE_PUBLIC_KEY:-}
       LICENSE_KEY: ${LICENSE_KEY:-}
-      STORMGLASS_API_KEY: ${STORMGLASS_API_KEY}
+      STORMGLASS_API_KEY: ${STORMGLASS_API_KEY:-}
     ports:
       - "8090:80"
     depends_on:

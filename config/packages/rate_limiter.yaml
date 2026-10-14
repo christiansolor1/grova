@@ -35,3 +35,9 @@ framework:
             policy: sliding_window
             limit: 10
             interval: '1 minute'
+
+        # 5 intentos de instalación por IP por hora
+        setup_attempt:
+            policy: fixed_window
+            limit: 5
+            interval: '1 hour'

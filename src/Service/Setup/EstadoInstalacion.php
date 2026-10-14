@@ -16,7 +16,9 @@ final class EstadoInstalacion
 
     public function estaInstalado(): bool
     {
-        return is_file($this->directorioProyecto.'/.env.local');
+        $ruta = $this->directorioProyecto.'/.env.local';
+
+        return is_file($ruta) && filesize($ruta) > 0;
     }
 
     public function obtenerRutaEnvLocal(): string
